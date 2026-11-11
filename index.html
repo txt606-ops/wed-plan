@@ -73,6 +73,7 @@ img.sprite { image-rendering: pixelated; image-rendering: crisp-edges; display: 
 
 /* Scene */
 .stage { background: var(--ink); border-bottom: 2px solid var(--ink); }
+.stage.pinned { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 19; }
 .stage canvas { display: block; width: 100%; height: auto; aspect-ratio: 192 / 120; image-rendering: pixelated; image-rendering: crisp-edges; max-width: 100%; }
 
 /* Main */
@@ -7411,6 +7412,7 @@ window.WP_COPY = {
     const sb = sheetBody();
     const meetingOpen = state.sheet?.type === "meeting" && state.meeting && D.meetings[state.meeting.key].picks > state.meeting.asked.length;
     $("#sheet").innerHTML = sb ? `<div class="backdrop" ${meetingOpen ? "" : 'data-act="close"'}></div><div class="sheet" role="dialog" aria-modal="true">${meetingOpen ? "" : `<button class="sheet-x" data-act="close" aria-label="Đóng">×</button>`}${sb}</div>` : "";
+    $("#stage").classList.toggle("pinned", p === "setup"); // tạo nhân vật: cảnh văn phòng đứng yên, chỉ danh sách bên dưới cuộn
     $("#stage").classList.toggle("compact", ["hub", "brief", "quote", "prep", "settlement"].includes(p));
     syncScene();
   }
