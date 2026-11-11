@@ -3405,6 +3405,75 @@ window.GAME_DATA = {
       box(174, 102, 10, 10, "#b5673f"); r(174, 102, 10, 2, "#c98058");
       [[178, 86, 2, 16], [173, 88, 5, 2], [180, 88, 5, 2], [171, 90, 2, 4], [185, 90, 2, 4], [175, 84, 2, 3], [181, 83, 2, 4]].forEach(([x, y, w, h]) => r(x, y, w, h, GREEN));
     },
+    // Phòng khách nhà gia đình: nơi planner tới gặp bố mẹ hai bên. 192×120, cùng cách vẽ với cảnh ăn hỏi và quán cà phê.
+    // Thanh duyệt 11/11/2026. Dùng ở tuần chuẩn bị khi tình huống là của bố mẹ.
+    living(g, o) {
+      // Hai nhà khác nhau (Thanh, 11/11/2026). o.side: "bride" = nhà gái (rèm hồng, gỗ sáng, gối đỏ, gạch bông như cảnh ăn hỏi);
+      // "groom" = nhà trai (rèm xanh, gỗ sẫm, gối xanh ngọc, sàn gỗ, tranh phong cảnh) và bố cục lật ngược: cửa sổ bên phải, tivi bên trái.
+      // Đồ thờ giữ nguyên ở cả hai nhà.
+      const groom = o.side === "groom";
+      const O = SP.OUTLINE, RED = "#c8372d", GOLD = "#f1c45a", GOLD2 = "#d9a441", MILK = "#fbf5ec", PINK = "#f2a3ad", GREEN = "#3f8a5a";
+      const WOOD = groom ? "#7a4f32" : "#a06a48", WOOD2 = groom ? "#5c3a24" : "#8a5a3c", WOOD3 = groom ? "#946648" : "#b98058", WOODHI = groom ? "#b07a52" : "#d9a070";
+      const WALL = groom ? "#eef0de" : "#f7e6cc", WALL2 = groom ? "#dfe3c8" : "#ecd3ad", WALL3 = groom ? "#cdd3b2" : "#dcbf95", STRIPE = groom ? "#e6e9d2" : "#f2dcbc", BASE = groom ? "#cfd6b8" : "#e3c49c", BASE2 = groom ? "#b3bd98" : "#cfa97c";
+      const CURT = groom ? "#8fb7d9" : PINK, CURT2 = groom ? "#4a7fa8" : "#d9577a", CUSH = groom ? "#23806c" : RED, POT = groom ? "#b5673f" : MILK, POT2 = groom ? "#c98058" : "#5f8fc0";
+      const MAT = groom ? "#d9e3ea" : "#ead9a6", MAT2 = groom ? "#c6d4de" : "#e1cd93", MATEDGE = groom ? "#2f6f8f" : RED, MATLINE = groom ? "#f1c45a" : "#5f9a6a";
+      if (groom) { g.save(); g.translate(SW, 0); g.scale(-1, 1); }
+      const r = (x, y, w, h, c) => rect(g, x, y, w, h, c);
+      const box = (x, y, w, h, c) => { r(x - 1, y - 1, w + 2, h + 2, O); r(x, y, w, h, c); };
+      const bloom = (x, y, c) => { r(x, y, 2, 2, c); r(x + 2, y + 1, 1, 1, "#5f9a6a"); };
+      // tường kem sọc mờ, chân tường
+      r(0, 0, SW, 58, WALL); r(0, 0, SW, 4, WALL2); r(0, 4, SW, 1, WALL3);
+      for (let x = 6; x < SW; x += 12) r(x, 9, 1, 41, STRIPE);
+      r(0, 50, SW, 8, BASE); r(0, 50, SW, 1, BASE2); r(0, 57, SW, 1, O);
+      // nhà gái: gạch bông như cảnh ăn hỏi. nhà trai: sàn gỗ ván dài
+      if (groom) { for (let y = 58, j = 0; y < SH; y += 8, j++) { r(0, y, SW, 8, j % 2 ? "#c99d74" : "#c2946b"); r(0, y, SW, 1, "#a87b55"); for (let x = (j % 2) * 20 + 8; x < SW; x += 40) r(x, y, 1, 8, "#a87b55"); } }
+      else {
+        for (let y = 58, j = 0; y < SH; y += 13, j++) for (let x = -8, i = 0; x < SW; x += 16, i++) r(x + (j % 2) * 8, y, 16, 13, (i + j) % 2 ? "#e7c8a2" : "#dfbc93");
+        for (let y = 70; y < SH; y += 13) r(0, y, SW, 1, "#d2ac82");
+      }
+
+      // cửa sổ rèm hoa, ngoài là vườn
+      box(8, 12, 38, 30, "#cfe9ef"); r(8, 32, 38, 10, "#9ccf95"); r(16, 28, 8, 6, "#5f9a6a"); r(30, 30, 9, 5, "#7fb27a");
+      r(26, 12, 2, 30, MILK); r(8, 26, 38, 1, MILK);
+      r(8, 12, 7, 30, CURT); r(39, 12, 7, 30, CURT); [[10, 18], [11, 28], [41, 22], [42, 34]].forEach(([x, y]) => r(x, y, 2, 2, MILK)); r(8, 12, 38, 3, CURT2);
+      // lịch treo tường
+      box(54, 24, 10, 15, MILK); r(54, 24, 10, 5, RED); r(56, 26, 6, 1, GOLD); r(57, 32, 4, 4, O); r(56, 37, 6, 1, "#c9c6cc");
+
+      // tủ thờ nhỏ: bát hương, đèn, hoa, đĩa quả. Nghi lễ giữ nguyên.
+      box(88, 9, 16, 11, GOLD2);
+      if (groom) { r(90, 11, 12, 7, "#cfe9ef"); r(90, 15, 12, 3, "#5f9a6a"); r(93, 13, 4, 3, "#7fb27a"); r(99, 12, 2, 2, GOLD); }
+      else { r(90, 11, 12, 7, RED); r(94, 13, 4, 3, GOLD); }
+      box(72, 42, 48, 15, WOOD2); r(74, 44, 21, 11, WOOD); r(97, 44, 21, 11, WOOD); r(93, 48, 2, 3, GOLD); r(97, 48, 2, 3, GOLD); r(74, 44, 21, 1, WOOD3); r(97, 44, 21, 1, WOOD3);
+      box(70, 37, 52, 4, WOOD3); r(70, 37, 52, 1, WOODHI); r(72, 41, 48, 1, RED); for (let x = 73; x < 120; x += 3) r(x, 42, 1, 1, GOLD);
+      box(92, 31, 8, 5, GOLD2); r(92, 31, 8, 1, GOLD); [94, 96, 98].forEach((x, i) => { r(x, 27 - (i % 2), 1, 3 + (i % 2), "#5c1c1a"); r(x, 26 - (i % 2), 1, 1, "#ffb14a"); });
+      [[77, 28], [113, 28]].forEach(([x, y]) => { box(x, y + 2, 2, 6, RED); r(x, y - 1, 2, 2, "#ffd766"); r(x, y - 2, 1, 1, "#fff3c0"); });
+      box(82, 33, 7, 3, MILK); r(82, 31, 2, 2, "#e9994a"); r(84, 30, 2, 3, "#8fbf5a"); r(86, 31, 2, 2, "#d8453a");
+      box(104, 30, 4, 6, "#5f8fc0"); r(104, 31, 4, 1, MILK); r(105, 27, 1, 3, "#5f9a6a"); bloom(103, 26, PINK); bloom(107, 25, "#ffffff"); bloom(105, 23, "#f1c45a");
+
+      // kệ tivi, đồng hồ
+      box(162, 8, 9, 9, MILK); r(166, 10, 1, 3, O); r(166, 12, 3, 1, O);
+      box(144, 24, 34, 19, "#2b2b33"); r(146, 26, 30, 15, "#8fb7d9"); r(146, 26, 30, 3, "#a9c8e2"); r(148, 30, 6, 1, MILK); r(159, 44, 4, 1, O);
+      box(138, 46, 48, 10, WOOD3); r(138, 46, 48, 1, WOODHI); r(140, 49, 20, 5, WOOD); r(164, 49, 20, 5, WOOD); r(150, 51, 2, 1, GOLD); r(172, 51, 2, 1, GOLD); r(140, 57, 2, 3, O); r(182, 57, 2, 3, O);
+      box(180, 39, 4, 6, PINK); r(181, 36, 2, 3, GREEN);
+
+      // trường kỷ gỗ dưới cửa sổ, gối đỏ
+      box(8, 54, 44, 3, WOOD2); for (let x = 12; x < 50; x += 6) r(x, 57, 2, 8, WOOD2); r(8, 57, 2, 8, WOOD2); r(50, 57, 2, 8, WOOD2);
+      box(8, 65, 44, 5, WOOD); r(8, 65, 44, 1, WOOD3); r(10, 71, 2, 5, O); r(48, 71, 2, 5, O);
+      box(14, 60, 8, 5, CUSH); r(15, 61, 6, 1, GOLD); box(38, 60, 8, 5, CUSH); r(39, 61, 6, 1, GOLD);
+
+      // chiếu hoa, bàn trà: ấm chén và đĩa bánh
+      box(64, 90, 64, 22, MAT); r(64, 90, 64, 2, MATEDGE); r(64, 110, 64, 2, MATEDGE); for (let x = 68; x < 126; x += 4) r(x, 93, 2, 16, MAT2); r(66, 92, 60, 1, MATLINE); r(66, 109, 60, 1, MATLINE);
+      r(87, 90, 2, 9, O); r(103, 90, 2, 9, O); r(88, 90, 1, 8, WOOD2); r(104, 90, 1, 8, WOOD2);
+      box(83, 85, 26, 4, WOOD2); r(83, 85, 26, 1, WOOD3);
+      box(93, 80, 6, 4, MILK); r(95, 78, 2, 1, O); r(99, 81, 2, 1, O); r(93, 82, 6, 1, "#8fb7d9");
+      [[86, 82], [103, 82]].forEach(([x, y]) => { box(x, y, 3, 2, MILK); });
+
+      // ghế gỗ đơn bên phải, chậu kim tiền góc trái
+      box(152, 68, 20, 3, WOOD2); r(154, 71, 2, 6, WOOD2); r(168, 71, 2, 6, WOOD2); box(152, 77, 20, 5, WOOD); r(152, 77, 20, 1, WOOD3); r(153, 83, 2, 5, O); r(169, 83, 2, 5, O); box(157, 73, 10, 4, CUSH); r(158, 74, 8, 1, GOLD);
+      box(6, 102, 10, 10, POT); r(6, 105, 10, 2, POT2);
+      [[10, 86, 2, 16], [5, 88, 5, 3], [12, 88, 5, 3], [4, 92, 4, 3], [14, 93, 4, 3], [7, 84, 3, 3], [12, 83, 3, 3]].forEach(([x, y, w, h]) => r(x, y, w, h, GREEN));
+      if (groom) g.restore();
+    },
     ballroom(g, o) {
       rect(g, 0, 0, SW, 46, "#2c2a44"); rect(g, 0, 40, SW, 6, "#24223a");
       for (let x = 6; x < SW; x += 18) rect(g, x, 4, 2, 36, "#36345a");
@@ -3446,6 +3515,7 @@ window.GAME_DATA = {
     ballroom: { x0: 8, x1: 184, y0: 58, y1: 116 },
     garden: { x0: 8, x1: 184, y0: 52, y1: 116 },
     cafe: { x0: 12, x1: 166, y0: 78, y1: 114 },
+    living: { x0: 22, x1: 176, y0: 80, y1: 114 },
     hall: { x0: 8, x1: 184, y0: 58, y1: 116 }
   };
 
@@ -6728,9 +6798,15 @@ window.WP_COPY = {
     if (p === "hub") return { key: `hub-${lv}-${state.career.staff.map(s => s.id).join("")}`, kind: "office", opts: office };
     if (p === "brief" || p === "quote") return { key: `brief-${lv}`, kind: "office", opts: office };
     if (p === "prep") {
-      // Gặp ai thì cảnh chuyển tới chỗ đó. Hiện mới có quán cà phê cho tình huống của vendor; chọn xong thì về văn phòng.
+      // Gặp ai thì cảnh chuyển tới chỗ đó: vendor ở quán cà phê, bố mẹ cô dâu ở nhà gái, mẹ chú rể ở nhà trai.
+      // Cô dâu chú rể tới văn phòng nên không đổi cảnh. Chọn xong thì về văn phòng.
       const d = weekDilemma();
-      if (d && !state.dilemmaPick[d.id] && (d.who || "").startsWith("v_")) return { key: `meetcafe-${d.id}`, kind: "cafe", place: `Quán cà phê · gặp ${whoName(d.who)}` };
+      if (d && !state.dilemmaPick[d.id]) {
+        const who = d.who || "", low = whoName(who).replace(/^./, c => c.toLowerCase());
+        if (who.startsWith("v_")) return { key: `meet-cafe-${d.id}`, kind: "cafe", place: `Quán cà phê · gặp ${whoName(who)}` };
+        if (who === "mom_bride" || who === "dad_bride") return { key: `meet-bride-${d.id}`, kind: "living", opts: { side: "bride" }, place: `Nhà gái · gặp ${low}` };
+        if (who === "mom_groom") return { key: `meet-groom-${d.id}`, kind: "living", opts: { side: "groom" }, place: `Nhà trai · gặp ${low}` };
+      }
       return { key: `prep-${lv}`, kind: "office", opts: office };
     }
     if (p === "settlement") return { key: `settle-${lv}`, kind: "office", opts: office };
@@ -6757,10 +6833,14 @@ window.WP_COPY = {
       s.add("me", me, 74, 88, { still: true });
       const b = s.add("bride", CL("bride_casual"), 172, 72, { still: true }); b.tx = 108; b.ty = 92;
       const g = s.add("groom", CL("groom_casual"), 180, 74, { still: true }); g.tx = 122; g.ty = 94;
-    } else if (key.startsWith("meetcafe")) {
+    } else if (key.startsWith("meet-cafe")) {
       // planner chờ sẵn ở bàn, vendor bước vào từ bên phải
       s.add("me", me, 72, 104, { still: true });
       const v = s.add("guest", speakerLook(weekDilemma().who), 188, 100, { still: true, speed: 26 }); v.tx = 120; v.ty = 104; v.flip = true;
+    } else if (key.startsWith("meet-")) {
+      // tới nhà: chủ nhà đứng sẵn bên bàn trà, planner bước vào từ bên trái
+      const h = s.add("guest", speakerLook(weekDilemma().who), 120, 104, { still: true }); h.flip = true;
+      const m = s.add("me", me, 4, 100, { still: true, speed: 26 }); m.tx = 72; m.ty = 104;
     } else if (key.startsWith("prep")) {
       s.add("me", me, 88, 84, { speed: 18 });
       for (let i = 1; i < tierObj().team; i++) s.add(`team${i}`, i % 2 ? SP.PEOPLE.staff : SP.PEOPLE.staff2, 40 + i * 30, 96, { speed: 16 });
@@ -6835,7 +6915,7 @@ window.WP_COPY = {
     if (p === "hub") scene.bubble("me", state.career.canUpgrade || state.career.pendingBrand ? "!" : "♪");
     if (p === "quote") scene.bubble("bride", "?");
     if (p === "brief") scene.bubble(state.briefStep % 2 ? "groom" : "bride", "…");
-    if (sceneKey.startsWith("meetcafe")) scene.bubble("guest", "…");
+    if (sceneKey.startsWith("meet-")) scene.bubble("guest", "…");
     if (p === "prep" && state.sheet?.type === "meeting") scene.bubble("me", "…");
     else if (p === "prep" && state.ap === 0) scene.bubble("me", "✓");
     if (p === "settlement") scene.bubble("bride", state.settlementOutcome ? (state.settlementOutcome.c >= 0 ? "♥" : "…") : "₫", state.settlementOutcome && state.settlementOutcome.c < 0 ? "upset" : null);
