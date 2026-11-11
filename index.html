@@ -73,7 +73,6 @@ img.sprite { image-rendering: pixelated; image-rendering: crisp-edges; display: 
 
 /* Scene */
 .stage { background: var(--ink); border-bottom: 2px solid var(--ink); }
-.stage.pinned { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 19; }
 .stage canvas { display: block; width: 100%; height: auto; aspect-ratio: 192 / 120; image-rendering: pixelated; image-rendering: crisp-edges; max-width: 100%; }
 
 /* Main */
@@ -521,6 +520,28 @@ h3.sub { margin: 6px 0 0; font: 700 12px/1.3 var(--body); letter-spacing: .08em;
 .stage.compact.meet canvas { height: 170px; object-position: 50% 67%; }
 .place { display: block; padding: 2px 16px 3px; font: 17px/1.25 var(--pixel); color: var(--bg); background: var(--ink); }
 .place[hidden] { display: none; }
+
+/* ---- Cảnh luôn đứng yên (Thanh, 11/11/2026) ---- */
+/* HUD và cảnh nằm chung một khối dính trên đầu ở mọi màn; chỉ phần nội dung bên dưới cuộn. */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--bg); }
+.top #hud, .top .hud { position: static; }
+/* màn hình thấp: cảnh to (ngày cưới) thu lại theo đúng tỷ lệ, không cắt, để còn chỗ cho nội dung */
+.top .stage:not(.compact) canvas { max-height: 42vh; max-height: 42dvh; object-fit: contain; }
+#decision, #ev-cur { scroll-margin-top: calc(var(--top-h, 140px) + 12px); }
+
+/* ---- Màn văn phòng gọn ---- */
+.hubline { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; width: 100%; text-align: left; padding: 10px 12px; background: var(--surface); border: 2px solid var(--line); color: var(--muted); font-size: 14px; }
+.hubline b { font: 22px/1 var(--pixel); color: var(--ink); }
+.hubline b.neg { color: var(--danger); }
+.hubline b.pos { color: var(--jade); }
+.hubline em { font-style: normal; font-size: 12px; padding: 1px 8px; background: var(--gold-soft); color: var(--gold); }
+.hubline .chev, .offer.tap .chev { margin-left: auto; font-style: normal; color: var(--muted); font-size: 18px; }
+.hubline.ctv { justify-content: space-between; border-style: dashed; }
+.hubline.ctv span { flex: 1; }
+.offer.tap { display: flex; flex-direction: column; width: 100%; text-align: left; padding: 12px; cursor: pointer; }
+.offer.tap .row-between { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.offer.tap .offer-line { color: var(--muted); }
+.offer.tap .offer-line em { font-style: normal; color: var(--gold); }
 
 </style>
 </head>
@@ -6369,18 +6390,32 @@ window.WP_COPY = {
     const c = state.career; const mi = C.monthInfo(c.month, c.city); const st = stageOf(); const next = C.STAGES[c.stage + 1];
     const brand = C.BRANDS.find(b => b.id === c.brand);
     const typeChip = o => `<span class="${o.type === "boss" ? "gold" : o.type === "dayof" ? "" : "pos"}">${esc(C.TYPES[o.type].short)}</span>`;
+    // Màn văn phòng gọn (Thanh, 11/11/2026): tiền cảnh chỉ có việc chọn khách. Tình hình, cấp, team, lịch sử nằm trong tờ "Sự nghiệp".
     const offerCard = (o, i) => {
-      const ct = C.CLIENTS.find(x => x.profile.id === o.client); const n = offerNotes(o).length;
+      const n = offerNotes(o).length;
       const fit = (brand && brand.offer === o.type) || (hasSkill("ngoai_ngu") && ["destination", "overseas"].includes(o.type));
-      return `<div class="card offer"><div class="row-between"><div class="offer-name"><b>${o.comeback ? "Người quen giới thiệu · " : ""}${esc(o.couple)}</b>${fit ? `<span class="fit">Hợp hướng của bạn</span>` : ""}</div><span class="fee-range"><small>Phí planning</small><b>${money(Math.round(o.fee * 0.85))}–${money(Math.round(o.fee * 1.05))}</b></span></div>
-        <p class="offer-line">${typeChip(o)} ${esc(o.location)} · ${o.guests} khách · chuẩn bị ${o.weeks} tuần</p>
-        ${ct ? `<p class="offer-sum">${esc(ct.profile.summary.split(/(?<=\.)\s/)[0])}</p>` : ""}
-        ${n ? `<small class="muted">${n} điểm cần lưu ý</small>` : ""}
-        <div class="row-btns"><button class="btn" data-act="sheet" data-id="offer:${i}">Xem brief</button><button class="btn primary" data-act="sheet" data-id="quote:${i}">Chọn gói</button></div></div>`;
+      return `<button class="card offer tap" data-act="sheet" data-id="offer:${i}"><span class="row-between"><span class="offer-name"><b>${o.comeback ? "Người quen giới thiệu · " : ""}${esc(o.couple)}</b>${fit ? `<span class="fit">Hợp hướng của bạn</span>` : ""}</span><span class="fee-range"><b>${money(Math.round(o.fee * 0.85))}–${money(Math.round(o.fee * 1.05))}</b></span></span>
+        <span class="offer-line">${typeChip(o)} ${o.guests} khách · ${o.weeks} tuần${n ? ` · <em>${n} điểm cần lưu ý</em>` : ""}<i class="chev">›</i></span></button>`;
     };
+    const canHire = C.ROLES.some(r => c.stage >= r.minStage) && c.staff.length < st.maxStaff;
     return `<section class="stack">
-      ${c.done === 0 ? `<div class="card"><b>Ngày đầu làm planner tự do</b><p class="muted">Bạn ở ${esc(C.CITIES[c.city].name)}, có ${money(20)}, một chiếc điện thoại và chưa có ai làm cùng. Nhận vài job điều phối nhỏ để có tiếng trước đã.</p></div>` : ""}
       ${c.stage >= 4 && c.bossDone && !c.endSeen ? `<div class="card moment"><span class="eyebrow">Hết chặng đầu</span><h2 class="h big">Agency của bạn đã có tên</h2><p>${c.done} đám cưới, danh tiếng ${avgStars().toFixed(1)}★, quỹ ${money(c.cash)}. Bạn vẫn có thể tiếp tục nhận khách.</p><button class="btn" data-act="endSeen">Tiếp tục làm nghề</button></div>` : ""}
+      <button class="hubline" data-act="sheet" data-id="career"><span>Quỹ <b class="${c.cash < 0 ? "neg" : ""}">${money(c.cash)}</b></span><span>Cấp <b>${c.stage + 1}/5</b></span><span>${next ? `Lên cấp <b>${goalPct(next.goal)}%</b>` : `<b>${c.done}</b> đám`}</span>${canHire ? `<em>Tuyển được người</em>` : ""}<i class="chev">›</i></button>
+        ${c.canUpgrade && next ? `<button class="btn primary" data-act="upgrade">Thuê văn phòng, lên ${esc(next.name)} (+${money(next.overhead - st.overhead)}/tháng)</button>` : ""}
+        ${c.pendingBrand ? `<button class="btn primary" data-act="sheet" data-id="brand">Chọn hướng thương hiệu</button>` : ""}
+        ${c.skillPoints ? `<button class="btn primary" data-act="sheet" data-id="skill">Học kỹ năng mới (${c.skillPoints})</button>` : ""}
+      ${c.done === 0 ? `<p class="muted">Ngày đầu làm planner tự do ở ${esc(C.CITIES[c.city].name)}. Nhận vài job điều phối nhỏ để có tiếng trước đã.</p>` : ""}
+      <h2 class="sec">Khách đang hỏi</h2>
+      ${c.offers.map(offerCard).join("")}
+      <button class="hubline ctv" data-act="floorJob"><span>Chưa muốn nhận ai? Đi làm CTV 1 tháng</span><b class="pos">+${money(8 + c.stage * 2)}</b></button>
+      ${c.cash < 0 && !c.loan ? `<div class="card slim"><b>Quỹ đang âm</b><small class="muted">Âm quá 100tr thì team phải giải tán. Có thể vay người quen 50tr, trả 60tr sau 3 tháng.</small><button class="btn" data-act="loan">Vay 50tr</button></div>` : ""}
+      ${c.loan ? `<p class="note">Đang nợ ${money(c.loan.repay)}, trả sau ${c.loan.left} tháng.</p>` : ""}
+    </section>`;
+  }
+  function sheetCareer() {
+    const c = state.career; const mi = C.monthInfo(c.month, c.city); const st = stageOf(); const next = C.STAGES[c.stage + 1];
+    const brand = C.BRANDS.find(b => b.id === c.brand);
+    return `<h2 class="h">Sự nghiệp</h2>
       <div class="career-stats">
         <div><small>Quỹ</small><b class="${c.cash < 0 ? "neg" : ""}">${money(c.cash)}</b></div>
         <div><small>Danh tiếng</small><b>${c.stars.length ? avgStars().toFixed(1) + "★" : "—"}</b></div>
@@ -6388,22 +6423,13 @@ window.WP_COPY = {
       </div>
       <div class="card"><div class="row-between"><span class="eyebrow">Cấp ${c.stage + 1}/5</span><span class="small muted">${esc(C.CITIES[c.city].short)} · ${esc(mi.label)}</span></div><h2 class="h">${esc(st.name)}</h2><p class="muted">${esc(st.desc)}${brand ? ` Hướng: <b>${esc(brand.name)}</b>.` : ""}</p>
         ${next ? `<div class="goal"><div class="row-between"><small class="muted">Để lên ${esc(next.name)}:</small><b class="small">${goalPct(next.goal)}%</b></div><div class="bar thin"><i style="width:${goalPct(next.goal)}%"></i></div>${goalRows(next.goal).map(([t, ok, v]) => `<div class="${ok ? "ok" : ""}"><span>${ok ? "✓" : "○"} ${esc(t)}</span><b>${esc(v)}</b></div>`).join("")}</div>` : `<p class="pos">Cấp cao nhất.</p>`}
-        ${c.canUpgrade && next ? `<button class="btn primary" data-act="upgrade">Thuê văn phòng, lên ${esc(next.name)} (+${money(next.overhead - st.overhead)}/tháng)</button>` : ""}
-        ${c.pendingBrand ? `<button class="btn primary" data-act="sheet" data-id="brand">Chọn hướng thương hiệu</button>` : ""}
-        ${c.skillPoints ? `<button class="btn primary" data-act="sheet" data-id="skill">Học kỹ năng mới (${c.skillPoints})</button>` : ""}
       </div>
-      <h2 class="sec">Khách đang hỏi</h2>
-      ${c.offers.map(offerCard).join("")}
-      <div class="card slim"><div class="row-between"><b>Làm CTV cho planner khác</b><span class="pos">+${money(8 + c.stage * 2)}</span></div><small class="muted">Ít tiền, không ảnh hưởng danh tiếng, mất 1 tháng. Dùng khi chưa muốn nhận khách nào.</small><button class="btn" data-act="floorJob">Đi làm CTV 1 tháng</button></div>
-      ${c.cash < 0 && !c.loan ? `<div class="card slim"><b>Quỹ đang âm</b><small class="muted">Âm quá 100tr thì team phải giải tán. Có thể vay người quen 50tr, trả 60tr sau 3 tháng.</small><button class="btn" data-act="loan">Vay 50tr</button></div>` : ""}
-      ${c.loan ? `<p class="note">Đang nợ ${money(c.loan.repay)}, trả sau ${c.loan.left} tháng.</p>` : ""}
-      <h2 class="sec">Team</h2>
+      <h3 class="sub">Team</h3>
       <div class="card">${[`<div class="staff">${img(planner().look, "face")}<div><b>${esc(planner().name)}</b><small>Bạn · ${SOLO_AP} lượt/tuần · ${esc(state.me.skills.map(id => C.SKILLS.find(k => k.id === id).name).join(", "))}</small></div><button class="link" data-act="sheet" data-id="skill">Kỹ năng</button></div>`].concat(c.staff.map(s => { const R = C.ROLES.find(r => r.id === s.role); return `<div class="staff">${img(staffLook(s.role, s.id), "face")}<div><b>${esc(s.name)}</b><small>${esc(R.name)} · ${money(R.salary)}/tháng</small></div><button class="link" data-act="askFire" data-id="${s.id}">Cho nghỉ</button></div>`; })).join("")}
         <small class="muted">Chi phí cố định: ${money(monthlyCost())}/tháng${st.overhead ? ` (gồm ${money(st.overhead)} văn phòng, đi lại)` : ""}.</small>
         ${C.ROLES.filter(r => c.stage >= r.minStage).length ? (c.staff.length >= st.maxStaff ? `<small class="muted">Đã đủ ${st.maxStaff} nhân viên ở cấp này. Lên cấp để tuyển thêm.</small>` : `<div class="list">${C.ROLES.filter(r => c.stage >= r.minStage).map(r => `<button class="opt" data-act="hireStaff" data-id="${r.id}"><b>Tuyển ${esc(r.name)} · ${money(r.salary)}/tháng</b><small>${esc(r.perk)}</small></button>`).join("")}</div><small class="muted">Còn tuyển được ${st.maxStaff - c.staff.length} người ở cấp này. Lương trừ mỗi tháng, kể cả tháng không có đám.</small>`) : `<small class="muted">Lên ${esc(C.STAGES[1].name)} mới tuyển được nhân viên.</small>`}
       </div>
-      ${c.history.length ? `<details class="card"><summary class="h">Các đám đã làm</summary><ul class="hist">${c.history.map(h => `<li><span>${esc(h.couple)} · ${esc(C.TYPES[h.type].short)}</span><b>${"★".repeat(h.stars)}</b><span class="${h.profit < 0 ? "neg" : "pos"}">${signed(h.profit)}</span></li>`).join("")}</ul></details>` : ""}
-    </section>`;
+      ${c.history.length ? `<details class="card"><summary class="h">Các đám đã làm</summary><ul class="hist">${c.history.map(h => `<li><span>${esc(h.couple)} · ${esc(C.TYPES[h.type].short)}</span><b>${"★".repeat(h.stars)}</b><span class="${h.profit < 0 ? "neg" : "pos"}">${signed(h.profit)}</span></li>`).join("")}</ul></details>` : ""}`;
   }
   function sheetBrand() {
     return `<h2 class="h">Chọn hướng thương hiệu</h2><p class="muted">Chọn một lần, không đổi lại được. Hướng này quyết định loại khách sẽ tìm tới bạn.</p>
@@ -7542,6 +7568,7 @@ window.WP_COPY = {
     if (s.type === "skill") return sheetSkill();
     if (s.type === "quote") return sheetQuote();
     if (s.type === "offer") return sheetOffer();
+    if (s.type === "career") return sheetCareer();
     if (s.type === "fire") { const x = state.career.staff.find(y => y.id === s.id); return x ? `<h2 class="h">Cho ${esc(x.name)} nghỉ?</h2><p>Bớt lương mỗi tháng, nhưng mất 1 lượt mỗi tuần và có thể tụt dưới yêu cầu nhân sự của cấp hiện tại.</p><div class="sheet-actions"><button class="btn primary" data-act="fire" data-id="${x.id}">Cho nghỉ</button><button class="btn" data-act="close">Thôi</button></div>` : ""; }
     if (s.type === "log") return `<h2 class="h">Nhật ký</h2><ol class="log">${state.log.map(l => `<li class="${l.type}">${l.week ? `<small>T${l.week}</small>` : ""}${esc(l.text)}</li>`).join("") || "<li>Chưa có gì.</li>"}</ol>`;
     if (s.type === "restart") return `<h2 class="h">Bắt đầu lại từ đầu?</h2><p>Quỹ, team và các đám đã làm sẽ mất hết.</p><div class="sheet-actions"><button class="btn primary" data-act="restartNow">Chơi lại</button><button class="btn" data-act="close">Thôi</button></div>`;
@@ -7562,7 +7589,7 @@ window.WP_COPY = {
     save();
     const app = $("#app");
     if (!$("#stage")) {
-      app.innerHTML = `<div id="hud"></div><div id="stage" class="stage"><canvas aria-label="Cảnh trong game"></canvas><span id="place" class="place" hidden></span></div><main id="main" class="main"></main><div id="nav"></div><div id="sheet"></div><div id="toast" class="toast" role="status" hidden></div>`;
+      app.innerHTML = `<div id="top" class="top"><div id="hud"></div><div id="stage" class="stage"><canvas aria-label="Cảnh trong game"></canvas><span id="place" class="place" hidden></span></div></div><main id="main" class="main"></main><div id="nav"></div><div id="sheet"></div><div id="toast" class="toast" role="status" hidden></div>`;
     }
     $("#hud").innerHTML = hud();
     const p = state.phase;
@@ -7572,13 +7599,16 @@ window.WP_COPY = {
     const sb = sheetBody();
     const meetingOpen = state.sheet?.type === "meeting" && state.meeting && D.meetings[state.meeting.key].picks > state.meeting.asked.length;
     $("#sheet").innerHTML = sb ? `<div class="backdrop" ${meetingOpen ? "" : 'data-act="close"'}></div><div class="sheet" role="dialog" aria-modal="true">${meetingOpen ? "" : `<button class="sheet-x" data-act="close" aria-label="Đóng">×</button>`}${sb}</div>` : "";
-    $("#stage").classList.toggle("pinned", p === "setup"); // tạo nhân vật: cảnh văn phòng đứng yên, chỉ danh sách bên dưới cuộn
     $("#stage").classList.toggle("compact", ["hub", "brief", "quote", "prep", "settlement"].includes(p));
     const want = desiredScene();
     $("#stage").classList.toggle("meet", !!want.place);
     $("#place").hidden = !want.place; $("#place").textContent = want.place || "";
     syncScene();
+    topHeight();
   }
+  // Chiều cao khối dính trên đầu (HUD + cảnh), để các chỗ tự cuộn tới không bị khối đó che.
+  function topHeight() { const t = $("#top"); if (t) document.documentElement.style.setProperty("--top-h", t.offsetHeight + "px"); }
+  if (typeof ResizeObserver !== "undefined") new ResizeObserver(topHeight).observe(document.getElementById("app"));
 
   const scrollTop = () => window.scrollTo({ top: 0 });
   document.addEventListener("click", e => {
