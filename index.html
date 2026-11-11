@@ -40,8 +40,11 @@
   color-scheme: light; /* Nền tối đã bỏ (Thanh, 11/11/2026): game luôn sáng, kể cả khi máy bật chế độ tối */
 }
 * { box-sizing: border-box; }
-html { background: var(--desk); }
-body { margin: 0; background: var(--desk); color: var(--ink); font: 15px/1.5 var(--body); -webkit-tap-highlight-color: transparent; }
+/* Nền đứng yên (Thanh, 11/11/2026): trang chỉ cuộn khi nội dung dài hơn màn hình.
+   overscroll-behavior tắt kiểu "kéo nảy" của iPhone; 100dvh bên dưới là chiều cao phần màn hình thật sự nhìn thấy
+   (100vh trên Safari iPhone cao hơn màn hình, nên màn nào cũng kéo được một đoạn). */
+html { background: var(--desk); overscroll-behavior: none; }
+body { margin: 0; overscroll-behavior: none; background: var(--desk); color: var(--ink); font: 15px/1.5 var(--body); -webkit-tap-highlight-color: transparent; }
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--surface); }
 button { font: inherit; color: inherit; cursor: pointer; }
 button:focus-visible, summary:focus-visible { outline: 3px solid var(--rose); outline-offset: 2px; }
@@ -51,7 +54,7 @@ img.sprite { image-rendering: pixelated; image-rendering: crisp-edges; display: 
 .muted { color: var(--muted); }
 .center { text-align: center; }
 
-#app { max-width: 460px; margin: 0 auto; min-height: 100vh; background: var(--bg); position: relative; box-shadow: 0 0 0 1px var(--line); }
+#app { max-width: 460px; margin: 0 auto; min-height: 100vh; min-height: 100dvh; background: var(--bg); position: relative; box-shadow: 0 0 0 1px var(--line); }
 
 /* HUD */
 .hud { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--surface); border-bottom: 2px solid var(--ink); }
