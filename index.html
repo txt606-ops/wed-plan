@@ -543,6 +543,10 @@ h3.sub { margin: 6px 0 0; font: 700 12px/1.3 var(--body); letter-spacing: .08em;
 .offer.tap .offer-line { color: var(--muted); }
 .offer.tap .offer-line em { font-style: normal; color: var(--gold); }
 
+/* ---- Màn brief: chữ hiện dần ---- */
+.msg[hidden], .after-brief[hidden], #brief-skip[hidden] { display: none !important; }
+#brief-skip { display: block; align-self: center; min-height: 44px; }
+
 </style>
 </head>
 <body>
@@ -6857,8 +6861,9 @@ window.WP_COPY = {
       state.career.staff.forEach((st, i) => s.add(`st_${st.id}`, staffLook(st.role, st.id), 40 + i * 26, 96 + (i % 2) * 8, { speed: 14 }));
     } else if (key.startsWith("brief")) {
       s.add("me", me, 74, 88, { still: true });
-      const b = s.add("bride", CL("bride_casual"), 172, 72, { still: true }); b.tx = 108; b.ty = 92;
-      const g = s.add("groom", CL("groom_casual"), 180, 74, { still: true }); g.tx = 122; g.ty = 94;
+      // cô dâu chú rể đi từ ngoài vào (mép phải cảnh), không hiện sẵn trong phòng
+      const b = s.add("bride", CL("bride_casual"), 204, 90, { still: true, speed: 30 }); b.tx = 108; b.ty = 92;
+      const g = s.add("groom", CL("groom_casual"), 222, 92, { still: true, speed: 30 }); g.tx = 122; g.ty = 94;
     } else if (key.startsWith("meet-cafe")) {
       // planner chờ sẵn ở bàn, vendor bước vào từ bên phải
       s.add("me", me, 72, 104, { still: true });
@@ -7051,8 +7056,9 @@ window.WP_COPY = {
     return `<section class="stack">
       <div class="facts"><span><small>Chuẩn bị</small><b>${D.config.weeks} tuần</b></span><span><small>Khách</small><b>${D.project.engagementGuests ? `${D.project.engagementGuests} + ` : ""}${D.project.weddingGuests}</b></span><span><small>Phí</small><b>${money(state.project.fee)}</b></span></div>
       <div class="chat">${lines.slice(0, n).map(l => `<div class="msg ${l.who}">${img(speakerLook(l.who), "face")}<p>${esc(l.text)}</p></div>`).join("")}</div>
-      ${done ? `<p class="hint">Họ chưa nói hết đâu. Gặp riêng cô dâu chú rể và hai họ ngay tuần đầu để mở những mong muốn ẩn.</p>` : ""}
-      <button class="btn primary" data-act="${done ? "startPrep" : "briefNext"}">${done ? "Bắt đầu chuẩn bị" : "Tiếp"}</button>
+      <button id="brief-skip" class="link" data-act="briefSkip" hidden>Hiện hết ›</button>
+      ${done ? `<p class="hint after-brief">Họ chưa nói hết đâu. Gặp riêng cô dâu chú rể và hai họ ngay tuần đầu để mở những mong muốn ẩn.</p>` : ""}
+      <button class="btn primary after-brief" data-act="${done ? "startPrep" : "briefNext"}">${done ? "Bắt đầu chuẩn bị" : "Tiếp"}</button>
     </section>`;
   }
 
@@ -7605,6 +7611,39 @@ window.WP_COPY = {
     $("#place").hidden = !want.place; $("#place").textContent = want.place || "";
     syncScene();
     topHeight();
+    if (p === "brief") runBrief(); else if (briefAnim) clearTimeout(briefAnim.timer);
+  }
+  // Màn brief (Thanh, 11/11/2026): cô dâu chú rể đi tới nơi rồi mới nói, chữ hiện dần từng câu.
+  // Bấm "Hiện hết" để khỏi chờ. Nút "Bắt đầu chuẩn bị" chỉ hiện khi họ nói xong.
+  let briefAnim = null;
+  function runBrief() {
+    const msgs = [...document.querySelectorAll("#main .chat .msg")]; if (!msgs.length) return;
+    const key = `${state.seed}:${state.project && state.project.couple}`;
+    const still = typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!briefAnim || briefAnim.key !== key) briefAnim = { key, line: 0, done: still, timer: 0 };
+    const A = briefAnim; clearTimeout(A.timer);
+    const after = [...document.querySelectorAll("#main .after-brief")], skip = $("#brief-skip");
+    if (A.done) return;
+    const full = msgs.map(m => m.querySelector("p").textContent);
+    msgs.forEach((m, i) => { m.hidden = i >= A.line; });
+    after.forEach(e => { e.hidden = true; }); if (skip) skip.hidden = false;
+    const finish = () => { A.done = true; msgs.forEach((m, i) => { m.hidden = false; m.querySelector("p").textContent = full[i]; }); after.forEach(e => { e.hidden = false; }); if (skip) skip.hidden = true; if (scene) scene.clearBubbles(); };
+    const say = () => {
+      if (A.line >= msgs.length) return finish();
+      const m = msgs[A.line], pEl = m.querySelector("p"), text = full[A.line]; let k = 0;
+      pEl.textContent = ""; m.hidden = false; m.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      if (scene) { scene.clearBubbles(); scene.bubble(m.classList.contains("groom") ? "groom" : "bride", "…"); }
+      const step = () => { k += 2; pEl.textContent = text.slice(0, k); if (k < text.length) A.timer = setTimeout(step, 30); else { A.line += 1; A.timer = setTimeout(say, 500); } };
+      step();
+    };
+    // chờ hai người đi tới chỗ planner (tối đa 6 giây) rồi mới bắt đầu câu đầu
+    let waited = 0;
+    const arrive = () => {
+      const b = scene && scene.get("bride"), here = !b || Math.hypot(b.tx - b.x, b.ty - b.y) < 1;
+      if (A.line > 0 || here || waited >= 6000) return say();
+      waited += 100; A.timer = setTimeout(arrive, 100);
+    };
+    arrive();
   }
   // Chiều cao khối dính trên đầu (HUD + cảnh), để các chỗ tự cuộn tới không bị khối đó che.
   function topHeight() { const t = $("#top"); if (t) document.documentElement.style.setProperty("--top-h", t.offsetHeight + "px"); }
@@ -7626,6 +7665,7 @@ window.WP_COPY = {
       case "startCareer": if (setupReady()) startCareer(); top = true; break;
       case "learnSkill": learnSkill(id); break;
       case "briefNext": state.briefStep += 1; break;
+      case "briefSkip": if (briefAnim) briefAnim.done = true; break;
       case "toQuote": state.phase = "quote"; top = true; break;
       case "startPrep": startPrep(); top = true; break;
       case "takeOffer": takeOffer(id); top = true; break;
