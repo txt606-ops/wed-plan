@@ -121,9 +121,11 @@ img.big { width: 72px; height: auto; }
 .facts b { font: 22px/1 var(--pixel); }
 .chat { display: flex; flex-direction: column; gap: 10px; }
 .msg { display: flex; gap: 8px; align-items: flex-end; }
-.msg.groom, .msg.me { flex-direction: row-reverse; }
+/* Khách và gia đình bên trái, planner bên phải (sửa 3.7.0, mục 1.12). */
+.msg.me { flex-direction: row-reverse; }
 .msg p { margin: 0; background: var(--surface); border: 2px solid var(--ink); padding: 10px 12px; max-width: 80%; position: relative; }
-.msg.groom p, .msg.me p { background: var(--surface-2); }
+.msg.groom p { background: var(--surface-2); }
+.msg.me p { background: var(--surface-2); border-style: dashed; }
 .msg.solo p { max-width: none; text-align: left; }
 img.face { width: 40px; height: auto; }
 
@@ -551,7 +553,83 @@ h3.sub { margin: 6px 0 0; font: 700 12px/1.3 var(--body); letter-spacing: .08em;
 .cashline { display: block; color: var(--muted); font-size: 13px; margin-top: -6px; }
 .cashline b { color: var(--ink); } .cashline b.neg { color: var(--danger); }
 .v-card .btn + .why-not + .btn { margin-top: 8px; width: 100%; }
+.task .cost .cost-n { display: block; font: 13px/1.2 var(--body); color: var(--ink); letter-spacing: 0; text-align: right; font-weight: 600; }
+.task .cost .dots { font-style: normal; display: block; text-align: right; }
+.sheet-actions.stacked > div { display: flex; flex-direction: column; gap: 4px; }
+.sheet-actions.stacked small { font-size: 13px; line-height: 1.35; }
+.crisis-opt .reason, small.reason { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; }
 .task .cost .money { display: block; font: 13px/1.2 var(--body); color: var(--muted); text-align: right; }
+
+/* Thẻ văn phòng: điều kiện mở (mục 1.9) */
+.opt .unlock { display: block; font-size: 13px; line-height: 1.35; margin-top: 4px; color: var(--ink); }
+.opt .unlock em { font-style: normal; color: var(--danger); }
+.opt .unlock.ok em { color: var(--jade); }
+
+/* ---- Đợt 2: cảnh nền ---- */
+/* Màn chuẩn bị: cảnh thấp hơn mặc định, cuộn xuống thì thu hẳn lại; HUD (tuần, lượt) luôn dính trên đầu. */
+.stage canvas { transition: height .2s ease; }
+.stage.compact.prep canvas { height: 84px; }
+.stage.compact.prep.meet canvas { height: 140px; }
+.stage.folded canvas { height: 0 !important; }
+.stage.folded .place { display: none; }
+.stage.folded { border-bottom-width: 0; }
+/* Tổng kết và Quyết toán: cảnh cuộn đi theo trang, cao khoảng 30% màn hình. */
+.top.flow { position: static; }
+.top.flow #hud { position: sticky; top: env(safe-area-inset-top, 0px); }
+.stage.read canvas { aspect-ratio: auto; height: 30vh; height: 30dvh; max-height: none !important; object-fit: cover; object-position: 50% 72%; }
+@media (prefers-reduced-motion: reduce) { .stage canvas { transition: none; } }
+
+/* Cảnh báo rủi ro: lần đầu hiện đủ kèm việc chuẩn bị; đã xem thì thu lại một dòng. */
+.need-hint { display: block; font-weight: 500; font-size: 13px; color: var(--muted); margin-top: 2px; }
+.need.one { padding-block: 4px; font-size: 13px; font-weight: 500; }
+.need.one > span:nth-child(2) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.need.one .need-mark { height: 20px; width: 24px; font-size: 16px; }
+
+/* Ngày cưới: lựa chọn bị khoá gom dưới một dòng */
+.locked-group { margin-top: 8px; }
+.locked-group > summary { cursor: pointer; font-size: 14px; color: var(--muted); padding: 8px 2px; list-style: none; }
+.locked-group > summary::before { content: "▸ "; }
+.locked-group[open] > summary::before { content: "▾ "; }
+.locked-group .list { opacity: .85; }
+
+/* ---- Đợt 2: thẻ việc gọn, bốn trạng thái ---- */
+.list:has(> .task) { gap: 8px; }
+.task { padding: 9px 10px 9px 12px; gap: 8px; border-left-width: 5px; }
+.task-main { gap: 3px; }
+.task-main b { font-size: 15px; line-height: 1.3; }
+.task-main small { font-size: 12.5px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.task .chips span { font-size: 12px; padding: 1px 6px; }
+.task.promised { border-left-color: var(--gold); }
+.task.st-overdue { border-color: var(--danger); border-left-color: var(--danger); background: #fff3f2; }
+.task.st-noap { border-style: dashed; border-left-style: solid; border-left-color: var(--line); opacity: .62; }
+.task.st-noap.promised { border-left-color: var(--gold); }
+.task.locked { opacity: .62; }
+.task .muted-chip { background: var(--surface-2); color: var(--muted); }
+.task-done { padding: 6px 12px; border-left: 5px solid var(--jade); font-size: 14px; }
+
+/* Hub: hồ sơ nhanh của lời mời */
+.offer-prof { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.offer-prof .lvl { font-size: 12px; padding: 1px 7px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); }
+.offer-prof .lvl.hi { background: #fde8e6; border-color: #f2b9b3; color: var(--danger); }
+.offer-prof .lvl.mid { background: var(--gold-soft); border-color: #ead49a; color: #7a5a10; }
+.offer-prof .lvl.lo { background: var(--jade-soft); border-color: #b6dccc; color: var(--jade); }
+.offer-prof .lvl.gain { background: transparent; }
+/* Giá trên thẻ khách: màu mực */
+.offer .fee-range b { color: var(--ink); }
+
+/* Thẻ vendor: bấm thanh để đọc giải thích tại chỗ */
+.v-why > summary { cursor: pointer; list-style: none; display: flex; flex-direction: column; gap: 4px; }
+.v-why > summary::-webkit-details-marker { display: none; }
+.v-why > summary::after { content: "Bấm để xem nghĩa là gì"; font-size: 11px; color: var(--muted); }
+.v-why[open] > summary::after { content: "Thu lại"; }
+.v-why p { margin: 6px 0 0; font-size: 13px; line-height: 1.4; background: var(--surface-2); padding: 6px 8px; }
+
+.side-week { margin: 0; padding: 8px 10px; background: var(--surface-2); border-left: 4px solid var(--jade); font-size: 14px; }
+
+/* Màn thiết lập: nút Tiếp ghim ở dưới cùng */
+.setup-nav { position: sticky; bottom: 0; z-index: 5; background: var(--bg); padding-block: 10px calc(10px + env(safe-area-inset-bottom, 0px)); margin-top: 4px; border-top: 1px solid var(--line); }
+.confirm-box { border-color: var(--danger); gap: 8px; }
+.confirm-box p { margin: 0; }
 
 </style>
 </head>
@@ -568,7 +646,7 @@ h3.sub { margin: 6px 0 0; font: 700 12px/1.3 var(--body); letter-spacing: .08em;
  * crises[].options[].effects: cost (agency pays), clientPays (client is charged), couple, family.
  */
 window.GAME_DATA = {
-  "version": "3.7.0",
+  "version": "3.7.3",
   "project": {
     "couple": "Linh & Minh",
     "location": "Sài Meo",
@@ -1707,31 +1785,38 @@ window.GAME_DATA = {
       "options": [
         {
           "id": "rain_plan",
-          "title": "Kích hoạt phương án thời tiết đã thống nhất",
+          "title": "Theo phương án mưa: giữ sân vườn, dựng lều",
           "requires": [
             {
               "flag": "rainPlan"
             }
           ],
           "effects": {
-            "couple": -3,
-            "family": -1
+            "couple": -2,
+            "family": 0
           },
-          "why": "Bạn đã chốt ngưỡng chuyển khu vực, người ra quyết định và luồng di chuyển. Ekip chuyển setup theo kế hoạch, không cần quyết định lại từ đầu. Tiệc vẫn trọn vẹn, nhưng phần nghi thức ngoài trời mà cặp đôi mong đợi không còn."
+          "afterRisk": {
+            "p": 30,
+            "family": -7,
+            "label": "Mưa to",
+            "text": "Mưa to, lều không che hết: người lớn tuổi phải dời chỗ giữa tiệc."
+          },
+          "why": "Ekip dựng lều theo kịch bản đã chốt, giữ được sân vườn cặp đôi chọn. Nhưng trời vẫn có thể mưa to (30%): lều không che hết, người lớn tuổi phải dời chỗ giữa tiệc và gia đình không vui."
         },
         {
           "id": "venue_backup",
-          "title": "Chuyển sang khu vực dự phòng của venue",
+          "title": "Dùng khu dự phòng: vào trong nhà",
           "requires": [
             {
               "flag": "venueBackup"
             }
           ],
           "effects": {
+            "cost": 1.5,
             "couple": -4,
-            "family": -2
+            "family": 0
           },
-          "why": "Khu vực dự phòng đã được khảo sát và xác nhận từ trước, nên việc chuyển khách không gây xáo trộn lớn."
+          "why": "Vào trong nên không còn lo mưa, người lớn tuổi yên tâm. Cặp đôi mất phần sân vườn đã mong, và venue tính thêm 1,5tr phí mở khu dự phòng."
         },
         {
           "id": "tent",
@@ -2890,8 +2975,8 @@ window.GAME_DATA = {
   // tier: bậc văn phòng, dùng làm cổng mở khách cùng với cấp sự nghiệp (mục 7). Chi phí all-in, không cộng thêm điện nước.
   const OFFICES = [
     { id: "home", tier: 0, cost: 0, name: "Làm ở nhà", perk: "Chỉ đủ Day-of và job nhỏ." },
-    { id: "cowork", tier: 1, cost: 4, name: "Co-working", perk: "Đủ điều kiện nhận khách trọn gói." },
-    { id: "small", tier: 2, cost: 15, name: "Văn phòng nhỏ", perk: "Mở Luxury, Destination; tuyển được người." },
+    { id: "cowork", tier: 1, cost: 4, name: "Co-working", perk: "Có chỗ gặp khách đàng hoàng." },
+    { id: "small", tier: 2, cost: 15, name: "Văn phòng nhỏ", perk: "Có chỗ cho team và một kho nhỏ." },
     { id: "studio", tier: 3, cost: 35, name: "Studio có showroom", perk: "Khách tự tìm đến, phí planning cao hơn 10%." }
   ];
   const LIVING = [
@@ -4018,8 +4103,8 @@ window.GAME_DATA = {
     photo_lumen: V("black", "tuxedo", { outfit: "tee", top: "#2f2a3a", bottom: "#2f2a3a", eyes: "#f1c45a", acc: ["camera", "glasses"], glass: "#b9aeb8" }),
     photo_vow: V("siam", "siamese", { outfit: "turtle", top: "#2f2a3a", bottom: "#2f2a3a", eyes: "#3f8fd0", acc: ["camera"], height: "tall" }),
     mc_thanh: V("orange", "solid", { outfit: "suit", top: "#8f2f45", bottom: "#2f2a3a", tie: "#f1c45a", acc: ["mic"] }),
-    mc_ceremony: V("blue", "solid", { outfit: "suit", top: "#2f2a3a", bottom: "#2f2a3a", tie: "#d9577a", blush: true, ears: "fold", acc: ["mic"] }),
-    mc_stage: V("tabby", "tabby", { outfit: "tee", top: "#4a4458", bottom: "#2f2a3a", ears: "big", acc: ["mic", "headset"] })
+    mc_ceremony: V("blue", "solid", { outfit: "suit", top: "#5a3a6e", bottom: "#2f2a3a", tie: "#d9577a", blush: true, ears: "fold", acc: ["mic"] }),
+    mc_stage: V("tabby", "tabby", { outfit: "tee", top: "#23806c", bottom: "#2f2a3a", ears: "big", acc: ["mic", "headset"] })
   };
 
   const G_FUR = [["orange", "tabby"], ["silver", "solid"], ["cream", "solid"], ["tabby", "tabby"], ["white", "calico"], ["blue", "solid"], ["brown", "tabby"], ["black", "tuxedo"], ["white", "solid"], ["choco", "socks"]];
@@ -4079,39 +4164,69 @@ window.GAME_DATA = {
   const PAINT = {
     // Level 0 is a corner of a bedroom; each level up adds furniture that shows the business growing.
     office(g, o) {
-      const L = o.level || 0;
-      rect(g, 0, 0, SW, 52, L === 0 ? "#f6e7d6" : L >= 3 ? "#ece4ee" : "#f3e6dc"); rect(g, 0, 46, SW, 6, L >= 3 ? "#d9cde0" : "#e4cfc0");
-      for (let x = 0; x < SW; x += 8) rect(g, x, 52, 8, SH - 52, (x / 8) % 2 ? "#c99d74" : "#bf9169");
-      for (let y = 58; y < SH; y += 10) rect(g, 0, y, SW, 1, "#a87b55");
-      rect(g, 16, 10, 34, 24, "#8fc4dc"); rect(g, 16, 22, 34, 1, "#fbf7f0"); rect(g, 32, 10, 1, 24, "#fbf7f0");
-      rect(g, 14, 8, 38, 2, "#fbf7f0"); rect(g, 14, 34, 38, 2, "#fbf7f0");
-      rect(g, 84, 12, 20, 16, "#fbf7f0"); rect(g, 86, 14, 16, 12, "#f2b8c6"); flower(g, 92, 18, "#d9577a");
-      rect(g, 160, 18, 22, 34, "#a9764a"); rect(g, 162, 20, 18, 30, "#b8865a"); rect(g, 176, 34, 2, 2, "#f1c45a");
-      rect(g, 60, 58, 56, 4, "#7a4f32"); rect(g, 60, 62, 56, 2, "#5c3a24"); rect(g, 62, 64, 3, 12, "#5c3a24"); rect(g, 111, 64, 3, 12, "#5c3a24");
-      rect(g, 80, 50, 16, 8, "#2b2b33"); rect(g, 82, 51, 12, 6, "#8fc4dc"); rect(g, 100, 54, 6, 4, "#fbf7f0");
-      rect(g, 128, 40, 10, 12, "#d9b98c"); rect(g, 126, 30, 14, 10, "#4f8a4b"); rect(g, 129, 26, 8, 6, "#5fa05a");
-      rect(g, 6, 40, 8, 12, "#c9a0dc"); rect(g, 5, 36, 10, 5, "#5fa05a");
-          if (L === 0) {
-        rect(g, 158, 18, 26, 34, "#f6e7d6"); // no door yet: a bed in the corner instead
-        rect(g, 150, 60, 40, 16, "#e9e0f0"); rect(g, 150, 56, 40, 5, "#a9764a"); rect(g, 152, 58, 12, 6, "#ffffff"); rect(g, 150, 76, 3, 4, "#7a4f32"); rect(g, 187, 76, 3, 4, "#7a4f32");
-        rect(g, 84, 12, 20, 16, "#f6e7d6");
+      // Vẽ lại (Đợt 2) theo cách của cảnh ăn hỏi và quán cà phê: đồ vật có viền tím, có chi tiết. Bố cục và vùng đi lại giữ nguyên.
+      // Cấp 0 là góc phòng ngủ; mỗi cấp thêm đồ cho thấy việc làm ăn lớn dần.
+      const L = o.level || 0, O = SP.OUTLINE, MILK = "#fbf5ec", PINK = "#f2a3ad", ROSE = "#d9577a", GREEN = "#3f8a5a", LEAF = "#5f9a6a";
+      const WOOD = "#a9764a", WOOD2 = "#7a4f32", WOOD3 = "#c98f5e";
+      const r = (x, y, w, h, c) => rect(g, x, y, w, h, c);
+      const box = (x, y, w, h, c) => { r(x - 1, y - 1, w + 2, h + 2, O); r(x, y, w, h, c); };
+      const WALL = L >= 3 ? "#ece4ee" : L === 0 ? "#f6e7d6" : "#f3e6dc", WALL2 = L >= 3 ? "#ddd0e4" : "#ecd8c2";
+      // tường, dải giấy dán tường, chân tường
+      r(0, 0, SW, 52, WALL); r(0, 0, SW, 3, WALL2); r(0, 3, SW, 1, "#d9c2a8");
+      for (let x = 4; x < SW; x += 12) for (let y = 8; y < 44; y += 12) r(x + ((y / 12) % 2) * 6, y, 1, 1, WALL2);
+      r(0, 44, SW, 7, L >= 3 ? "#d9cde0" : "#e4cfc0"); r(0, 44, SW, 1, "#cfae94"); r(0, 51, SW, 1, O);
+      // sàn gỗ: ván so le có đường nối
+      for (let y = 52, j = 0; y < SH; y += 8, j++) { r(0, y, SW, 8, j % 2 ? "#c99d74" : "#c2946b"); r(0, y, SW, 1, "#a87b55"); for (let x = (j % 2) * 20 + 8; x < SW; x += 40) r(x, y + 1, 1, 7, "#a87b55"); r((j * 37) % SW, y + 4, 3, 1, "#d4aa80"); }
+      // cửa sổ: trời, mây, ngọn cây, rèm hồng, bậu cửa
+      box(16, 10, 34, 24, "#cfe9ef"); r(16, 10, 34, 9, "#b9dfec"); r(19, 13, 8, 2, "#ffffff"); r(21, 12, 4, 1, "#ffffff"); r(39, 15, 6, 2, "#ffffff");
+      r(36, 25, 14, 9, "#7fb27a"); r(38, 23, 8, 3, "#8fc485"); r(40, 28, 2, 2, LEAF);
+      r(16, 22, 34, 1, MILK); r(32, 10, 1, 24, MILK);
+      box(12, 7, 5, 30, PINK); box(49, 7, 5, 30, PINK); r(13, 7, 1, 30, "#f7c3c8"); r(50, 7, 1, 30, "#f7c3c8"); r(12, 7, 42, 2, ROSE);
+      box(14, 35, 38, 2, WOOD3);
+      // chậu cây nhỏ trên bậu
+      box(41, 31, 5, 4, "#b5673f"); r(42, 28, 3, 3, GREEN); r(41, 27, 1, 2, LEAF); r(45, 27, 1, 2, LEAF);
+      // tranh treo tường (từ cấp 1)
+      if (L >= 1) { box(84, 12, 20, 16, MILK); r(86, 14, 16, 12, "#f2b8c6"); r(86, 22, 16, 4, "#e9849f"); flower(g, 92, 17, ROSE); r(93, 9, 2, 3, O); }
+      // tủ hồ sơ: gáy bìa màu
+      box(124, 16, 26, 28, WOOD); r(124, 29, 26, 1, WOOD2); r(124, 16, 26, 1, WOOD3);
+      ["#d9577a", "#8fb7d9", "#f1c45a", "#a8c69f", "#c9a0dc"].forEach((c, k) => { r(126 + k * 5, 19, 4, 9, c); r(126 + k * 5, 19, 4, 1, MILK); });
+      ["#fbf5ec", "#e6e3e8", "#fbf5ec"].forEach((c, k) => r(127 + k * 7, 34, 6, 8, c));
+      // cửa ra vào (từ cấp 1)
+      if (L >= 1) { box(160, 16, 22, 35, WOOD); r(162, 18, 18, 14, WOOD3); r(162, 34, 18, 15, WOOD3); r(162, 32, 18, 2, WOOD); r(176, 36, 2, 2, "#f1c45a"); r(160, 16, 22, 1, WOOD2); }
+      // bàn làm việc: laptop, cốc, đèn bàn, giấy tờ; ghế
+      box(60, 58, 56, 4, WOOD); r(60, 58, 56, 1, WOOD3); r(60, 62, 56, 2, WOOD2); r(62, 64, 3, 12, WOOD2); r(111, 64, 3, 12, WOOD2); r(62, 64, 3, 1, O); r(111, 64, 3, 1, O);
+      box(80, 50, 16, 8, "#2b2b33"); r(82, 51, 12, 6, "#8fc4dc"); r(83, 52, 6, 1, "#ffffff"); r(83, 54, 9, 1, "#cfe9ef"); r(78, 57, 20, 1, "#6e6a7c");
+      box(100, 54, 5, 4, MILK); r(105, 55, 1, 2, O); r(101, 53, 1, 1, "#d9c2a8");
+      box(66, 54, 8, 4, MILK); r(67, 55, 6, 1, "#d9c2a8"); r(67, 56, 4, 1, "#d9c2a8");
+      r(109, 46, 1, 12, O); box(106, 44, 7, 3, "#f1c45a"); r(107, 47, 5, 1, "#fff3c0");
+      box(84, 66, 10, 3, "#d9577a"); r(85, 69, 1, 7, O); r(92, 69, 1, 7, O); box(85, 60, 8, 6, "#e9849f");
+      // cây to góc trái
+      box(6, 40, 8, 11, "#c9a0dc"); r(6, 40, 8, 2, "#dcbde8"); r(9, 30, 2, 10, GREEN); r(4, 33, 5, 3, LEAF); r(11, 31, 5, 3, LEAF); r(6, 27, 4, 3, GREEN); r(10, 26, 4, 3, LEAF);
+      if (L === 0) { // chưa có cửa: góc giường ngủ
+        box(150, 60, 40, 16, "#e9e0f0"); box(150, 55, 40, 5, WOOD); r(150, 55, 40, 1, WOOD3);
+        box(153, 58, 13, 6, "#ffffff"); r(153, 63, 13, 1, "#e6e3e8");
+        for (let x = 168; x < 190; x += 4) r(x, 62, 2, 2, "#c9a0dc");
+        r(150, 72, 40, 1, "#d6c7e6"); r(151, 77, 3, 4, WOOD2); r(186, 77, 3, 4, WOOD2);
+        box(140, 64, 7, 9, WOOD3); r(141, 66, 5, 1, WOOD2); box(141, 60, 5, 3, "#f1c45a");
       }
-      if (L >= 2) { // concept board with swatches and a second desk
-        rect(g, 108, 8, 44, 26, "#b8865a"); rect(g, 110, 10, 40, 22, "#d9b98c");
-        [["#f2b8c6", 112, 12], ["#4f8a4b", 122, 13], ["#f1c45a", 133, 12], ["#8fc4dc", 142, 14], ["#d9577a", 115, 22], ["#fbf7f0", 127, 23], ["#c9a0dc", 139, 22]].forEach(([c, x, y]) => rect(g, x, y, 7, 6, c));
-        rect(g, 14, 70, 34, 3, "#7a4f32"); rect(g, 14, 73, 34, 2, "#5c3a24"); rect(g, 16, 75, 2, 8, "#5c3a24"); rect(g, 44, 75, 2, 8, "#5c3a24"); rect(g, 24, 64, 12, 6, "#2b2b33"); rect(g, 25, 65, 10, 4, "#8fc4dc");
+      if (L >= 2) { // bảng concept với mẫu màu, bàn thứ hai
+        box(108, 8, 44, 26, "#b8865a"); r(110, 10, 40, 22, "#d9b98c");
+        [["#f2b8c6", 112, 12], ["#4f8a4b", 122, 13], ["#f1c45a", 133, 12], ["#8fc4dc", 142, 14], ["#d9577a", 115, 22], ["#fbf7f0", 127, 23], ["#c9a0dc", 139, 22]].forEach(([c, x, y]) => { box(x, y, 7, 6, c); r(x + 3, y - 1, 1, 1, ROSE); });
+        box(14, 70, 34, 3, WOOD); r(14, 73, 34, 2, WOOD2); r(16, 75, 2, 8, WOOD2); r(44, 75, 2, 8, WOOD2);
+        box(24, 64, 12, 6, "#2b2b33"); r(25, 65, 10, 4, "#8fc4dc"); r(26, 66, 4, 1, "#ffffff");
       }
-      if (L >= 3) { // client lounge: rug and sofa
-        rect(g, 128, 92, 58, 22, "#d9577a"); rect(g, 130, 94, 54, 18, "#e9849f");
-        rect(g, 140, 80, 40, 12, "#2f6f8f"); rect(g, 140, 76, 40, 5, "#24566f"); rect(g, 138, 80, 3, 12, "#24566f"); rect(g, 179, 80, 3, 12, "#24566f");
-        rect(g, 4, 30, 10, 22, "#4f8a4b"); rect(g, 2, 26, 14, 6, "#5fa05a");
+      if (L >= 3) { // góc tiếp khách: thảm và sofa
+        box(128, 92, 58, 22, ROSE); r(130, 94, 54, 18, "#e9849f"); for (let x = 133; x < 182; x += 6) r(x, 96, 2, 1, MILK); for (let x = 133; x < 182; x += 6) r(x, 109, 2, 1, MILK);
+        box(140, 76, 40, 5, "#24566f"); box(140, 80, 40, 12, "#2f6f8f"); r(140, 80, 40, 1, "#4a89ab"); box(137, 79, 3, 13, "#24566f"); box(180, 79, 3, 13, "#24566f");
+        box(146, 81, 8, 5, "#f1c45a"); box(166, 81, 8, 5, PINK);
+        box(3, 42, 12, 9, "#b5673f"); r(3, 42, 12, 2, "#c98058"); r(8, 24, 2, 18, "#5c3a24");
+        [[2, 26, 6, 3], [10, 24, 6, 3], [1, 31, 6, 3], [11, 30, 6, 3], [4, 20, 5, 3], [9, 19, 5, 3], [3, 36, 5, 2], [10, 35, 5, 2]].forEach(([x, y, w, h], k) => r(x, y, w, h, k % 2 ? LEAF : GREEN));
       }
-      if (L >= 4) { // project board with live jobs and a sign
-        rect(g, 54, 2, 52, 8, "#d9577a"); rect(g, 58, 4, 44, 4, "#fbf7f0");
-        [0, 1, 2].forEach(k => { rect(g, 60 + k * 15, 36 - 0, 12, 2, "#2b1f33"); });
-        rect(g, 108, 36, 44, 10, "#fbf7f0"); [0, 1, 2, 3].forEach(k => rect(g, 110 + k * 10, 38, 8, 6, ["#5fa05a", "#f1c45a", "#d9577a", "#8fc4dc"][k]));
+      if (L >= 4) { // biển hiệu và bảng dự án đang chạy
+        box(54, 2, 52, 7, ROSE); r(58, 4, 44, 3, MILK); r(61, 5, 3, 1, ROSE); r(68, 5, 10, 1, ROSE); r(81, 5, 15, 1, ROSE);
+        box(108, 36, 44, 9, MILK); [0, 1, 2, 3].forEach(k => box(110 + k * 10, 38, 8, 5, ["#5fa05a", "#f1c45a", "#d9577a", "#8fc4dc"][k]));
       }
-},
+    },
     // Lễ ăn hỏi at the bride's house: 192×144, taller than the other scenes.
     home(g, o) {
       const H = 144, O = SP.OUTLINE, GOLD = "#f1c45a", GOLD2 = "#d9a441", RED = "#c8372d", RED2 = "#a82a25", RED3 = "#8f2420";
@@ -4309,16 +4424,46 @@ window.GAME_DATA = {
       [[30, 66], [62, 66], [130, 66], [162, 66], [30, 96], [62, 96], [130, 96], [162, 96]].forEach(([x, y]) => table(g, x, y, o.cloth || "#fbf7f0", o.chair || "#c9962e"));
     },
     garden(g, o) {
-      rect(g, 0, 0, SW, 20, "#9fd3e8"); rect(g, 0, 20, SW, 14, "#bfe3ee");
-      rect(g, 20, 6, 14, 4, "#ffffff"); rect(g, 24, 4, 8, 2, "#ffffff"); rect(g, 140, 10, 18, 4, "#ffffff");
-      for (let y = 34; y < SH; y += 4) rect(g, 0, y, SW, 4, (y / 4) % 2 ? "#86c06b" : "#7bb661");
-      [[10, 30], [40, 26], [150, 26], [180, 30]].forEach(([x, y]) => { rect(g, x - 1, y, 3, 10, "#7a4f32"); rect(g, x - 9, y - 12, 19, 14, "#4f8a4b"); rect(g, x - 6, y - 16, 13, 6, "#5fa05a"); });
-      for (let x = 0; x < SW; x += 6) rect(g, x, 10 + (x % 12 === 0 ? 1 : 0), 1, 1, "#f1c45a");
-      rect(g, 80, 12, 3, 36, "#fbf7f0"); rect(g, 109, 12, 3, 36, "#fbf7f0"); rect(g, 80, 10, 32, 3, "#fbf7f0");
-      const n = o.flowers || 8, rr = rnd(11);
-      for (let i = 0; i < n * 2; i++) flower(g, 78 + Math.floor(rr() * 36), 8 + Math.floor(rr() * 38) * (rr() > 0.5 ? 1 : 0.3), i % 2 ? "#ffffff" : "#f28fb1");
-      rect(g, 84, 60, 24, SH - 60, "#e9e1d4");
-      [[30, 66], [62, 70], [130, 70], [162, 66], [30, 98], [62, 100], [130, 100], [162, 98]].forEach(([x, y]) => table(g, x, y, o.cloth || "#fbf7f0", o.chair || "#fbf7f0"));
+      // Vẽ lại (Đợt 2) theo cách của cảnh ăn hỏi và quán cà phê: viền tím, có chi tiết. Cổng hoa, lối đi và chỗ đứng của cô dâu chú rể giữ nguyên.
+      const O = SP.OUTLINE, MILK = "#fbf5ec", PINK = "#f28fb1", ROSE = "#d9577a", GREEN = "#3f8a5a", LEAF = "#5f9a6a", GRASS = "#86c06b", GRASS2 = "#7bb661";
+      const r = (x, y, w, h, c) => rect(g, x, y, w, h, c);
+      const box = (x, y, w, h, c) => { r(x - 1, y - 1, w + 2, h + 2, O); r(x, y, w, h, c); };
+      // trời chiều: ba dải màu, mây có viền
+      r(0, 0, SW, 12, "#9fd3e8"); r(0, 12, SW, 10, "#b9dfec"); r(0, 22, SW, 12, "#f6dcc6");
+      [[18, 6, 16], [136, 9, 20], [64, 3, 10]].forEach(([x, y, w]) => { r(x - 1, y, w + 2, 4, "#e6f4f7"); r(x, y - 1, w, 4, "#ffffff"); r(x + 3, y - 3, w - 6, 2, "#ffffff"); r(x, y + 3, w, 1, "#d6ebf2"); });
+      // hàng cây xa: tán có viền, thân cây
+      r(0, 28, SW, 6, "#6fa65a");
+      [[10, 30, 11], [40, 26, 13], [150, 26, 13], [180, 30, 11], [72, 30, 7], [124, 30, 7]].forEach(([x, y, s2]) => { r(x - 1, y, 3, 10, "#7a4f32"); r(x - 1, y, 1, 10, "#5c3a24"); box(x - s2, y - 12, s2 * 2 + 1, 12, "#4f8a4b"); r(x - s2 + 3, y - 16, s2 * 2 - 5, 5, LEAF); r(x - s2 + 2, y - 11, 4, 2, LEAF); r(x + 2, y - 8, 3, 2, "#3e7a3d"); });
+      // dây đèn vàng giăng ngang
+      for (let x = 0; x < SW; x++) { const y = 9 + Math.round(2.5 * Math.sin(x / 15)); r(x, y, 1, 1, "#7a5a3a"); if (x % 8 === 0) { r(x, y + 1, 1, 2, "#f1c45a"); r(x, y + 2, 1, 1, "#fff3c0"); } }
+      // cỏ: sọc nhạt đậm, khóm hoa dại
+      for (let y = 34; y < SH; y += 4) r(0, y, SW, 4, (y / 4) % 2 ? GRASS : GRASS2);
+      const rr = rnd(23);
+      for (let i = 0; i < 40; i++) { const x = Math.floor(rr() * SW), y = 36 + Math.floor(rr() * (SH - 38)); if (x > 82 && x < 110) continue; r(x, y, 1, 2, "#5ea34a"); if (i % 3 === 0) r(x, y - 1, 1, 1, i % 2 ? "#ffffff" : "#f6d36b"); }
+      // bụi hoa hai bên cổng
+      [[66, 40], [118, 40]].forEach(([x, y]) => { box(x, y, 12, 7, "#4f8a4b"); r(x + 1, y - 2, 10, 3, LEAF); [[2, 1], [6, 0], [9, 2], [4, 4]].forEach(([dx, dy], k) => r(x + dx, y + dy, 2, 2, k % 2 ? PINK : "#ffffff")); });
+      // cổng hoa: hai cột trắng có viền, vòm, dây lụa
+      box(80, 12, 3, 36, MILK); box(109, 12, 3, 36, MILK); r(81, 12, 1, 36, "#ffffff"); r(110, 12, 1, 36, "#ffffff");
+      box(80, 9, 32, 3, MILK); r(84, 6, 24, 3, MILK); r(83, 5, 26, 1, O); r(81, 8, 3, 1, O); r(108, 8, 3, 1, O);
+      r(83, 12, 2, 14, "#f7c3c8"); r(107, 12, 2, 14, "#f7c3c8"); r(84, 26, 1, 4, "#f7c3c8"); r(107, 26, 1, 4, "#f7c3c8");
+      box(78, 46, 7, 3, "#d9c2a8"); box(107, 46, 7, 3, "#d9c2a8");
+      // vòng hoa dày trên đỉnh cổng và hai góc
+      for (let x = 79; x <= 111; x += 3) { const y = 7 + ((x * 7) % 3); r(x, y + 2, 2, 1, LEAF); flower(g, x, y, (x / 3) % 3 === 0 ? ROSE : (x / 3) % 2 ? "#ffffff" : PINK); }
+      [[77, 13], [80, 17], [78, 21], [110, 13], [107, 17], [111, 21]].forEach(([x, y], k) => { r(x, y + 2, 3, 1, LEAF); flower(g, x, y, k % 2 ? "#ffffff" : PINK); });
+      const n = o.flowers || 8, fr = rnd(11);
+      for (let i = 0; i < n * 2; i++) { const left = fr() > 0.5; const y = 7 + Math.floor(fr() * 40) * (fr() > 0.5 ? 1 : 0.3); const x = (y < 12 ? 80 + Math.floor(fr() * 30) : left ? 78 + Math.floor(fr() * 6) : 107 + Math.floor(fr() * 6)); flower(g, x, y, i % 3 === 0 ? ROSE : i % 2 ? "#ffffff" : PINK); r(x + 2, y + 2, 1, 1, LEAF); }
+      // lối đi trải thảm, cánh hoa rơi, viền
+      r(83, 49, 26, SH - 49, "#d9cdbb"); r(84, 49, 24, SH - 49, "#efe6d6"); for (let y = 52; y < SH; y += 6) r(84, y, 24, 1, "#e6dccb");
+      [[88, 58], [101, 66], [92, 80], [99, 94], [87, 104], [103, 110]].forEach(([x, y], k) => r(x, y, 2, 1, k % 2 ? PINK : "#ffffff"));
+      // đèn lồng cắm cỏ dọc lối đi
+      [[78, 64], [112, 64], [78, 92], [112, 92]].forEach(([x, y]) => { r(x, y, 1, 8, "#6e6a7c"); box(x - 1, y - 4, 3, 4, "#f1c45a"); r(x - 1, y - 3, 3, 1, "#fff3c0"); });
+      // bàn tiệc: khăn trắng có viền, nến, ghế
+      [[30, 66], [62, 70], [130, 70], [162, 66], [30, 98], [62, 100], [130, 100], [162, 98]].forEach(([x, y]) => {
+        const cloth = o.cloth || "#fbf7f0", chair = o.chair || "#fbf7f0";
+        [[-12, 0], [11, 0], [-6, -6], [5, -6]].forEach(([dx, dy]) => { box(x + dx, y + dy, 2, 3, chair); });
+        box(x - 9, y - 2, 18, 6, cloth); r(x - 9, y + 3, 18, 1, SP.shade(cloth, 0.85)); r(x - 7, y - 1, 2, 1, "#ffffff");
+        r(x - 1, y - 6, 2, 3, "#f6d36b"); r(x - 1, y - 7, 2, 1, "#fff6c8"); r(x + 3, y - 4, 2, 2, PINK);
+      });
     },
     hall(g, o) {
       rect(g, 0, 0, SW, 46, "#e8d9c5"); rect(g, 0, 40, SW, 6, "#d8c4aa");
@@ -6065,7 +6210,7 @@ window.WP_CONTENT = {
    "event": "WEDDING",
    "time": "18:20",
    "title": "Bánh cưới sai tên",
-   "category": "decor",
+   "category": "catering",
    "baseDescription": "Bánh cưới vừa được đưa ra sân khấu nhưng phần chữ trên bánh bị viết sai tên chú rể. Photographer đang chuẩn bị chụp hình và khách bắt đầu hướng về sân khấu.",
    "options": [
     {
@@ -6103,7 +6248,7 @@ window.WP_CONTENT = {
    ],
    "risk": [
     {
-     "categoryRisk": "decor",
+     "categoryRisk": "catering",
      "scale": 0.4,
      "reason": "Rủi ro hạng mục decor"
     },
@@ -6174,21 +6319,21 @@ window.WP_CONTENT = {
   "eng_thieu_phong_bao_be_trap": {
    "who": "mom_bride",
    "good": "May quá, có đủ cho các cháu rồi. Mình làm lễ tiếp đi con.",
-   "ok": "Thôi lần sau nhớ kiểm tra kỹ hơn nha.",
+   "ok": "Thôi, cũng kịp phát cho các cháu. Mà sát giờ quá, cô hồi hộp muốn chết.",
    "bad": "Đội bê tráp đứng chờ hết rồi mới chạy đi tìm phong bao là sao?",
    "fail": "Chuyện nhỏ vậy mà cũng không chuẩn bị được, tôi thật sự thất vọng."
   },
   "eng_ao_dai_nguoi_lon_sai_size": {
    "who": "mom_groom",
    "good": "Cảm ơn con, sửa kịp vậy là tốt rồi.",
-   "ok": "Lần sau nhớ đo lại trước khi giao nha.",
+   "ok": "Mặc tạm thì được, mà đứng chụp hình là thấy chật liền.",
    "bad": "Áo dài của người lớn mà giao sai như vậy thì khó coi lắm.",
    "fail": "Tôi đã nói rõ số đo từ đầu, sao tới ngày làm lễ mới phát hiện?"
   },
   "eng_dai_dien_hai_ho_mat_giong": {
    "who": "dad_bride",
    "good": "May mà có người hỗ trợ, nghi lễ vẫn giữ được đầy đủ.",
-   "ok": "Không sao, sức khỏe quan trọng hơn. Lần sau mình chuẩn bị thêm người dự phòng.",
+   "ok": "Không sao, sức khỏe quan trọng hơn. Có người thay kịp là được rồi.",
    "bad": "Phần thưa gửi quan trọng mà đổi người vào phút cuối vậy sao?",
    "fail": "Hai họ đang chờ lời đại diện mà cuối cùng lại bỏ luôn phần đó."
   },
@@ -6202,7 +6347,7 @@ window.WP_CONTENT = {
   "wed_banh_cuoi_sai_ten": {
    "who": "groom",
    "good": "May mà sửa kịp, chụp hình vẫn ổn rồi.",
-   "ok": "Thôi được rồi, lần sau kiểm tra mẫu chữ kỹ hơn.",
+   "ok": "Thôi được rồi, chụp hình né phần chữ là ổn.",
    "bad": "Tên mình mà cũng viết sai thì thật sự khó chấp nhận.",
    "fail": "Khoảnh khắc cắt bánh mà thành ra vậy, tụi em không vui chút nào."
   },
@@ -7733,7 +7878,7 @@ window.WP_COPY = {
      "who": "staff",
      "speaker": null,
      "title": "Nhân viên xin hỗ trợ",
-     "text": "{name} xin ứng một khoản hỗ trợ viện phí cho mẹ trước ngày trả lương. bảng lương tháng này đã chốt, nên khoản này sẽ là chi riêng của agency.",
+     "text": "{name} xin ứng một khoản hỗ trợ viện phí cho mẹ trước ngày trả lương. Bảng lương tháng này đã chốt, nên khoản này sẽ là chi riêng của agency.",
      "options": [
       {
        "id": "o1",
@@ -8998,29 +9143,31 @@ window.WP_COPY = {
     "Bali": { multiplier: 1.8, travel: 40 }, "Phuket": { multiplier: 1.7, travel: 35 }, "Jeju": { multiplier: 1.8, travel: 45 }
   };
   const DESTS = CITIES.hcm.dests;
-  // Month 1–12 of the solar calendar.
+  // Month 1–12 of the solar calendar. Tháng trong game là tháng dương lịch; tháng cô hồn (tháng 7 âm lịch) được đặt vào tháng 8 dương.
+  // Tháng chuyển mùa: vừa trong mùa mưa vừa trong mùa cưới của thành phố (Sài Meo: tháng 10; Hà Miêu: tháng 9).
+  const transitionMonths = (city = "hcm") => { const C = CITIES[city] || CITIES.hcm; return C.peak.filter(m => m >= C.rain[0] && m <= C.rain[1]); };
   const monthInfo = (m, city = "hcm") => {
     const C = CITIES[city] || CITIES.hcm;
     const peak = C.peak.includes(m), rainy = m >= C.rain[0] && m <= C.rain[1], ghost = m === 8, cold = C.cold.includes(m);
-    return { peak, rainy, ghost, cold, label: ghost ? "Tháng cô hồn, ít đám" : peak ? (cold ? "Mùa cưới, trời rét" : "Mùa cưới cao điểm") : rainy ? "Mùa mưa" : "Thấp điểm", priceMult: peak ? 1.15 : 1 };
+    return { peak, rainy, ghost, cold, label: ghost ? "Tháng cô hồn (tháng 7 âm lịch), ít đám" : peak ? (cold ? "Mùa cưới, trời rét" : rainy ? "Chuyển mùa: đầu mùa cưới, vẫn còn mưa" : "Mùa cưới cao điểm") : rainy ? "Mùa mưa" : "Thấp điểm", priceMult: peak ? 1.15 : 1 };
   };
   const SEASONS = [
     { month: 10, name: "Tháng 10 · đầu mùa cưới", note: "Khách hỏi nhiều, vendor đắt hơn 15%." },
     { month: 1, name: "Tháng 1 · cận Tết", note: "Cao điểm cuối năm, khách nhiều nhất, vendor đắt." },
     { month: 4, name: "Tháng 4 · thấp điểm", note: "Vendor giá thường, ít khách hỏi hơn." },
-    { month: 7, name: "Tháng 7 · giữa hè", note: "Mùa mưa, tháng sau là tháng cô hồn. Khởi đầu khó nhất." }
+    { month: 7, name: "Tháng 7 · giữa hè", note: "Mùa mưa, tháng sau là tháng cô hồn (tháng 7 âm lịch). Khởi đầu khó nhất." }
   ];
   // One skill at the start; one more each time the business reaches a new level.
-  const SKILLS = [
-    { id: "ngoai_giao", name: "Ngoại giao hai họ", note: "Hai họ khởi đầu hài lòng hơn (+4)." },
-    { id: "tham_my", name: "Mắt thẩm mỹ", note: "Cặp đôi khởi đầu hài lòng hơn (+4)." },
-    { id: "ep_gia", name: "Ép giá vendor", note: "Vendor nào cũng giảm 5% giá cho bạn." },
-    { id: "nhanh_nhen", name: "Chạy việc nhanh", note: "Tuần đầu mỗi dự án có thêm 1 lượt." },
-    { id: "binh_tinh", name: "Bình tĩnh", note: "Khách bớt phật ý khi có sự cố." },
-    { id: "xu_ly", name: "Xử lý sự cố", note: "Phương án tự xử lý hoặc nhờ khách thành công thêm 10%." },
-    { id: "moi_quan_he", name: "Quen vendor", note: "Chốt trễ hạn chỉ +10% giá, vendor không bao giờ kín lịch với bạn." },
-    { id: "chot_sale", name: "Chốt sale", note: "Khách đồng ý phí cao hơn 10%." },
-    { id: "ngoai_ngu", name: "Ngoại ngữ", note: "Nhận đám cưới ở nước ngoài sớm hơn một cấp, chi phí bay giảm 30%." }
+  const SKILLS = [ // note: khi nào có tác dụng, rồi tác dụng gì (sửa 3.7.0, mục 1.9). Số trong câu phải khớp với code ở game.js.
+    { id: "ngoai_giao", name: "Ngoại giao hai họ", note: "Mỗi dự án: hai họ bắt đầu ở mức hài lòng +4. Khi khách phát hiện phần chênh giá vendor và bạn giải thích: khả năng khách chấp nhận thêm 15%." },
+    { id: "tham_my", name: "Mắt thẩm mỹ", note: "Mỗi dự án: cặp đôi bắt đầu ở mức hài lòng +4." },
+    { id: "ep_gia", name: "Ép giá vendor", note: "Khi chốt vendor: giá mọi vendor thấp hơn 5%." },
+    { id: "nhanh_nhen", name: "Chạy việc nhanh", note: "Tuần đầu của mỗi dự án: thêm 1 lượt (chỉ tuần đó)." },
+    { id: "binh_tinh", name: "Bình tĩnh", note: "Khi có sự cố ngày cưới: mỗi lần khách phật ý nhẹ đi nửa mức, nên lúc quyết toán khách ít đòi giảm phí hơn." },
+    { id: "xu_ly", name: "Xử lý sự cố", note: "Khi xử lý sự cố: phương án tự xử lý (thường 75%) và phương án nhờ khách (thường 85%) thành công thêm 10%. Phương án gọi vendor hoặc chi tiền vốn đã chắc chắn, không cộng thêm." },
+    { id: "moi_quan_he", name: "Quen vendor", note: "Khi chốt vendor trễ hạn: phụ phí chỉ +10% (thường +20%), và không vendor nào báo kín lịch với bạn." },
+    { id: "chot_sale", name: "Chốt sale", note: "Mọi lời hỏi của khách: phí bạn báo cao hơn 10%, khách vẫn nhận như thường." },
+    { id: "ngoai_ngu", name: "Ngoại ngữ", note: "Khách cưới ở nước ngoài tìm tới sớm hơn một cấp, và tính là khách đúng gu. Đám ở nước ngoài: chi phí bay và lưu trú giảm 30%." }
   ];
 
   // Extra content (content.js): client personalities with their own meetings and hidden wishes, brief variants, more traits and names.
@@ -9031,6 +9178,112 @@ window.WP_COPY = {
   const ALL_BRIEFS = {};
   Object.keys(BRIEFS).forEach(k => { ALL_BRIEFS[k] = [BRIEFS[k]].concat((X.briefs || {})[k] || []); });
   // One strategic decision per prep week. phase: which week it can land in; when: extra condition; risks: crisis odds tied to a choice.
+  // Lý do bằng lời cho nhãn cảm xúc của từng lựa chọn sự cố (sửa 3.7.0, mục 1.2): hiện ngay dưới nhãn, để hai lựa chọn không bao giờ trông giống hệt nhau.
+  const CRISIS_REASONS = {
+   "flower_delay": {
+    "backup": "đổi một phần hoa so với mẫu đã duyệt",
+    "rush": "hoa mua gấp, khác mẫu một chút",
+    "agency": "khách phải trả cho lỗi họ không gây ra",
+    "simplify": "bỏ bớt cụm hoa phụ khách đã duyệt"
+   },
+   "tray_team_short": {
+    "crew": "người thay quen việc, đoàn vẫn đi đúng giờ",
+    "hire": "đoàn đi trễ khoảng 10 phút",
+    "agency": "khách phải trả cho chuyện không phải lỗi của họ",
+    "fewer": "số tráp không chẵn đôi, người lớn để ý"
+   },
+   "extra_guests_engagement": {
+    "seating": "khách thêm được xếp chỗ, vài người phải dời bàn",
+    "add_table": "thêm bàn vội, góc tiếp khách hơi chật",
+    "decline": "gia đình thấy cứng nhắc với khách của họ"
+   },
+   "ritual_conflict": {
+    "script": "làm đúng kịch bản, vẫn có người muốn đổi",
+    "pause": "chương trình lùi vài phút",
+    "force": "gia đình thấy ý kiến không được nghe"
+   },
+   "loadin_late": {
+    "walk": "bớt vài chi tiết decor cho kịp giờ",
+    "crew": "setup kịp nhưng vội, vài chỗ chưa gọn",
+    "pay": "đón khách trễ một chút",
+    "cut": "photobooth và lối đi không hoàn thiện"
+   },
+   "rental_missing": {
+    "audit": "lấy hàng dự phòng, vài bàn chậm bày",
+    "venue": "đồ của venue hơi khác mẫu",
+    "rush": "đồ giao bổ sung tới sát giờ",
+    "agency": "khách phải trả cho lỗi của rental",
+    "layout": "bàn tiệc không đồng nhất với thiết kế"
+   },
+   "weather": {
+    "rain_plan": "giữ được sân vườn cặp đôi chọn, nhưng nếu mưa to thì người lớn tuổi phải dời chỗ",
+    "venue_backup": "không còn lo mưa nên gia đình yên tâm, nhưng cặp đôi mất sân vườn đã mong",
+    "tent": "mái che che bớt khung cảnh",
+    "agency_tent": "khách phải trả cho chuyện thời tiết",
+    "outdoor": "khách và thiết bị dính mưa"
+   },
+   "catering_shortage": {
+    "buffer": "suất buffer lên kịp, vài bàn chờ thêm",
+    "order": "món bổ sung lên chậm",
+    "agency_meals": "khách phải trả thêm suất ăn",
+    "split": "khẩu phần ít đi, khách để ý"
+   },
+   "sound_failure": {
+    "check": "đổi micro mất vài giây giữa nghi thức",
+    "hotel": "đổi thiết bị mất vài phút",
+    "rent": "chương trình dừng khoảng 10 phút",
+    "go": "lời phát biểu khó nghe, video thu xấu"
+   },
+   "mc_mistake": {
+    "rehearsal": "MC dừng một nhịp để đối chiếu cue",
+    "backup": "đổi người dẫn giữa chừng",
+    "tech": "chương trình chững lại một lúc",
+    "improvise": "nghi thức thiếu mạch lạc"
+   },
+   "photo_moment": {
+    "brief": "vài ảnh phụ bị bỏ qua",
+    "delay": "khoảnh khắc chính lùi 10 phút",
+    "assistant": "ảnh của người chụp phụ không đều tay",
+    "agency_photo": "khách phải trả thêm người chụp",
+    "guest_phone": "ảnh từ điện thoại khách, chất lượng kém"
+   },
+   "overtime": {
+    "contract": "phải nhắc venue về điều khoản giữa tiệc",
+    "pay": "phải chờ chốt phụ thu giữa tiệc",
+    "agency": "khách phải trả phụ thu",
+    "cut": "mất phần after party cặp đôi mong chờ"
+   },
+   "eng_thieu_phong_bao_be_trap": {
+    "eng_phong_bao_agency": "lễ chững lại lúc chờ mua phong bao",
+    "eng_phong_bao_client": "gia đình phải bỏ tiền ngay trong lễ",
+    "eng_phong_bao_ignore": "vài bạn bê tráp không có phong bao"
+   },
+   "eng_ao_dai_nguoi_lon_sai_size": {
+    "eng_aodai_agency": "người lớn phải chờ thợ sửa áo",
+    "eng_aodai_client": "gia đình phải trả bộ thay thế",
+    "eng_aodai_ignore": "bà mặc áo không vừa suốt buổi lễ"
+   },
+   "eng_dai_dien_hai_ho_mat_giong": {
+    "eng_daidien_agency": "MC thay lời thưa gửi, khác dự kiến",
+    "eng_daidien_client": "người thay chưa quen vai",
+    "eng_daidien_ignore": "thiếu lời thưa gửi giữa hai họ"
+   },
+   "wed_so_do_ban_tiec_nham": {
+    "wed_seating_agency": "vài bàn phải đổi chỗ",
+    "wed_seating_client": "gia đình phải trả và tự giải thích với khách",
+    "wed_seating_ignore": "khách tự tìm chỗ, người thân phải đổi bàn"
+   },
+   "wed_banh_cuoi_sai_ten": {
+    "wed_cake_agency": "bánh lên sân khấu muộn vài phút",
+    "wed_cake_client": "gia đình trả bánh thay thế, cắt bánh bị lùi",
+    "wed_cake_ignore": "tên sai nằm trong ảnh cưới"
+   },
+   "wed_guestbook_mat_ket_noi": {
+    "wed_guestbook_agency": "khách ghi vội vài dòng",
+    "wed_guestbook_client": "khách thấy việc tặng quà hơi gượng",
+    "wed_guestbook_ignore": "sổ lưu bút gần như trống"
+   }
+  };
   const DILEMMAS = [
     // Gói B "Chịu học hỏi": thẻ tuần cho nhân viên có ưu điểm này. Tên thẻ và hiệu ứng theo gói B; lời thẻ anh Thanh duyệt 12/11/2026.
     { id: "coaching", when: "trait:coaching", phase: ["late"], who: "staff", title: "Kèm cặp sau tổng duyệt",
@@ -9082,10 +9335,10 @@ window.WP_COPY = {
         { id: "yes", label: "Đặt lều", note: "Mất 6tr, mưa cũng không sao", cost: 6, costLabel: "Lều dự phòng mưa", family: 1, mark: "rain_tent" },
         { id: "no", label: "Không đặt, theo dõi dự báo", note: "Giữ tiền, chịu rủi ro thời tiết" } ],
       risks: [{ mark: "rain_tent", crisis: "weather", add: -40, reason: "Đã đặt lều dự phòng" }] },
-    { id: "rehearsal", phase: ["late"], who: "v_mc", title: "Tổng duyệt chiều trước ngày cưới",
+    { id: "rehearsal", needsTeam: true, phase: ["late"], who: "v_mc", title: "Tổng duyệt chiều trước ngày cưới",
       text: "MC và ekip kỹ thuật hẹn tổng duyệt chiều hôm trước. Team bạn đã mệt sau mấy tuần chạy.",
       options: [
-        { id: "full", label: "Cả team cùng tổng duyệt", note: "Tốn 3tr tiền ăn và xe, ngày cưới trơn tru hơn", cost: 3, costLabel: "Tổng duyệt cả team", mark: "full_rehearsal" },
+        { id: "full", label: "Cả team cùng tổng duyệt", note: "Tốn 3tr tiền ăn và xe, ngày cưới trơn tru hơn. Tính luôn là đã tổng duyệt MC và âm thanh.", cost: 3, costLabel: "Tổng duyệt MC và âm thanh cùng cả team", mark: "full_rehearsal", flags: ["mcRehearsal", "soundcheck"] },
         { id: "lead", label: "Chỉ trưởng nhóm đi", note: "Không tốn gì, mức an toàn bình thường" },
         { id: "skip", label: "Bỏ tổng duyệt cho team nghỉ", note: "Team khỏe, MC dễ lỡ nhịp", mark: "no_rehearsal" } ],
       risks: [{ mark: "full_rehearsal", crisis: "mc_mistake", add: -12, reason: "Đã tổng duyệt cả team" }, { mark: "full_rehearsal", crisis: "loadin_late", add: -8, reason: "Đã tổng duyệt cả team" },
@@ -9096,7 +9349,7 @@ window.WP_COPY = {
         { id: "keep", label: "Giữ nguyên 10 phút", note: "Hai họ cảm động, dễ quá giờ venue", family: 2, mark: "long_speech" },
         { id: "cut", label: "Khéo léo rút còn 3 phút", note: "Đúng giờ, bố cô dâu hơi buồn", family: -3, couple: 1 } ],
       risks: [{ mark: "long_speech", crisis: "overtime", add: 15, reason: "Phát biểu dài làm trễ chương trình" }] },
-    { id: "envelope_desk", phase: ["late"], who: "mom_bride", title: "Ai trông bàn nhận phong bì?",
+    { id: "envelope_desk", needsTeam: true, phase: ["late"], who: "mom_bride", title: "Ai trông bàn nhận phong bì?",
       text: "Mẹ cô dâu lo bàn phong bì đông người qua lại.",
       options: [
         { id: "staff", label: "Cử một người của team", note: "Tốn 1 lượt, gia đình yên tâm", ap: 1, family: 2 },
@@ -9125,7 +9378,7 @@ window.WP_COPY = {
       options: [
         { id: "repair", label: "Sửa {cash}", note: "Dùng tiếp được, nhưng máy cũ có thể hỏng lại.", cash: -3, risk: { p: 0.3, cash: -3, label: "Laptop hỏng lại, sửa lần nữa" } },
         { id: "new", label: "Mua máy mới {cash}", note: "Tốn ngay một khoản lớn, yên tâm cả năm.", cash: -15, block: 12 },
-        { id: "borrow", label: "Mượn tạm máy bạn", note: "Không tốn tiền, nhưng làm chậm hẳn.", apNext: 1 }
+        { id: "borrow", label: "Mượn tạm máy bạn", note: "Không tốn tiền, nhưng máy bạn chậm nên làm gì cũng lâu: tháng sau mất 1 lượt mỗi tuần.", apNext: 1 }
       ] },
     { id: "receivable", who: "client", speaker: "Khách cũ", title: "Khách đám trước chưa trả đợt cuối", when: "receivable", weight: 3,
       text: "Đã qua tháng mà khách đám trước vẫn chưa chuyển phần còn lại. Nhắn tin thì chỉ thấy đã xem.",
@@ -9139,27 +9392,27 @@ window.WP_COPY = {
       options: [
         { id: "full", label: "Sửa hẳn {cash}", note: "Xong một lần.", cash: -4 },
         { id: "patch", label: "Sửa tạm {cash}", note: "Chạy được, nhưng dễ hỏng lại và lần sau tốn {risk}.", cash: -1, risk: { p: 0.4, cash: -5, label: "Xe hỏng lại, phải sửa hẳn" } },
-        { id: "bus", label: "Gửi xe đó, đi nhờ và xe buýt", note: "Không tốn tiền, mất thời gian đi lại.", apNow: 1 }
+        { id: "bus", label: "Gửi xe đó, đi nhờ và xe buýt", note: "Không tốn tiền, nhưng đi lại mất thời gian: tuần này mất 1 lượt.", apNow: 1 }
       ] },
     { id: "sick", who: "me", title: "Planner bị ốm",
       text: "Sốt từ tối qua, sáng dậy đầu nặng như đeo đá. Tuần này vẫn còn việc.",
       options: [
         { id: "doctor", label: "Đi khám, mua thuốc {cash}", note: "Uống thuốc là làm được ngay.", cash: -2 },
-        { id: "rest", label: "Nghỉ hẳn hai ngày", note: "Không tốn tiền, mất việc của hai ngày.", apNow: 2 },
-        { id: "push", label: "Cố làm", note: "Không tốn gì ngay. Nếu bệnh nặng hơn thì tháng sau vừa tốn {risk} tiền thuốc vừa đuối.", risk: { p: 0.5, cash: -3, apNext: 1, label: "Ốm nặng hơn vì cố làm" } }
+        { id: "rest", label: "Nghỉ hẳn hai ngày", note: "Không tốn tiền, nhưng nghỉ hai ngày: tuần này mất 2 lượt.", apNow: 2 },
+        { id: "push", label: "Cố làm", note: "Không tốn gì ngay. Nếu bệnh nặng hơn thì tháng sau vừa tốn {risk} tiền thuốc vừa đuối: mất 1 lượt mỗi tuần.", risk: { p: 0.5, cash: -3, apNext: 1, label: "Ốm nặng hơn vì cố làm" } }
       ] },
-    { id: "gio_que", who: "family", speaker: "Mẹ", title: "Giỗ ở quê",
+    { id: "gio_que", who: "family", look: "planner_mom", speaker: "Mẹ", title: "Giỗ ở quê",
       text: "Mẹ gọi: cuối tuần này giỗ ông, cả nhà mong con về.",
       options: [
-        { id: "home", label: "Về quê", note: "Tiền xe và quà {cash}, mất một ngày làm việc. Mẹ gói đồ quê mang lên, tháng sau đỡ được {later} tiền chợ.", cash: -3, apNow: 1, later: { cash: 2, label: "Đồ quê mẹ gói, đỡ tiền chợ" } },
+        { id: "home", label: "Về quê", note: "Tiền xe và quà {cash}, mất một ngày làm việc: tuần này mất 1 lượt. Mẹ gói đồ quê mang lên, tháng sau đỡ được {later} tiền chợ.", cash: -3, apNow: 1, later: { cash: 2, label: "Đồ quê mẹ gói, đỡ tiền chợ" } },
         { id: "send", label: "Gửi tiền về {cash}", note: "Không về được thì góp giỗ.", cash: -1.5 },
-        { id: "skip", label: "Không về", note: "Không tốn tiền. Cả tuần áy náy, làm việc không tập trung.", apNow: 1 }
+        { id: "skip", label: "Không về", note: "Không tốn tiền. Cả tuần áy náy, làm việc không tập trung: tuần này mất 1 lượt.", apNow: 1 }
       ] },
     { id: "tax", who: "me", title: "Thuế và giấy tờ",
       text: "Tới hạn quyết toán thuế và gia hạn giấy phép hộ kinh doanh.",
       options: [
         { id: "service", label: "Thuê dịch vụ {cash}", note: "Họ làm hết.", cash: -2.5 },
-        { id: "self", label: "Tự làm", note: "Không tốn tiền, mất hai buổi xếp hàng và điền tờ khai.", apNow: 2 },
+        { id: "self", label: "Tự làm", note: "Không tốn tiền, nhưng mất hai buổi xếp hàng và điền tờ khai: tuần này mất 2 lượt.", apNow: 2 },
         { id: "delay", label: "Để tháng sau", note: "Không tốn gì tháng này. Tháng sau nộp trễ, bị phạt {later}.", later: { cash: -4, label: "Phạt nộp thuế trễ" } }
       ] },
     { id: "phone", who: "me", title: "Điện thoại hỏng",
@@ -9167,7 +9420,7 @@ window.WP_COPY = {
       options: [
         { id: "repair", label: "Sửa {cash}", note: "Dùng tạm được, có thể hỏng lại.", cash: -2, risk: { p: 0.25, cash: -2, label: "Điện thoại hỏng lại" } },
         { id: "new", label: "Thay máy {cash}", note: "Tốn ngay, yên tâm cả năm.", cash: -9, block: 12 },
-        { id: "borrow", label: "Mượn máy cũ của bạn", note: "Không tốn tiền, máy chậm nên trả lời khách và vendor trễ.", apNext: 1 }
+        { id: "borrow", label: "Mượn máy cũ của bạn", note: "Không tốn tiền, nhưng máy chậm nên trả lời khách và vendor trễ: tháng sau mất 1 lượt mỗi tuần.", apNext: 1 }
       ] },
     { id: "gift", months: [1, 8], who: "me", title: "Dịp cần quà biếu",
       text: "Sắp lễ. Vendor thân và khách cũ là nguồn giới thiệu, năm nào cũng tới dịp này.",
@@ -9180,7 +9433,7 @@ window.WP_COPY = {
       text: "Gói phần mềm quản lý dự án và làm moodboard hết hạn trong tuần này.",
       options: [
         { id: "renew", label: "Gia hạn {cash}", note: "Dùng tiếp như cũ.", cash: -2 },
-        { id: "drop", label: "Ngừng dùng", note: "Không tốn tiền. Tháng sau làm tay bằng bảng tính nên chậm hơn.", apNext: 1 }
+        { id: "drop", label: "Ngừng dùng", note: "Không tốn tiền. Tháng sau làm tay bằng bảng tính nên chậm hơn: mất 1 lượt mỗi tuần.", apNext: 1 }
       ] },
     { id: "vendor_hold", vendorCategory: "decor", who: "vendor", speaker: "Vendor thân", title: "Vendor thân cần ứng tiền giữ lịch",
       text: "Chị chủ tiệm hoa nhờ ứng trước một khoản để chị cọc lô hoa nhập, tháng sau chị gửi lại.",
@@ -9188,11 +9441,11 @@ window.WP_COPY = {
         { id: "lend", label: "Ứng {cash}", note: "Tháng sau thường nhận lại đủ {later} (đôi khi chị ấy khất thêm một tháng), và có một mối quen vendor.", cash: -10, needCash: 10, later: { cash: 10, label: "Vendor thân trả lại tiền ứng", lateP: 0.15, lateLabel: "Chị chủ tiệm hoa xin khất thêm một tháng mới trả tiền ứng" }, grant: "vendor" },
         { id: "refuse", label: "Từ chối", note: "Không mất tiền, nhưng mất một mối quen đang có. Nếu chưa có mối quen nào thì lần chốt tới chị ấy tăng giá 5%.", loseContact: "vendor" }
       ] },
-    { id: "landlord", who: "family", speaker: "Chủ nhà", title: "Chủ nhà đòi tiền sửa chữa",
+    { id: "landlord", who: "family", look: "landlord", speaker: "Chủ nhà", title: "Chủ nhà đòi tiền sửa chữa",
       text: "Chủ nhà báo sửa lại hệ thống nước cả dãy, chia đều cho các phòng. Không đóng thì tháng sau tính thêm.",
       options: [
         { id: "pay", label: "Đóng {cash}", note: "Xong chuyện.", cash: -3 },
-        { id: "move", label: "Chuyển chỗ ở", note: "Tiền cọc và chuyển đồ {cash}, mất hai ngày. Chỗ mới không còn chuyện này nữa.", cash: -4, apNow: 2, block: 24 },
+        { id: "move", label: "Chuyển chỗ ở", note: "Tiền cọc và chuyển đồ {cash}, mất hai ngày: tuần này mất 2 lượt. Chỗ mới không còn chuyện này nữa.", cash: -4, apNow: 2, block: 24 },
         { id: "delay", label: "Khất tháng sau", note: "Không tốn gì tháng này. Tháng sau chủ nhà thu {later}.", later: { cash: -4.5, label: "Chủ nhà thu tiền sửa chữa kèm phạt" } }
       ] },
 
@@ -9227,7 +9480,7 @@ window.WP_COPY = {
       options: [
         { id: "rent", label: "Thuê kho {cash}", note: "Có chỗ để gọn, dùng lại được cho đám sau.", cash: -5 },
         { id: "vendor", label: "Gửi nhờ kho vendor {cash}", note: "Rẻ hơn, nhưng đồ gửi nhờ dễ thất lạc hoặc hư; nếu vậy thì tháng sau phải đền {risk}.", cash: -2, risk: { p: 0.3, cash: -6, label: "Đồ gửi nhờ bị hư, phải làm lại" } },
-        { id: "stay", label: "Cứ chất ở văn phòng", note: "Không tốn tiền. Văn phòng bừa bộn, tháng sau làm chậm hơn.", apNext: 1 }
+        { id: "stay", label: "Cứ chất ở văn phòng", note: "Không tốn tiền. Văn phòng bừa bộn nên tìm gì cũng lâu: tháng sau mất 1 lượt mỗi tuần.", apNext: 1 }
       ] },
     // Studio (cấp 3)
     { id: "insurance", minStage: 3, when: "staff", weight: 2, who: "me", title: "Bảo hiểm cho nhân viên",
@@ -9276,6 +9529,17 @@ window.WP_COPY = {
     // ---- Gói F: 6 thẻ mới (nạp từ docs/content bằng tools/import_gpt.py) ----
     ...GPT.monthCards
   ];
+  // Câu hệ quả cho các thẻ tháng của gói F (sửa 3.7.0, mục 1.11): file GPT chỉ có "result" (hiện sau khi chọn), nên trước khi chọn
+  // người chơi không đọc được gì. Ghi ở đây, không sửa khối GPT, để lần nhập lại sau không xoá mất.
+  const CARD_NOTES = {
+    solo_portfolio_refresh: { o1: "In lại bộ portfolio chọn lọc. Khách xem thấy chỉn chu hơn: danh tiếng nhích lên.", o2: "Rẻ hơn, gửi qua tin nhắn được ngay. Tháng sau có một mối quen khách: thêm một lời hỏi.", o3: "Không tốn tiền. Portfolio cũ vẫn dùng được, không thêm gì." },
+    solo_drive_recovery: { o1: "Anh Khánh cứu được hồ sơ trong ngày. Dự án kế tiếp: rủi ro mọi hạng mục −2%.", o2: "Không tốn tiền, nhưng chắp lại hồ sơ từ email mất nhiều buổi: tháng sau mất 1 lượt mỗi tuần." },
+    team_staff_family_support: { o1: "{name} yên tâm đi làm tiếp: tinh thần +1.", o2: "Không tốn tiền. {name} tự xoay xở viện phí và hụt hẫng: tinh thần −1." },
+    team_rental_van_tires: { o1: "Thay một lần cho yên tâm. Dự án kế tiếp: rủi ro mọi hạng mục −3%.", o2: "Rẻ trước mắt, nhưng lốp cũ dễ trục trặc khi chở đồ. Dự án kế tiếp: rủi ro mọi hạng mục +2%." },
+    studio_backdrop_storage_leak: { o1: "Xử lý mái và kê cao backdrop. Dự án kế tiếp: rủi ro mọi hạng mục −3%.", o2: "Che tạm cho đỡ tốn, mưa lớn thì đồ vẫn có thể ẩm. Dự án kế tiếp: rủi ro mọi hạng mục +3%." },
+    agency_venue_preferred_dates: { o1: "Đứng tên đồng tổ chức buổi giới thiệu: danh tiếng nhích lên, và tháng sau anh Vũ thành mối quen vendor.", o2: "Góp ít, không đứng tên. Tháng sau anh Vũ vẫn thành mối quen vendor.", o3: "Không tốn tiền, không thêm mối quen nào." }
+  };
+  MONTH_CARDS.forEach(k => (k.options || []).forEach(o => { if (!o.note && (CARD_NOTES[k.id] || {})[o.id]) o.note = CARD_NOTES[k.id][o.id]; }));
 
   // ---- Đi làm thêm (đặc tả Làm thêm · Nhân sự · Chi nhánh, mục 1; thay hoàn toàn CTV) ----
   // Mỗi việc một ngày; đủ daysPerWeek ngày thì lịch qua một tuần. Mỗi bên thuê có tính cách cố định trong save (chọn theo trọng số w).
@@ -9344,7 +9608,7 @@ window.WP_COPY = {
   };
 
 
-  root.WP_CAREER = { OVERSEAS_VENDORS: GPT.overseasVendors, BRANCH_CARDS, BRANCH_TEXT, SIDE_JOBS, MONTH_CARDS, STAGES, ROLES, STAFF_TRAITS, TRAIT_FX, CANDIDATES, MORALE, HIRING, STAFF_NAMES, BRANDS, COUPLES: ALL_COUPLES, TRAITS: ALL_TRAITS, TYPES, CONTRACTS, BRIEFS: ALL_BRIEFS, CLIENTS, EXTRA_CRISES: X.crises || [], EXTRA_REACTIONS: X.reactions || {}, DESTS, CITIES, OVERSEAS, DEST_FEES, SEASONS, SKILLS, DILEMMAS, monthInfo };
+  root.WP_CAREER = { CRISIS_REASONS, OVERSEAS_VENDORS: GPT.overseasVendors, BRANCH_CARDS, BRANCH_TEXT, SIDE_JOBS, MONTH_CARDS, STAGES, ROLES, STAFF_TRAITS, TRAIT_FX, CANDIDATES, MORALE, HIRING, STAFF_NAMES, BRANDS, COUPLES: ALL_COUPLES, TRAITS: ALL_TRAITS, TYPES, CONTRACTS, BRIEFS: ALL_BRIEFS, CLIENTS, EXTRA_CRISES: X.crises || [], EXTRA_REACTIONS: X.reactions || {}, DESTS, CITIES, transitionMonths, OVERSEAS, DEST_FEES, SEASONS, SKILLS, DILEMMAS, monthInfo };
 })(typeof window !== "undefined" ? window : globalThis);
 
 </script>
@@ -9367,6 +9631,8 @@ window.WP_COPY = {
   const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const money = n => `${Math.round(n).toLocaleString("vi-VN")}tr`;
   const r1 = x => Math.round(x * 10) / 10;
+  // Đổi sang chữ thường để đặt giữa câu, nhưng giữ chữ viết tắt (MC, VIP…) như cũ: "MC đọc sai" không thành "mc đọc sai".
+  const lower = t => String(t == null ? "" : t).split(/(\s+)/).map(w => (/^[A-ZĐ]{2,}[\W\d]*$/.test(w) ? w : w.toLowerCase())).join("");
   const signed = n => `${n >= 0 ? "+" : "−"}${money(Math.abs(n))}`;
   const clamp = (n, a = 0, b = 100) => Math.max(a, Math.min(b, n));
   const getVendor = id => D.vendors.find(v => v.id === id);
@@ -9385,6 +9651,18 @@ window.WP_COPY = {
   const careerFresh = (month = 9, city = "hcm") => CORE.initCareer({ cash: 20, month, year: 1, city, maxStage: 0, skillPoints: 0, stage: 0, done: 0, stars: [], staff: [], brand: null, offers: [], history: [], loan: null, canUpgrade: false, pendingBrand: false, bossDone: false, endSeen: false, staffSeq: 0 });
   const stageOf = () => C.STAGES[state.career.stage];
   const hasRole = r => state.career.staff.some(s => s.role === r);
+  // ---- Chủ ngữ theo cấp người chơi (sửa 3.7.0, mục 1.4): chưa có nhân viên → "bạn"; có nhân viên → "team"; cấp Agency → "agency" ----
+  // Day-of là điều phối, không phải planning (mục 1.5): một chỗ quyết định tên khoản phí.
+  const isDayof = o => !!o && o.type === "dayof";
+  const feeName = (o = state.project) => (isDayof(o) ? "phí điều phối" : "phí planning");
+  const FeeName = (o = state.project) => (isDayof(o) ? "Phí điều phối" : "Phí planning");
+  const packName = (o = state.project) => (isDayof(o) ? "Gói điều phối" : "Gói planning");
+  const subjectWord = (c = state.career) => (!(c.staff || []).length ? "bạn" : (c.stage || 0) >= 4 ? "agency" : "team");
+  function voice(t, c) {
+    if (t == null) return t; const s = subjectWord(c); if (s === "agency") return String(t);
+    const S = s[0].toUpperCase() + s.slice(1);
+    return String(t).replace(/\bAgency\b/g, S).replace(/\bagency\b/g, s);
+  }
   // ---- Nhân viên có tính cách (mục 2 đặc tả Nhân sự) ----
   CORE.registerTraits(C.STAFF_TRAITS);
   const roleOf = id => C.ROLES.find(r => r.id === id);
@@ -9412,14 +9690,30 @@ window.WP_COPY = {
     ].filter(Boolean);
   }
   const goalMet = goal => goalRows(goal).every(r => r[1]);
-  // Overall progress to the next level: average of each goal's completion, capped per goal.
-  function goalPct(goal) {
-    const c = state.career; const parts = [];
-    if (goal.done) parts.push(c.done / goal.done);
-    if (goal.stars) parts.push(c.stars.length ? avgStars() / goal.stars : 0);
-    if (goal.cash) parts.push(Math.max(0, c.cash) / goal.cash);
-    if (goal.staff) parts.push(c.staff.length / goal.staff);
-    return parts.length ? Math.round(parts.reduce((s, x) => s + Math.min(1, x), 0) / parts.length * 100) : 100;
+  // Điều kiện lên cấp viết bằng câu (mục 1.9): điều kiện còn thiếu nói rõ thiếu bao nhiêu, không dùng thanh phần trăm.
+  const starStr = x => x.toFixed(1).replace(".", ",") + "★";
+  function goalLines(goal) {
+    const c = state.career; const out = [];
+    if (goal.done) out.push(c.done >= goal.done ? { ok: true, text: `Đã làm ${c.done} đám (cần ${goal.done})` } : { ok: false, text: `Còn ${goal.done - c.done} đám nữa (đã làm ${c.done}/${goal.done})` });
+    if (goal.stars) { const a = avgStars(); out.push(c.stars.length && a >= goal.stars ? { ok: true, text: `Danh tiếng ${starStr(a)} (cần ${starStr(goal.stars)})` } : { ok: false, text: `Cần danh tiếng ${starStr(goal.stars)} (${c.stars.length ? `hiện ${starStr(a)}` : "chưa có đám nào"})` }); }
+    if (goal.cash) out.push(c.cash >= goal.cash ? { ok: true, text: `Quỹ ${money(c.cash)} (cần từ ${money(goal.cash)})` } : { ok: false, text: `Cần quỹ từ ${money(goal.cash)} (hiện ${money(c.cash)})` });
+    if (goal.staff) out.push(c.staff.length >= goal.staff ? { ok: true, text: `Có ${c.staff.length} nhân viên (cần ${goal.staff})` } : { ok: false, text: `Cần thêm ${goal.staff - c.staff.length} nhân viên (hiện ${c.staff.length})` });
+    return out;
+  }
+  // Văn phòng mở được gì, cần cấp nào (mục 1.9): mỗi thứ ghi cả cấp lẫn văn phòng, và nói đang thiếu gì.
+  const GATE_LABEL = { full: "Nhận khách trọn gói", package: "Nhận gói cưới cố định", luxury: "Nhận Luxury", destination: "Nhận Destination", boss: "Nhận đám cưới của năm" };
+  function officeUnlocks(o, c = state.career) {
+    const rows = [];
+    const add = (label, stage, extra) => rows.push({ label, stage, office: o.tier, extra });
+    Object.entries(CORE.OFFER_GATES).forEach(([t, gt]) => { if (gt.office === o.tier && GATE_LABEL[t]) add(GATE_LABEL[t], gt.stage, ["luxury", "destination"].includes(t) ? "chọn đúng hướng thương hiệu" : ""); });
+    if (o.tier === CORE.HIRE_GATE.office) add("Tuyển được người", CORE.HIRE_GATE.stage);
+    if (o.tier === CORE.BIG_WEDDING.office) add(`Nhận đám trên ${CORE.BIG_WEDDING.guests} khách`, CORE.BIG_WEDDING.stage);
+    if (o.tier === CORE.BRANCH.minOfficeTier) add("Mở chi nhánh", CORE.BRANCH.minStage);
+    return rows.map(r => {
+      const needStage = (c.stage || 0) < r.stage; const needOffice = CORE.OFFICES.find(x => x.id === c.office).tier < r.office;
+      const miss = [needStage ? `cấp ${C.STAGES[r.stage].name}` : "", needOffice ? o.name : ""].filter(Boolean);
+      return { ok: !miss.length, text: `${r.label}: cần cấp ${C.STAGES[r.stage].name} + ${o.name}${r.extra ? `, ${r.extra}` : ""}.`, miss: miss.length ? `Còn thiếu: ${miss.join(" và ")}.` : "Đã đủ điều kiện." };
+    });
   }
   function checkStage() {
     const c = state.career;
@@ -9473,7 +9767,7 @@ window.WP_COPY = {
       if (e.type === "monthCard" && !e.branch) { const card = C.MONTH_CARDS.find(x => x.id === e.id); const k = CORE.cardTraitKey(card); if (k) CORE.staffWith(c, k).forEach(s => revealCons(s, [k])); if (card.options.some(o => o.quit || (o.risk && o.risk.quit))) c.staff.forEach(s => revealCons(s, ["poach"])); }
       if (e.type === "monthStart") c.staff.forEach(s => revealCons(s, ["morale"]));
       if (e.type === "branchResult") log(branchLine(e), e.amount >= 0 ? "good" : "bad");
-      if (e.type === "monthlyCost" && e.total) log(`Sang tháng ${c.month}: ${e.parts.map(x => `${x.label.toLowerCase()} ${cashStr(x.amount)}`).join(", ")}. Tổng −${cashStr(e.total)}.`);
+      if (e.type === "monthlyCost" && e.total) log(`Sang tháng ${c.month}: ${e.parts.map(x => `${lower(x.label)} ${cashStr(x.amount)}`).join(", ")}. Tổng −${cashStr(e.total)}.`);
       if (e.type === "scheduled" && e.delayed) { log(`${e.label}.`, "bad"); continue; }
       if (e.type === "scheduled") log(`${e.label}${e.cash ? `: ${e.cash < 0 ? "−" : "+"}${cashStr(e.cash)}` : ""}${e.apNext ? ", tháng này mất 1 lượt mỗi tuần" : ""}${e.quit ? ` (${e.quit.name} nghỉ việc)` : ""}.`, e.cash < 0 || e.apNext || e.quit ? "bad" : "good");
       if (e.type === "loanRepaid") log(`Trả nợ ${money(e.amount)}.`, "bad");
@@ -9523,7 +9817,7 @@ window.WP_COPY = {
       state.ledger.push({ label: "Giảm phí planning để giữ lòng khách", c: 1, f: 3 });
     } else return;
     d.pick = id; state.needDecision = false;
-    log(`Khách hỏi về giá ${d.label.toLowerCase()}: ${{ refund: "hoàn lại một phần", explain: d.ok ? "giải thích, khách bỏ qua" : "giải thích, khách không tin", feecut: "giảm 10% phí planning" }[id]}.`, id === "explain" && !d.ok ? "bad" : "info");
+    log(`Khách hỏi về giá ${lower(d.label)}: ${{ refund: "hoàn lại một phần", explain: d.ok ? "giải thích, khách bỏ qua" : "giải thích, khách không tin", feecut: "giảm 10% phí planning" }[id]}.`, id === "explain" && !d.ok ? "bad" : "info");
   }
   // Chọn / gán mối quen (tờ Sự nghiệp)
   function chooseContact(kind) { const e = CORE.chooseContact(state.career, kind); if (e) log(kind === "vendor" ? "Chọn mối quen vendor." : "Chọn mối quen khách: lần tới sẽ có thêm một lời hỏi.", "good"); }
@@ -9756,6 +10050,7 @@ window.WP_COPY = {
     if (trait?.deadlineShift) P.categories.forEach(c => { c.deadline = Math.max(c.from, c.deadline + trait.deadlineShift); });
     if (trait?.actionCost) P.actions.forEach(a => { if (trait.actionCost[a.id]) a.cost = (a.cost || 1) + trait.actionCost[a.id]; });
     P.crises = P.crises.concat(clone(C.EXTRA_CRISES)); Object.assign(P.reactions, C.EXTRA_REACTIONS);
+    P.crises.forEach(cr => cr.options.forEach(op => { op.title = voice(op.title); op.why = voice(op.why); })); // chủ ngữ theo cấp người chơi
     const drop = new Set(o.type === "dayof" ? ["choose_concept", "ceremony_plan", "transport_plan"] : hasEng ? [] : ["ceremony_plan", "transport_plan"]);
     P.actions = P.actions.filter(a => !drop.has(a.id));
     P.crises = P.crises.filter(c => T.events.includes(c.event));
@@ -9787,7 +10082,7 @@ window.WP_COPY = {
     rolls: [], stage: null, pending: [], stageHits: 0, queue: [], qi: 0, crisisOutcome: null, moments: [],
     crisisCost: 0, recovered: 0, clientCharged: 0, grievances: 0, feeDiscountPct: 0, disputePaid: 0,
     settlement: [], settlementIndex: 0, settlementOutcome: null, result: null, briefStep: 0, expand: null,
-    ledger: [], dilemmas: {}, dilemmaPick: {}, wishMode: {}, riskStart: null, groups: {}, lastResolved: null, vtab: {}, fg: null, needDecision: false, fin: null, contactDisc: {}, surcharge: {}, luxuryPaid: false, discovery: null, slotKind: null, feeCutPct: 0, badReview: false, promised: null });
+    ledger: [], dilemmas: {}, dilemmaPick: {}, wishMode: {}, riskStart: null, groups: {}, lastResolved: null, vtab: {}, fg: null, needDecision: false, fin: null, contactDisc: {}, surcharge: {}, luxuryPaid: false, discovery: null, slotKind: null, feeCutPct: 0, badReview: false, promised: null, warned: {}, markSrc: {} });
   // ---- Quoting the planning fee: three prices inside the market range, each with its own promises ----
   const actionTitle = id => (BASE.actions.find(a => a.id === id) || {}).title || id;
   function quoteOptions(o) {
@@ -9809,7 +10104,7 @@ window.WP_COPY = {
   }
   function sheetQuote() {
     const i = state.sheet.id; const o = state.career.offers[i]; if (!o) return "";
-    return `<h2 class="h">Gói planning cho ${esc(o.couple)}</h2><p class="muted">Gói quyết định bạn hứa làm những việc gì và thu bao nhiêu phí. Việc đã hứa mà bỏ thì lúc quyết toán khách đòi giảm phí. Chất lượng vendor là chuyện riêng, chọn sau.</p>
+    return `<h2 class="h">${packName(o)} cho ${esc(o.couple)}</h2><p class="muted">Gói quyết định bạn hứa làm những việc gì và thu bao nhiêu phí. Việc đã hứa mà bỏ thì lúc quyết toán khách đòi giảm phí. Chất lượng vendor là chuyện riêng, chọn sau.</p>
       <p class="muted">${o.type === "dayof" ? "Khách trả phí 2 đợt: 30% khi ký, 70% sau đám. Vendor khách tự trả." : (sh => `Khách trả 3 đợt trên tổng hợp đồng (dự toán vendor + phí): ${Math.round(sh.sign * 100)}% khi ký, ${Math.round(sh.mid * 100)}% trước lễ 2 tuần, ${Math.round(sh.final * 100)}% sau đám.${sh.mid < CORE.TERMS.client.mid ? " Đám lớn nên khách giữ lại phần cuối nhiều hơn: bạn phải ứng nhiều hơn trước lễ." : ""} ${o.type === "package" && (C.BRANDS.find(b => b.id === state.career.brand) || {}).partnerVendors ? `Vendor đối tác: cọc ${Math.round(CORE.TERMS.partnerDeposit * 100)}% khi chốt, trả nốt trong ${CORE.TERMS.partnerPayWeeks} tuần sau đám.` : "Bạn cọc vendor 30% khi chốt, trả nốt trước lễ."}`)(CORE.clientShares(o.budget + o.fee, false))}</p>
       ${CORE.luxuryServiceCost(o) ? `<p class="note">${esc(CORE.LUXURY_SERVICE.label)}: khoảng ${money(CORE.luxuryServiceCost(o))}, agency tự chi, thanh toán lúc quyết toán sau đám (${Math.round(CORE.LUXURY_SERVICE.share * 100)}% ngân sách khách). Gói nào cũng phải chi khoản này.</p>` : ""}
       <div class="list">${quoteOptions(o).map(q => `<button class="opt fee-opt" data-act="takeOffer" data-id="${i}:${q.level}">
@@ -9833,7 +10128,7 @@ window.WP_COPY = {
     const o = { ...offer, fee: q.fee, quote: { level: q.level, contracted: q.contracted, expect: q.expect, discountMult: q.discountMult }, riskNext: state.career.riskNext || 0 };
     state.career.riskNext = 0; // chuyện tháng trước (gói F): tác động đúng dự án kế tiếp
     state.sheet = null;
-    Object.assign(state, projectFields(), { project: o, seed: hash(`${state.seed}:${o.id}`) });
+    Object.assign(state, projectFields(), { project: o, seed: hash(`${state.seed}:${o.id}`), projStartWeek: state.career.elapsedWeeks || 0 });
     D = buildProject(o, state.career.staff, state.me.skills); TIME = D.config.time;
     state.tier = "job"; state.negBonus = hasSkill("ep_gia") ? 0.05 : 0;
     if (hasSkill("ngoai_giao")) state.familyScore += 4;
@@ -9843,7 +10138,7 @@ window.WP_COPY = {
     if (fxNow("risk") > 0) state.flags.teamSloppy = true;
     if (o.riskNext) state.flags.monthCard = true;
     state.phase = "brief";
-    log(`Nhận dự án ${o.couple}: ${C.TYPES[o.type].name}, báo phí ${q.name.toLowerCase()} ${money(o.fee)}.`, "good");
+    log(`Nhận dự án ${o.couple}: ${C.TYPES[o.type].name}, báo phí ${lower(q.name)} ${money(o.fee)}.`, "good");
     // Dòng tiền: khách cọc 30% tổng hợp đồng ngay khi ký. Đây là tiền mặt đã nhận, chưa phải lợi nhuận.
     state.fin = CORE.newProjectFinance(o);
     { const B = C.BRANDS.find(b => b.id === state.career.brand); if (B && B.partnerVendors && o.type === "package") state.fin.partner = true; } // vendor đối tác của Package
@@ -9862,10 +10157,10 @@ window.WP_COPY = {
       const f = k => CORE.staffFx(s, k);
       const com = f("commission"); if (com) { const amt = r1(o.fee * com); projCash(-amt, "staff", `Hoa hồng cho ${s.name}`); log(`Hoa hồng cho ${s.name}: ${money(amt)}.`, "bad"); revealCons(s, ["commission"]); }
       const unrevealed = () => D.wishes.filter(x => x.kind === "wish" && !state.revealed.includes(x.id)).sort((a, b) => hash(a.id + o.id + s.id) - hash(b.id + o.id + s.id))[0];
-      if (f("hiddenWish") && o.type !== "dayof") { const w = unrevealed(); if (w) { state.revealed.push(w.id); log(`${s.name} hỏi ra mong muốn ẩn của khách: ${w.title.toLowerCase()}.`, "good"); } }
+      if (f("hiddenWish") && o.type !== "dayof") { const w = unrevealed(); if (w) { state.revealed.push(w.id); log(`${s.name} hỏi ra mong muốn ẩn của khách: ${lower(w.title)}.`, "good"); } }
       if (f("overpromise") && o.type !== "dayof" && !state.promised && rr(`promise:${s.id}`) < f("overpromise")) {
         const w = unrevealed();
-        if (w) { state.revealed.push(w.id); state.promised = { id: w.id, by: s.name }; log(`Khách nhắc thêm một mong muốn ngoài gói: ${w.title.toLowerCase()}. Không đưa vào kế hoạch thì cặp đôi sẽ thất vọng.`, "bad"); revealCons(s, ["overpromise"]); }
+        if (w) { state.revealed.push(w.id); state.promised = { id: w.id, by: s.name }; log(`Khách nhắc thêm một mong muốn ngoài gói: ${lower(w.title)}. Không đưa vào kế hoạch thì cặp đôi sẽ thất vọng.`, "bad"); revealCons(s, ["overpromise"]); }
       }
     });
   }
@@ -9874,10 +10169,10 @@ window.WP_COPY = {
     if (s.conShown) return;
     const con = (s.traits || []).map(id => CORE.traitOf(id)).find(t => t && !t.pro);
     if (!con || !Object.keys(con.fx).some(k => keys.includes(k))) return;
-    s.conShown = true; log(`${s.name}: ${con.name.toLowerCase()}. ${con.full}`, "bad");
+    s.conShown = true; log(`${s.name}: ${lower(con.name)}. ${con.full}`, "bad");
   }
   function startPrep() {
-    if (state.career.sideDays > 0) { state.career.sideDays = 0; if (!tickWeek()) return; } // ngày làm thêm lẻ: tính tròn thành một tuần khi nhận dự án mới
+    if (state.career.sideDays > 0) { state.career.sideDays = 0; state.career.sideWeek = { paid: 0, owed: 0 }; if (!tickWeek()) return; } // ngày làm thêm lẻ: tính tròn thành một tuần khi nhận dự án mới
     if (!tickWeek()) return;
     state.phase = "prep"; state.week = 1; state.weekExtra = { fl: 0, ot: 0 }; state.cardWeek = null; planDilemmas(); weekStartAP(); state.riskStart = riskStatus().hot; claimSlot(); weekStartFinance();
   }
@@ -9930,6 +10225,7 @@ window.WP_COPY = {
   }
   // ---- Weekly decisions ----
   function dilemmaOk(d, o) {
+    if (d.needsTeam && !state.career.staff.length) return false; // tình huống cần có team chỉ hiện khi đã có nhân viên
     if (typeof d.when === "string" && d.when.startsWith("trait:") && !CORE.staffWith(state.career, d.when.slice(6)).length) return false;
     if (d.events && !d.events.some(e => evList().includes(e))) return false;
     if (d.when === "weather" && !(o.rainy || o.cold || ["destination", "overseas"].includes(o.type))) return false;
@@ -9952,13 +10248,14 @@ window.WP_COPY = {
     if ((o.ap || 0) > state.ap) return toast(`Cần ${o.ap} lượt`, "warn");
     state.ap -= o.ap || 0;
     state.coupleScore += o.couple || 0; state.familyScore += o.family || 0;
-    if (o.cost) { state.extraCost += o.cost; addExtra(o.costLabel || o.label, o.cost); projCash(-o.cost, "extra", o.costLabel || o.label); }
+    if (o.cost) { state.extraCost += o.cost; addExtra(voice(o.costLabel || o.label), o.cost); projCash(-o.cost, "extra", voice(o.costLabel || o.label)); }
+    (o.flags || []).forEach(f => { state.flags[f] = true; }); // tình huống làm luôn một việc đã hứa (cả team cùng tổng duyệt = tổng duyệt MC và âm thanh)
     if (o.relation) state.grievances = Math.max(0, state.grievances - o.relation);
-    if (o.mark && !state.marks.includes(o.mark)) state.marks.push(o.mark);
+    if (o.mark && !state.marks.includes(o.mark)) { state.marks.push(o.mark); (state.markSrc = state.markSrc || {})[o.mark] = `${d.title}: ${voice(o.label).toLowerCase()}`; }
     if (o.morale && d.when) CORE.staffWith(state.career, d.when.slice(6)).forEach(s => { CORE.changeMorale(state.career, s, o.morale); log(`Tinh thần của ${s.name}: ${s.morale > 0 ? "+" : ""}${s.morale}.`, "good"); });
     state.dilemmaPick[d.id] = optId; state.needDecision = false;
-    state.ledger.push({ label: `${d.title}: ${o.label.toLowerCase()}`, c: o.couple || 0, f: o.family || 0 });
-    log(`${d.title}: ${o.label}.`, "good");
+    state.ledger.push({ label: `${d.title}: ${voice(o.label).toLowerCase()}`, c: o.couple || 0, f: o.family || 0 });
+    log(`${d.title}: ${voice(o.label)}.`, "good");
   }
   // Risk shown as a count of real dangers among what is already decided, not a red label from day one.
   function riskStatus() {
@@ -10012,6 +10309,8 @@ window.WP_COPY = {
     const offer = state.sideOffers.find(o => o.kind === kindId); if (!offer) return;
     const e = CORE.workSideDay(c, SJ, offer, CAL.rnd, hasSkill);
     const story = sideStory(e); let learned = null;
+    // Tổng của tuần làm thêm đang dở (Đợt 2): tiền đã nhận, và tiền bên thuê còn nợ (trả chậm).
+    const wk = (c.sideWeek = c.sideWeek || { paid: 0, owed: 0 }); wk.paid = r1(wk.paid + (e.paid || 0)); if (e.outcome === "late") wk.owed = r1(wk.owed + e.pay);
     if (e.skill && state.me && !state.me.skills.includes(e.skill)) {
       state.me.skills.push(e.skill); learned = { skill: e.skill, text: e.moment };
       log(`${learned.text} Học được kỹ năng: ${C.SKILLS.find(x => x.id === e.skill).name}.`, "good");
@@ -10020,7 +10319,7 @@ window.WP_COPY = {
     log(story, ["normal", "minor"].includes(e.outcome) ? "info" : "bad");
     state.sideLast = { story, outcome: e.outcome, learned, ev: e };
     if (e.weekDone) { // đủ 5 ngày: lịch qua một tuần; sang tháng mới thì có khách mới hỏi
-      c.sideDays -= SJ.daysPerWeek; const m0 = c.monthNo;
+      c.sideDays -= SJ.daysPerWeek; const m0 = c.monthNo; state.sideLast.week = { ...c.sideWeek }; c.sideWeek = { paid: 0, owed: 0 };
       if (!tickWeek()) return;
       checkStage();
       if (c.monthNo !== m0) { CORE.refreshOfferBonus(c); c.lostReferralNow = CORE.takeLostReferral(c); c.offers = genOffers(); state.sideLast.newMonth = true; }
@@ -10067,6 +10366,23 @@ window.WP_COPY = {
     log(`Chọn hướng thương hiệu: ${C.BRANDS.find(b => b.id === id).name}.`, "good");
   }
 
+  // Hồ sơ nhanh của một lời mời (Đợt 2): độ khó, rủi ro, lợi ích, tính từ dữ liệu có sẵn của lời mời, không thêm cơ chế.
+  function offerProfile(o) {
+    const T = C.TYPES[o.type]; const trait = C.TRAITS.find(t => t.id === o.trait);
+    const hard = [], risk = [];
+    if (o.weeks < T.weeks) hard.push(`gấp: ${o.weeks} tuần chuẩn bị`);
+    if (o.guests > (T.guests[0] + T.guests[1]) / 2) hard.push(`đông khách (${o.guests})`);
+    if (trait && (trait.expect < 0 || trait.actionCost || trait.wishMult || trait.deadlineShift)) hard.push(lc(trait.name));
+    if (o.client && o.client !== "classic") hard.push("khách có mong muốn riêng, cần hỏi kỹ");
+    if ((o.premiumExpect || []).length) hard.push("khách quen đồ cao cấp");
+    if (o.type === "dayof") { const weak = Object.values(o.preset || {}).map(id => BASE.vendors.find(v => v.id === id)).filter(v => v && v.reliability <= 2); if (weak.length) risk.push(`khách chọn ${weak.length} vendor kém tin cậy (${weak.map(v => v.name).join(", ")})`); }
+    if (o.rainy) risk.push("đang mùa mưa");
+    if (o.cold) risk.push("trời rét");
+    if (["destination", "overseas"].includes(o.type)) risk.push("cưới xa, khó kiểm soát");
+    const lvl = (n, hiAt) => (n >= hiAt ? ["hi", "Cao"] : n >= hiAt - 1 && n > 0 ? ["mid", "Vừa"] : ["lo", "Thấp"]);
+    const perWeek = Math.round(o.fee / Math.max(1, o.weeks) * 10) / 10;
+    return { hard, risk, hardLvl: lvl(hard.length, 3), riskLvl: lvl(risk.length, 2), perWeek };
+  }
   function offerNotes(o) {
     const T = C.TYPES[o.type]; const trait = C.TRAITS.find(t => t.id === o.trait); const ct = C.CLIENTS.find(x => x.profile.id === o.client);
     const out = [];
@@ -10094,10 +10410,11 @@ window.WP_COPY = {
     const i = state.sheet.id; const o = state.career.offers[i]; if (!o) return "";
     const T = C.TYPES[o.type];
     return `<h2 class="h">${esc(o.couple)}</h2><p class="muted">${esc(T.name)} · ${esc(o.location)} · ${o.guests} khách · ${o.months} tháng · chuẩn bị ${o.weeks} tuần</p>
-      <dl class="rows"><div><dt>Phí planning</dt><dd>${money(Math.round(o.fee * 0.85))}–${money(Math.round(o.fee * 1.05))}</dd></div>${o.type === "dayof" ? `<div><dt>Vendor</dt><dd>Khách tự chốt</dd></div>` : `<div><dt>Dự toán vendor</dt><dd>${o.range ? `${money(o.range[0])}–${money(o.range[1])}` : money(o.budget)}</dd></div>`}</dl>
+      <dl class="rows"><div><dt>${FeeName(o)}</dt><dd>${money(Math.round(o.fee * 0.85))}–${money(Math.round(o.fee * 1.05))}</dd></div>${o.type === "dayof" ? `<div><dt>Vendor</dt><dd>Khách tự chốt</dd></div>` : `<div><dt>Dự toán vendor</dt><dd>${o.range ? `${money(o.range[0])}–${money(o.range[1])}` : money(o.budget)}</dd></div>`}</dl>
       <p>${esc(T.note)}</p>
+      ${(() => { const p = offerProfile(o); return `<h3 class="sub">So với các lời mời khác</h3><ul class="bul"><li><b>Độ khó ${p.hardLvl[1].toLowerCase()}.</b> ${p.hard.length ? esc(p.hard.join("; ")) + "." : "Không có gì đặc biệt."}</li><li><b>Rủi ro ${p.riskLvl[1].toLowerCase()}.</b> ${p.risk.length ? esc(p.risk.join("; ")) + "." : "Không có gì đặc biệt."}</li><li><b>Lợi ích:</b> phí khoảng ${cashStr(p.perWeek)} cho mỗi tuần chuẩn bị.</li></ul>`; })()}
       ${offerNotes(o).length ? `<h3 class="sub">Điểm cần lưu ý</h3><ul class="bul">${offerNotes(o).map(([a, b]) => `<li><b>${esc(a)}.</b> ${esc(b)}</li>`).join("")}</ul>` : ""}
-      <div class="sheet-actions"><button class="btn primary" data-act="sheet" data-id="quote:${i}">Chọn gói planning</button></div>`;
+      <div class="sheet-actions"><button class="btn primary" data-act="sheet" data-id="quote:${i}">Chọn ${packName(o).toLowerCase()}</button></div>`;
   }
   function screenHub() {
     const c = state.career; const mi = C.monthInfo(c.month, c.city); const st = stageOf(); const next = C.STAGES[c.stage + 1];
@@ -10108,7 +10425,8 @@ window.WP_COPY = {
       const n = offerNotes(o).length;
       const fit = (brand && brand.offer === o.type) || (hasSkill("ngoai_ngu") && ["destination", "overseas"].includes(o.type));
       return `<button class="card offer tap" data-act="sheet" data-id="offer:${i}"><span class="row-between"><span class="offer-name"><b>${o.comeback ? "Người quen giới thiệu · " : ""}${esc(o.couple)}</b>${fit ? `<span class="fit">Hợp hướng của bạn</span>` : ""}</span><span class="fee-range"><b>${money(Math.round(o.fee * 0.85))}–${money(Math.round(o.fee * 1.05))}</b></span></span>
-        <span class="offer-line">${typeChip(o)} ${o.guests} khách · ${o.weeks} tuần${n ? ` · <em>${n} điểm cần lưu ý</em>` : ""}<i class="chev">›</i></span></button>`;
+        <span class="offer-line">${typeChip(o)} ${o.guests} khách · ${o.weeks} tuần${n ? ` · <em>${n} điểm cần lưu ý</em>` : ""}<i class="chev">›</i></span>
+        ${(() => { const p = offerProfile(o); return `<span class="offer-prof"><span class="lvl ${p.hardLvl[0]}">Độ khó ${p.hardLvl[1].toLowerCase()}</span><span class="lvl ${p.riskLvl[0]}">Rủi ro ${p.riskLvl[1].toLowerCase()}</span><span class="lvl gain">Phí ${cashStr(p.perWeek)}/tuần</span></span>`; })()}</button>`;
     };
     const canHire = CORE.canHire(c) && C.ROLES.some(r => c.stage >= r.minStage) && c.staff.length < st.maxStaff;
     const wantTypes = c.stage === 0 ? [] : c.stage === 1 ? ["full"] : ["full", brand ? brand.offer : "full", "luxury", "destination"].concat(c.stage >= 4 && !c.bossDone ? ["boss"] : []);
@@ -10116,24 +10434,24 @@ window.WP_COPY = {
     return `<section class="stack">
       ${cardPending() ? monthCardHtml() : ""}
       ${c.stage >= 4 && c.bossDone && !c.endSeen ? `<div class="card moment"><span class="eyebrow">Hết chặng đầu</span><h2 class="h big">Agency của bạn đã có tên</h2><p>${c.done} đám cưới, danh tiếng ${avgStars().toFixed(1)}★, quỹ ${money(c.cash)}. Bạn vẫn có thể tiếp tục nhận khách.</p><button class="btn" data-act="endSeen">Tiếp tục làm nghề</button></div>` : ""}
-      <button class="hubline" data-act="sheet" data-id="career"><span>Quỹ <b class="${c.cash < 0 ? "neg" : ""}">${money(c.cash)}</b></span><span>Cấp <b>${c.stage + 1}/5</b></span><span>${next ? `Lên cấp <b>${goalPct(next.goal)}%</b>` : `<b>${c.done}</b> đám`}</span>${canHire ? `<em>Tuyển được người</em>` : ""}<i class="chev">›</i></button>
+      <button class="hubline" data-act="sheet" data-id="career"><span>Quỹ <b class="${c.cash < 0 ? "neg" : ""}">${money(c.cash)}</b></span><span>Cấp <b>${c.stage + 1}/5</b></span><span>${next ? (goalMet(next.goal) ? `<b>Đủ điều kiện lên cấp</b>` : `Lên cấp: thiếu <b>${goalLines(next.goal).filter(x => !x.ok).length}</b>`) : `<b>${c.done}</b> đám`}</span>${canHire ? `<em>Tuyển được người</em>` : ""}<i class="chev">›</i></button>
         ${c.canUpgrade && next ? `<button class="btn primary" data-act="upgrade">Lên ${esc(next.name)}</button>` : ""}
         ${c.pendingBrand ? `<button class="btn primary" data-act="sheet" data-id="brand">Chọn hướng thương hiệu</button>` : ""}
         ${c.skillPoints ? `<button class="btn primary" data-act="sheet" data-id="skill">Học kỹ năng mới (${c.skillPoints})</button>` : ""}
       ${c.done === 0 ? `<p class="muted">Ngày đầu làm planner tự do ở ${esc(C.CITIES[c.city].name)}. Nhận vài job điều phối nhỏ để có tiếng trước đã.</p>` : ""}
       <h2 class="sec">Khách đang hỏi</h2>
       ${CORE.demandLevel(c) !== "normal" ? `<p class="note">${CORE.demandLevel(c) === "shunned" ? "Mấy đám gần đây để lại tiếng xấu. Giờ chỉ còn khách day-of dám hỏi, và họ ép phí." : "Mấy đám gần đây chưa tốt nên khách lớn còn dè chừng. Làm tốt vài đám tới để lấy lại tiếng."}</p>` : ""}
-      ${hint ? `<p class="muted">Khách ${esc(C.TYPES[hint.type].short.toLowerCase())} chưa tìm tới vì bạn chưa có ${esc(hint.office.name.toLowerCase())}. Đổi văn phòng trong tờ Sự nghiệp.</p>` : ""}
+      ${hint ? `<p class="muted">Khách ${esc(C.TYPES[hint.type].short.toLowerCase())} chưa tìm tới vì bạn chưa có ${esc(lower(hint.office.name))}. Đổi văn phòng trong tờ Sự nghiệp.</p>` : ""}
       ${c.offers.length ? "" : `<p class="muted">Tháng này không có ai hỏi. ${CORE.dayofAvailable(c, mi.peak) ? "" : "Mùa thấp điểm không có đám nhỏ; khách lớn thì cần văn phòng và tiếng tốt. "}Có thể đi làm thêm vài ngày.</p>`}
       ${c.offers.map(offerCard).join("")}
       <button class="hubline ctv" data-act="sideOpen"><span>Chưa nhận khách? Đi làm thêm vài ngày</span>${c.sideDays ? `<b>${c.sideDays}/${SJ.daysPerWeek} ngày</b>` : ""}</button>
-      ${c.cash < 0 && !c.loan ? `<div class="card slim"><b>Quỹ đang âm</b><small class="muted">Chốt tháng mà quỹ âm hai lần liền là phải đóng cửa. Có thể vay người quen 50tr, trả 60tr sau 3 tháng.</small><button class="btn" data-act="loan">Vay 50tr</button></div>` : ""}
+      ${c.cash < 0 && !c.loan ? `<div class="card slim"><b>Quỹ đang âm</b><small class="muted">Chốt tháng mà quỹ âm hai lần liền là phải đóng cửa. Có thể vay người quen 50tr, trả 60tr sau 3 tháng.</small>${state.loanAsk ? `<p class="small"><b>Vay ${money(CORE.LOAN.amount)}?</b> Sau ${CORE.LOAN.months} tháng trả ${money(CORE.LOAN.repay)}; tới hạn không đủ thì phá sản.</p><div class="row-btns"><button class="btn" data-act="loanCancel">Thôi</button><button class="btn primary" data-act="loan">Vay ${money(CORE.LOAN.amount)}</button></div>` : `<button class="btn" data-act="loanAsk">Vay 50tr</button>`}</div>` : ""}
       ${c.loan ? `<p class="note">Đang nợ ${money(c.loan.repay)}, trả sau ${c.loan.left} tháng.</p>` : ""}
     </section>`;
   }
   // Văn phòng và mức sống: hai lựa chọn riêng, đổi lúc nào cũng được, áp dụng từ kỳ thu tháng kế tiếp.
-  function choiceList(title, list, cur, next, act) {
-    return `<h3 class="sub">${esc(title)}</h3><div class="list">${list.map(o => { const on = (next || cur) === o.id; return `<button class="opt ${on ? "on" : ""}" data-act="${act}" data-id="${o.id}" aria-pressed="${on}"><div class="row-between"><b>${esc(o.name)}</b><b>${o.cost ? cashStr(o.cost) + "/tháng" : "0tr"}</b></div><small>${esc(o.perk)}${next === o.id ? " Áp dụng từ tháng sau." : cur === o.id && next ? " Đang dùng tới hết tháng này." : ""}</small></button>`; }).join("")}</div>`;
+  function choiceList(title, list, cur, next, act, extra) {
+    return `<h3 class="sub">${esc(title)}</h3><div class="list">${list.map(o => { const on = (next || cur) === o.id; return `<button class="opt ${on ? "on" : ""}" data-act="${act}" data-id="${o.id}" aria-pressed="${on}"><div class="row-between"><b>${esc(o.name)}</b><b>${o.cost ? cashStr(o.cost) + "/tháng" : "0tr"}</b></div><small>${esc(o.perk)}${next === o.id ? " Áp dụng từ tháng sau." : cur === o.id && next ? " Đang dùng tới hết tháng này." : ""}</small>${extra ? extra(o) : ""}</button>`; }).join("")}</div>`;
   }
   function contactsHtml() {
     const c = state.career; const rows = [];
@@ -10144,13 +10462,24 @@ window.WP_COPY = {
     return rows.length ? `<h3 class="sub">Mối quen</h3>${rows.join("")}` : "";
   }
   // Tờ chọn việc làm thêm: ba lời mời, mỗi loại một lời; câu chuyện của ngày vừa làm ở trên cùng.
+  function sideWeekLine() {
+    const c = state.career, wk = c.sideWeek || { paid: 0, owed: 0 }, done = state.sideLast && state.sideLast.week && !c.sideDays ? state.sideLast.week : null;
+    const fmt = (days, x) => `${days}/${SJ.daysPerWeek} ngày · ${x.paid ? `+${cashStr(x.paid)}` : "chưa nhận đồng nào"}${x.owed ? ` · bên thuê còn nợ ${cashStr(x.owed)}` : ""}`;
+    return `<p class="side-week"><b>${done ? "Tuần vừa xong" : "Tuần này"}:</b> ${esc(done ? fmt(SJ.daysPerWeek, done) : fmt(c.sideDays, wk))}</p>`;
+  }
   function sheetSide() {
     const c = state.career, offers = state.sideOffers || [], last = state.sideLast, why = sideBlock();
     const hist = name => { const h = c.sideHistory[name]; if (!h) return "Chưa làm với bên này."; const bad = [h.deduct ? `${h.deduct} lần bị trừ` : "", h.late ? `${h.late} lần trả chậm` : "", h.unpaid ? `${h.unpaid} lần bị quịt` : ""].filter(Boolean).join(", "); return `Đã làm ${h.days} ngày${bad ? `: ${bad}` : ", chưa gặp chuyện gì"}.`; };
-    return `<h2 class="h">Đi làm thêm</h2><p class="muted">Mỗi việc một ngày. Đủ ${SJ.daysPerWeek} ngày thì qua một tuần, chi phí tháng vẫn tính như thường. Dừng lúc nào cũng được. Tuần này đã làm ${c.sideDays}/${SJ.daysPerWeek} ngày.</p>
+    return `<h2 class="h">Đi làm thêm</h2><p class="muted">Mỗi việc một ngày. Đủ ${SJ.daysPerWeek} ngày thì qua một tuần, chi phí tháng vẫn tính như thường. Dừng lúc nào cũng được.</p>
+      ${sideWeekLine()}
       ${last ? `<div class="card ${["normal", "minor"].includes(last.outcome) ? "" : "decision"}"><p>${esc(last.story)}</p>${last.learned ? `<p class="pos"><b>${esc(last.learned.text)}</b> Học được kỹ năng: ${esc(C.SKILLS.find(x => x.id === last.learned.skill).name)}.</p>` : ""}${last.newMonth ? `<p class="muted">Sang tháng mới: có khách mới hỏi ở văn phòng.</p>` : ""}</div>` : ""}
       ${why ? `<p class="note">${esc(why)}.</p>` : ""}
       <div class="list">${offers.map(o => { const k = sideKind(o.kind); return `<button class="opt" data-act="side" data-id="${o.kind}" ${why ? "disabled" : ""}><div class="row-between"><b>${esc(o.employer)}</b><b>${cashStr(o.pay)}/ngày</b></div><small>${esc(k.name)}. ${esc(sideEmployer(o.employerId).intro || k.what)}</small><small><i>${esc(sideEmployer(o.employerId).hint || "")}</i></small><small class="muted">${esc(hist(o.employer))} Kinh nghiệm loại việc này: ${c.sideXp[o.kind] || 0} ngày.</small></button>`; }).join("")}</div>`;
+  }
+  // "Chi phí cố định mỗi tháng: 11tr · sinh hoạt Bình thường" (mục 1.13). Nhiều khoản thì ghi thêm số tiền từng khoản.
+  function fixedPart(x, c = state.career) {
+    const name = x.id === "living" ? `sinh hoạt ${(CORE.LIVING.find(l => l.id === c.living) || CORE.LIVING[1]).name}` : x.id === "office" ? `văn phòng ${x.label}` : lc(x.label);
+    return monthlyParts(c).length > 1 ? `${name} ${cashStr(x.amount)}` : name;
   }
   function sheetCareer() {
     const c = state.career; const mi = C.monthInfo(c.month, c.city); const st = stageOf(); const next = C.STAGES[c.stage + 1];
@@ -10162,17 +10491,20 @@ window.WP_COPY = {
         <div><small>Đã làm</small><b>${c.done} đám</b></div>
       </div>
       <div class="card"><div class="row-between"><span class="eyebrow">Cấp ${c.stage + 1}/5</span><span class="small muted">${esc(C.CITIES[c.city].short)} · ${esc(mi.label)}</span></div><h2 class="h">${esc(st.name)}</h2><p class="muted">${esc(st.desc)}${brand ? ` Hướng: <b>${esc(brand.name)}</b>.` : ""}</p>
-        ${next ? `<div class="goal"><div class="row-between"><small class="muted">Để lên ${esc(next.name)}:</small><b class="small">${goalPct(next.goal)}%</b></div><div class="bar thin"><i style="width:${goalPct(next.goal)}%"></i></div>${goalRows(next.goal).map(([t, ok, v]) => `<div class="${ok ? "ok" : ""}"><span>${ok ? "✓" : "○"} ${esc(t)}</span><b>${esc(v)}</b></div>`).join("")}</div>` : `<p class="pos">Cấp cao nhất.</p>`}
+        ${next ? `<div class="goal"><small class="muted">Để lên ${esc(next.name)}:</small>${goalLines(next.goal).map(x => `<div class="${x.ok ? "ok" : ""}"><span>${x.ok ? "✓" : "○"} ${esc(x.text)}</span></div>`).join("")}</div>` : `<p class="pos">Cấp cao nhất.</p>`}
       </div>
-      ${choiceList("Văn phòng", CORE.OFFICES, c.office, c.officeNext, "office")}
+      ${choiceList("Văn phòng", CORE.OFFICES, c.office, c.officeNext, "office", o => officeUnlocks(o).map(u => `<span class="unlock ${u.ok ? "ok" : ""}">${esc(u.text)} <em>${esc(u.miss)}</em></span>`).join(""))}
       ${choiceList("Mức sống", CORE.LIVING, c.living, c.livingNext, "living")}
-      ${c.loan ? `<p class="note">Đang vay: trả ${money(c.loan.repay)} vào đầu tháng thứ ${c.loan.dueMonth} của sự nghiệp (đang ở tháng thứ ${Math.max(1, c.monthNo)}).</p>` : `<button class="btn" data-act="loan">Vay người quen 50tr, trả 60tr sau 3 tháng</button>`}
+      <h3 class="sub">Vay tiền</h3>
+      ${c.loan ? `<p class="note">Đang vay: trả ${money(c.loan.repay)} vào đầu tháng thứ ${c.loan.dueMonth} của sự nghiệp (đang ở tháng thứ ${Math.max(1, c.monthNo)}). Tới hạn không đủ tiền trả là phá sản.</p>`
+        : state.loanAsk ? `<div class="card confirm-box"><p><b>Vay người quen ${money(CORE.LOAN.amount)}?</b> Sau ${CORE.LOAN.months} tháng phải trả ${money(CORE.LOAN.repay)}. Tới hạn mà quỹ không đủ thì phá sản: đa số ca phá sản là vì khoản vay này.</p><div class="row-btns"><button class="btn" data-act="loanCancel">Thôi</button><button class="btn primary" data-act="loan">Vay ${money(CORE.LOAN.amount)}</button></div></div>`
+        : `<button class="btn" data-act="loanAsk">Vay người quen ${money(CORE.LOAN.amount)}, trả ${money(CORE.LOAN.repay)} sau ${CORE.LOAN.months} tháng</button>`}
       ${CORE.receivableTotal(c) ? `<p class="note">Khách còn nợ ${money(CORE.receivableTotal(c))} (chưa phải tiền trong quỹ).</p>` : ""}
       ${CORE.payableTotal(c) ? `<p class="note">Còn phải trả vendor đối tác ${money(CORE.payableTotal(c))}, tới hạn trong vài tuần làm việc tới.</p>` : ""}
       ${contactsHtml()}
       <h3 class="sub">Team</h3>
       <div class="card">${[`<div class="staff">${img(planner().look, "face")}<div><b>${esc(planner().name)}</b><small>Bạn · ${SOLO_AP} lượt/tuần · ${esc(state.me.skills.map(id => C.SKILLS.find(k => k.id === id).name).join(", "))}</small></div><button class="link" data-act="sheet" data-id="skill">Kỹ năng</button></div>`].concat(c.staff.map(s => { const R = roleOf(s.role); return `<div class="staff">${img(staffLook(s.role, s.look || s.id), "face")}<div><b>${esc(s.name)}</b><small>${esc(R.name)} · ${cashStr(salaryOf(s))}/tháng${CORE.onProbation(c, s) ? " · đang thử việc" : ""}</small>${traitLine(s)}</div><button class="link" data-act="askFire" data-id="${s.id}">Cho nghỉ</button></div>`; })).join("")}
-        <small class="muted">Chi phí cố định: ${cashStr(monthlyCost())}/tháng (${monthlyParts(c).map(x => `${x.label.toLowerCase()} ${cashStr(x.amount)}`).join(", ")}).</small>
+        <small class="muted">Chi phí cố định mỗi tháng: ${cashStr(monthlyCost())} · ${monthlyParts(c).map(x => fixedPart(x)).join(" · ")}</small>
         ${!CORE.canHire(c) && c.stage >= CORE.HIRE_GATE.stage ? `<small class="muted">Cần văn phòng nhỏ trở lên mới tuyển được người mới.${c.staff.length ? " Nhân viên hiện tại vẫn ở lại và vẫn nhận lương." : ""}</small>` : rolesOpen(c).length ? (c.staff.length >= st.maxStaff ? `<small class="muted">Đã đủ ${st.maxStaff} nhân viên ở cấp này. Lên cấp để tuyển thêm.</small>` : `${c.staffSeq ? "" : `<small class="muted">Người đầu tiên: chọn một trong ba vai. Coordinator và Planner mở ở lần tuyển sau.</small>`}<div class="list">${rolesOpen(c).map(r => `<button class="opt" data-act="sheet" data-id="cands:${r.id}"><b>Tuyển ${esc(r.name)} · từ ${cashStr(CORE.salaryAt(r.salary, c.stage))}/tháng</b><small>${esc(r.perk)}</small></button>`).join("")}</div><small class="muted">Còn tuyển được ${st.maxStaff - c.staff.length} người ở cấp này. Lương trừ mỗi tháng, kể cả tháng không có đám. Ứng viên đổi mỗi tháng.</small>`) : `<small class="muted">Lên ${esc(C.STAGES[1].name)} mới tuyển được nhân viên.</small>`}
       </div>
       ${branchSection()}
@@ -10224,17 +10556,28 @@ window.WP_COPY = {
   const HAIR = ["#24160f", "#3b2418", "#5a2a2a", "#1a1414", "#8a4a2a"];
   const AODAI_B = ["#c8372d", "#d9577a", "#b23a48", "#c8372d", "#d9577a"];
   const AODAI_G = ["#2c5aa0", "#243a66", "#1f7a78", "#2c5aa0", "#6b4a8a"];
+  const GROOM_TOPS = ["#2f3a5c", "#2f2a3a", "#4a4458", "#3b2a1a"]; // vest chú rể; MC không được trùng (test)
   const CASUAL = ["#f2b8c6", "#8fb3c8", "#f6d36b", "#a8c69f", "#c9a0dc"];
+  // Lông cặp đôi và bố mẹ không trùng với planner (sửa 3.7.0, mục 1.12): trùng thì lấy màu kế tiếp trong danh sách.
+  const meFur = () => planner().look.fur;
+  const furNotMe = (list, i) => { for (let k = 0; k < list.length; k++) { const f = list[(i + k) % list.length]; if (f[0] !== meFur()) return f; } return list[i]; };
+  const PARENT_ALT = [["silver", "solid"], ["cream", "solid"], ["blue", "solid"], ["choco", "socks"], ["white", "solid"]];
+  function famLook(id) {
+    const base = SP.PEOPLE[id]; if (!base || base.fur !== meFur()) return base;
+    const used = ["mom_bride", "dad_bride", "mom_groom", "dad_groom"].filter(x => x !== id).map(x => SP.PEOPLE[x].fur);
+    const [fur, pattern] = PARENT_ALT.find(([f]) => f !== meFur() && !used.includes(f)) || PARENT_ALT[0];
+    return { ...base, fur, pattern: base.pattern === "calico" ? "calico" : pattern };
+  }
   function CL(kind) {
-    const base = SP.PEOPLE[kind]; const o = state.project; if (!o) return base;
+    const base = SP.PEOPLE[kind]; const o = state.project; if (!o) return famLook(kind) || base;
     const h = hash(o.id); const pickc = (arr, k) => arr[Math.abs(h >> k) % arr.length];
-    const isB = kind.startsWith("bride"); const [fur, pattern] = pickc(isB ? FUR_B : FUR_G, isB ? 1 : 3);
+    const isB = kind.startsWith("bride"); const list = isB ? FUR_B : FUR_G; const [fur, pattern] = furNotMe(list, Math.abs(h >> (isB ? 1 : 3)) % list.length);
     const look = { ...base, fur, pattern };
     if (kind === "bride_engage") look.top = pickc(AODAI_B, 5);
     if (kind === "groom_engage") { look.top = pickc(AODAI_G, 7); look.hat = look.top; }
     if (kind === "bride_casual") look.top = pickc(CASUAL, 9);
     if (kind === "groom_casual") { const bi = (h >> 9) % CASUAL.length; let gi = (h >> 11) % CASUAL.length; if (gi === bi) gi = (gi + 1) % CASUAL.length; look.top = CASUAL[gi]; }
-    if (kind === "groom") { look.top = pickc(["#2f3a5c", "#2f2a3a", "#4a4458", "#3b2a1a"], 13); look.bottom = look.top; }
+    if (kind === "groom") { look.top = pickc(GROOM_TOPS, 13); look.bottom = look.top; }
     return look;
   }
   function weekText(w) {
@@ -10264,6 +10607,8 @@ window.WP_COPY = {
   //   Đồng hồ sự nghiệp bắt đầu từ 0: tháng đầu tính phí khi vào tuần làm việc kế tiếp.
   //   Đám đang làm dở: không tạo cọc khách/vendor giả. Đám đó quyết toán kiểu cũ (lời cộng vào quỹ khi xong); dòng tiền mới áp dụng từ hợp đồng kế tiếp.
   const MIGRATE_FROM = ["3.5.1", "3.6.0"];
+  // Bản cùng cấu trúc lưu: đọc thẳng, không chuyển đổi. 3.7.1–3.7.3 chỉ sửa giao diện; trường mới (warned, markSrc, sideWeek) đều có giá trị mặc định.
+  const SAME_SHAPE = ["3.7.0"];
   const OFFICE_BY_OLD_STAGE = ["home", "cowork", "small", "studio", "studio"];
   function migrate(old, from) {
     const s = { ...fresh(), ...old, sheet: null };
@@ -10282,7 +10627,7 @@ window.WP_COPY = {
   function restore(p) {
     if (!p || !p.s) return null;
     let s = null;
-    if (p.v === BASE.version) { s = { ...fresh(), ...p.s, sheet: null }; CORE.initCareer(s.career); if (s.career.seed == null) s.career.seed = s.seed; }
+    if (p.v === BASE.version || SAME_SHAPE.includes(p.v)) { s = { ...fresh(), ...p.s, sheet: null }; CORE.initCareer(s.career); if (s.career.seed == null) s.career.seed = s.seed; }
     else if (MIGRATE_FROM.includes(p.v)) s = migrate(p.s, p.v);
     if (!s) return null;
     if (s.project) { D = buildProject(s.project, s.career.staff, s.me ? s.me.skills : []); TIME = D.config.time; } else { D = BASE; TIME = CFG.time; }
@@ -10380,7 +10725,7 @@ window.WP_COPY = {
     if (CORE.useVendorContact(state.career, id)) { state.contactDisc[id] = true; log(`Mối quen với ${v.name}: hoá đơn giảm 5% cho đám này.`, "good"); }
     { const sc = CORE.vendorSurchargeFor(state.career, v); if (sc) { (state.surcharge = state.surcharge || {})[id] = sc; state.career.vendorSurcharge = null; log(`${v.name} tính thêm ${sc}% vì lần trước bạn không giữ quan hệ.`, "bad"); } } // dùng đúng một lần
     if (isLate(c)) state.flags[`rush_${c.id}`] = true;
-    log(`Chốt ${c.label.toLowerCase()}: ${v.name}${isLate(c) ? " (đặt gấp, +${Math.round(TIME.rushFee * 100)}% giá)" : ""}.`, isLate(c) ? "bad" : "good");
+    log(`Chốt ${lower(c.label)}: ${v.name}${isLate(c) ? " (đặt gấp, +${Math.round(TIME.rushFee * 100)}% giá)" : ""}.`, isLate(c) ? "bad" : "good");
     visit(id);
   }
   function research(id) {
@@ -10409,7 +10754,7 @@ window.WP_COPY = {
     if (flag(a.flag)) return "Đã xong";
     if (state.week < a.from) return `Mở tuần ${a.from}`;
     if (state.week > a.to) return "Đã quá hạn";
-    if (a.requires && !state.selectedVendors[a.requires]) return `Cần chốt ${getCat(a.requires).label.toLowerCase()} trước`;
+    if (a.requires && !state.selectedVendors[a.requires]) return `Cần chốt ${lower(getCat(a.requires).label)} trước`;
     if (state.ap < (a.cost || 1)) return `Cần ${a.cost || 1} lượt`;
     const m = actionMoney(a); if (m && state.career.cash < m) return `Thiếu ${cashStr(m - state.career.cash)} để đi`;
     return "";
@@ -10426,7 +10771,7 @@ window.WP_COPY = {
     if (why) { state.nudge = `task:${id}`; return; }
     if (a.special === "concept") { state.sheet = { type: "concept", pick: state.selectedConcept || "modern" }; return; }
     state.ap -= a.cost || 1; state.flags[a.flag] = true;
-    { const m = actionMoney(a); if (m) { CORE.applyActionCost(state.career, state.fin, a.id, m, a.title); state.extraCost += m; addExtra("Đi gặp, khảo sát, thử món", m); } } // chỉ trừ khi việc thực sự được làm
+    { const m = actionMoney(a); if (m) { CORE.applyActionCost(state.career, state.fin, a.id, m, a.title); state.extraCost += m; addExtra(a.title, m); } } // chỉ trừ khi việc thực sự được làm; ghi đúng tên việc đã làm (mục 1.7)
     state.coupleScore += a.couple || 0; state.familyScore += a.family || 0;
     if (id === "ceremony_plan" && fxNow("ceremonyFamily")) { const d = fxNow("ceremonyFamily"); state.familyScore += d; state.ledger.push({ label: "Planner chốt trình tự nghi lễ", c: 0, f: d }); if (d < 0) state.career.staff.forEach(s => revealCons(s, ["ceremonyFamily"])); } // planner hiểu nghi lễ / lệch ý hai họ
     if (["decor_prep", "final_check", "ceremony_plan", "meet_family"].includes(id)) state.career.staff.forEach(s => revealCons(s, [{ decor_prep: "decorAP", final_check: "finalAP", ceremony_plan: "ceremonyAP", meet_family: "meetFamilyAP" }[id]]));
@@ -10453,7 +10798,7 @@ window.WP_COPY = {
   }
   function wishBlock(w) {
     if (state.flags[`wish_${w.id}`]) return "Đã đưa vào kế hoạch";
-    if (w.needs && !state.selectedVendors[w.needs]) return `Cần chốt ${getCat(w.needs).label.toLowerCase()} trước`;
+    if (w.needs && !state.selectedVendors[w.needs]) return `Cần chốt ${lower(getCat(w.needs).label)} trước`;
     if (state.ap < 1) return "Cần 1 lượt";
     return "";
   }
@@ -10465,9 +10810,9 @@ window.WP_COPY = {
     const w = getWish(id); const why = wishBlock(w);
     if (why) { state.nudge = `wish:${id}`; return; }
     state.ap -= 1; state.flags[`wish_${id}`] = true; state.wishMode[id] = w.cost ? mode : "free";
-    if (w.cost && mode === "client") { const m = wishMarkup(w); state.extraCost -= m; addExtra(`${w.title} (khách trả, agency ăn chênh)`, -m); if (state.fin) state.fin.extraDue += m; } // khách trả cùng đợt cuối
-    if (w.cost && mode === "gift") { state.extraCost += w.cost; addExtra(`${w.title} (agency tặng)`, w.cost); state.grievances = Math.max(0, state.grievances - 0.5); projCash(-w.cost, "extra", `${w.title} (agency tặng)`); }
-    log(`Đưa vào kế hoạch: ${w.title}${w.cost ? (mode === "client" ? " (khách trả)" : ` (agency tặng ${money(w.cost)})`) : ""}.`, "good");
+    if (w.cost && mode === "client") { const m = wishMarkup(w); state.extraCost -= m; addExtra(voice(`${w.title} (khách trả, agency ăn chênh)`), -m); if (state.fin) state.fin.extraDue += m; } // khách trả cùng đợt cuối
+    if (w.cost && mode === "gift") { state.extraCost += w.cost; addExtra(voice(`${w.title} (agency tặng)`), w.cost); state.grievances = Math.max(0, state.grievances - 0.5); projCash(-w.cost, "extra", `${w.title} (agency tặng)`); }
+    log(voice(`Đưa vào kế hoạch: ${w.title}${w.cost ? (mode === "client" ? " (khách trả)" : ` (agency tặng ${money(w.cost)})`) : ""}.`), "good");
     toast(`Đã thêm: ${w.title}${w.cost ? (mode === "client" ? ` · +${money(wishMarkup(w))}` : ` · −${money(w.cost)}`) : ""}`, "good");
   }
   const wishMult = id => state.wishMode[id] === "client" ? 0.6 : 1;
@@ -10509,7 +10854,7 @@ window.WP_COPY = {
       if (state.selectedVendors[c.id]) return;
       const cheapest = D.vendors.filter(v => v.category === c.id).sort((a, b) => a.price - b.price)[0];
       state.selectedVendors[c.id] = cheapest.id; state.flags[`fallback_${c.id}`] = true;
-      log(`Không chốt ${c.label.toLowerCase()} kịp: phải đặt khẩn ${cheapest.name}.`, "bad");
+      log(`Không chốt ${lower(c.label)} kịp: phải đặt khẩn ${cheapest.name}.`, "bad");
       if (state.fin) CORE.bookEmergency(state.career, state.fin, c.id, cheapest.id, E.vendorCost(D, state, c.id), cheapest.name);
     });
     if (state.fin && !state.fin.dayof) {
@@ -10593,10 +10938,13 @@ window.WP_COPY = {
     const chance = successChance(cr, o);
     const success = chance >= 100 || roll(`opt:${item.id}:${idx}`) < chance;
     if (!success) { fx.couple = (fx.couple || 0) - 3; fx.family = (fx.family || 0) - 3; }
+    // Rủi ro còn lại sau khi chọn (sự cố thời tiết, phương án mưa): tung một lần, trúng thì trừ thêm.
+    const ar = o.afterRisk; const afterHit = !!ar && roll(`after:${item.id}:${idx}`) < ar.p;
+    if (afterHit) { fx.couple = (fx.couple || 0) + (ar.couple || 0); fx.family = (fx.family || 0) + (ar.family || 0); }
     let recovered = 0;
     const vendorFault = D.categories.some(c => c.id === cr.category);
     if (fx.cost) {
-      state.crisisCost += fx.cost; projCash(-fx.cost, "crisis", `Xử lý sự cố: ${cr.title.toLowerCase()}`); // trừ tiền mặt ngay
+      state.crisisCost += fx.cost; projCash(-fx.cost, "crisis", `Xử lý sự cố: ${lower(cr.title)}`); // trừ tiền mặt ngay
       if (vendorFault && flag("contractChecked")) { recovered = fx.cost * 0.5; state.recovered += recovered; if (state.fin) state.fin.recoverDue += recovered; } // vendor đền: nhận lúc quyết toán
     }
     if (fx.clientPays) state.clientCharged += fx.clientPays;
@@ -10608,10 +10956,10 @@ window.WP_COPY = {
     }
     const tone = kind === "prep" ? "good" : kind === "absorb" ? "bad" : success ? "ok" : "fail";
     let mark = null;
-    if (o.mark && !state.marks.includes(o.mark.id)) { state.marks.push(o.mark.id); mark = o.mark.text; }
-    item.out = { id: o.id, kind, recovered, success, chance, tone, fx, mark };
-    state.ledger.push({ label: `Sự cố: ${cr.title.toLowerCase()}`, c: fx.couple || 0, f: fx.family || 0 });
-    log(`${cr.title}: ${o.title}${success ? "" : " (không thành)"}.`, tone === "good" || tone === "ok" ? "info" : "bad");
+    if (o.mark && !state.marks.includes(o.mark.id)) { state.marks.push(o.mark.id); mark = o.mark.text; (state.markSrc = state.markSrc || {})[o.mark.id] = `${cr.title}: ${voice(o.title).toLowerCase()}`; }
+    item.out = { id: o.id, kind, recovered, success, chance, tone, fx, mark, afterHit, afterText: afterHit ? ar.text : null };
+    state.ledger.push({ label: `Sự cố: ${lower(cr.title)}`, c: fx.couple || 0, f: fx.family || 0 });
+    log(`${cr.title}: ${o.title}${success ? "" : " (không thành)"}.${afterHit ? ` ${ar.text}` : ""}`, tone === "good" || tone === "ok" ? "info" : "bad");
     state.lastResolved = state.queue.length - 1;
     advanceEvent();
   }
@@ -10632,15 +10980,15 @@ window.WP_COPY = {
     if (item.type === "discount") {
       const half = Math.round(item.pct / 2);
       return [
-        { id: "accept", title: `Đồng ý giảm ${item.pct}%`, note: `Mất ${money(fee * item.pct / 100)}, khách thấy được tôn trọng`, feePct: item.pct, c: 3, f: 3, reply: "Cảm ơn bạn đã nhận trách nhiệm. Tụi mình sẽ giới thiệu bạn bè." },
-        { id: "negotiate", title: `Thương lượng xuống ${half}%`, note: soft ? "Khách còn khá vui, dễ đồng ý" : "Khách đang bực, mặc cả lúc này dễ mất lòng", feePct: half, c: soft ? 0 : -4, f: soft ? 0 : -4, reply: soft ? "Ừ, vậy cũng được." : "Thôi được, nhưng tụi mình hơi buồn đó." },
-        { id: "refuse", title: "Giữ nguyên phí", note: "Giữ đủ tiền, rủi ro bị review xấu", feePct: 0, c: -8, f: -6, reply: "Vậy là hết sự cố cũng không ai chịu sao…" }
+        { id: "accept", title: `Đồng ý giảm ${item.pct}% ${feeName()}`, note: `Mất ~${cashStr(fee * item.pct / 100)}, khách thấy được tôn trọng`, feePct: item.pct, c: 3, f: 3, reply: "Cảm ơn bạn đã nhận trách nhiệm. Tụi mình sẽ giới thiệu bạn bè." },
+        { id: "negotiate", title: `Thương lượng xuống ${half}%`, note: `Mất ~${cashStr(fee * half / 100)}. ${soft ? "Khách còn khá vui, dễ đồng ý" : "Khách đang bực, mặc cả lúc này dễ mất lòng"}`, feePct: half, c: soft ? 0 : -4, f: soft ? 0 : -4, reply: soft ? "Ừ, vậy cũng được." : "Thôi được, nhưng tụi mình hơi buồn đó." },
+        { id: "refuse", title: `Giữ nguyên ${feeName()}`, note: "Giữ đủ tiền, rủi ro bị review xấu", feePct: 0, c: -8, f: -6, reply: "Vậy là hết sự cố cũng không ai chịu sao…" }
       ];
     }
     const x = item.amount;
     return [
-      { id: "absorb", title: `Agency chịu ${money(x)}`, note: "Mất tiền, đổi lại thiện cảm", pay: x, c: 2, f: 2, reply: "Bạn làm việc sòng phẳng ghê." },
-      { id: "split", title: `Chia đôi, agency chịu ${money(x / 2)}`, note: "Hai bên cùng nhường", pay: x / 2, c: 0, f: 0, reply: "Ok, chia đôi cho công bằng." },
+      { id: "absorb", title: voice(`Agency chịu ${money(x)}`), note: "Mất tiền, đổi lại thiện cảm", pay: x, c: 2, f: 2, reply: "Bạn làm việc sòng phẳng ghê." },
+      { id: "split", title: voice(`Chia đôi, agency chịu ${money(x / 2)}`), note: "Hai bên cùng nhường", pay: x / 2, c: 0, f: 0, reply: "Ok, chia đôi cho công bằng." },
       { id: "insist", title: "Yêu cầu khách trả đủ", note: "Đúng hợp đồng nhưng khách khó chịu", pay: 0, c: -5, f: -4, reply: "Lỗi đâu phải của tụi mình mà…" }
     ];
   }
@@ -10650,7 +10998,7 @@ window.WP_COPY = {
     const o = settlementOptions(item).find(x => x.id === id); if (!o) return;
     if (item.type === "discount") state.feeDiscountPct = o.feePct + (state.feeCutPct || 0); else { state.disputePaid += o.pay; if (o.pay) projCash(-o.pay, "dispute", "Gánh phát sinh khách không trả"); }
     state.coupleScore += o.c; state.familyScore += o.f; state.settlementOutcome = o;
-    state.ledger.push({ label: `Quyết toán: ${o.title.toLowerCase()}`, c: o.c, f: o.f });
+    state.ledger.push({ label: `Quyết toán: ${lower(o.title)}`, c: o.c, f: o.f });
     log(`Quyết toán: ${o.title}.`, o.c >= 0 ? "good" : "bad");
   }
   function nextSettlement() {
@@ -10757,10 +11105,10 @@ window.WP_COPY = {
       const st = (id, look, x, y, o = {}) => s.add(id, look, x, y, { still: true, wander: false, ...o });
       st("groom", { ...CL("groom_engage"), turn: 1 }, 87, 89, { mood: done === 6 ? "happy" : null });
       st("bride", { ...CL("bride_engage"), turn: -1 }, 105, 89, { mood: "happy" });
-      st("mom_groom", { ...SP.PEOPLE.mom_groom, turn: 1 }, 42, 91, { mood: done === 6 ? "happy" : null });
-      st("dad_groom", { ...SP.PEOPLE.dad_groom, turn: 1 }, 62, 97);
-      st("mom_bride", { ...SP.PEOPLE.mom_bride, turn: -1 }, 132, 97, { mood: done === 6 ? "happy" : null });
-      st("dad_bride", { ...SP.PEOPLE.dad_bride, turn: -1 }, 152, 91, { mood: "happy" });
+      st("mom_groom", { ...famLook("mom_groom"), turn: 1 }, 42, 91, { mood: done === 6 ? "happy" : null });
+      st("dad_groom", { ...famLook("dad_groom"), turn: 1 }, 62, 97);
+      st("mom_bride", { ...famLook("mom_bride"), turn: -1 }, 132, 97, { mood: done === 6 ? "happy" : null });
+      st("dad_bride", { ...famLook("dad_bride"), turn: -1 }, 152, 91, { mood: "happy" });
       st("v_mc", vlook("mc"), 174, 93);
       st("v_photo", vlook("photo"), 182, 142);
       st("me", me, 18, 97, { speed: 26 });
@@ -10778,12 +11126,13 @@ window.WP_COPY = {
     } else if (key.startsWith("ev-wed") || key === "review") {
       const bucket = key === "review" ? 2 : Number(key.split("-")[2] || 2);
       const stage = { x0: 70, x1: 122, y0: 50, y1: 58 }, floor = { x0: 10, x1: 182, y0: 70, y1: 116 };
-      s.add("bride", CL("bride"), 90, 54, { zone: stage, speed: 6 });
-      s.add("groom", CL("groom"), 104, 54, { zone: stage, speed: 6 });
-      s.add("v_mc", vlook("mc"), 76, 56, { zone: stage, speed: 8 });
-      s.add("mom_bride", SP.PEOPLE.mom_bride, 30, 76, { still: true });
-      s.add("mom_groom", SP.PEOPLE.mom_groom, 162, 76, { still: true });
-      s.add("dad_bride", SP.PEOPLE.dad_bride, 44, 78, { still: true });
+      // Cô dâu bên trái, chú rể bên phải, đứng yên dưới cổng hoa; MC đứng cạnh, cầm micro (sửa 3.7.0, mục 1.12).
+      s.add("bride", { ...CL("bride"), turn: 1 }, 90, 54, { still: true, wander: false });
+      s.add("groom", { ...CL("groom"), turn: -1 }, 104, 54, { still: true, wander: false });
+      s.add("v_mc", { ...vlook("mc"), turn: 1 }, 74, 56, { still: true, wander: false });
+      s.add("mom_bride", famLook("mom_bride"), 30, 76, { still: true });
+      s.add("mom_groom", famLook("mom_groom"), 162, 76, { still: true });
+      s.add("dad_bride", famLook("dad_bride"), 44, 78, { still: true });
       for (let i = 0; i < [3, 6, 10][bucket]; i++) s.add(`g${i}`, SP.guest(i + 3), [24, 38, 56, 70, 124, 138, 156, 170, 50, 142][i], [100, 102, 72, 104, 104, 72, 102, 100, 108, 108][i], { still: true });
       s.add("me", me, 96, 96, { zone: floor, speed: 28 });
       s.add("v_photo", vlook("photo"), 80, 80, { zone: floor, speed: 24 });
@@ -10842,14 +11191,15 @@ window.WP_COPY = {
   function speakerLook(who) {
     if (who === "bride") return state.phase === "event" ? (state.stage === "WEDDING" ? CL("bride") : CL("bride_engage")) : CL("bride_casual");
     if (who === "groom") return state.phase === "event" ? (state.stage === "WEDDING" ? CL("groom") : CL("groom_engage")) : CL("groom_casual");
+    if (["mom_bride", "dad_bride", "mom_groom", "dad_groom"].includes(who)) return famLook(who);
     if (SP.PEOPLE[who]) return SP.PEOPLE[who];
     if (who.startsWith("v_")) return SP.VENDOR_LOOKS[E.vendorFor(D, state, who.slice(2))?.id] || SP.PEOPLE.staff;
     return SP.PEOPLE.staff;
   }
   function effectChips(fx, who) {
     const out = [];
-    if (fx.cost) out.push(`<span class="neg">Agency chi ${money(fx.cost)}</span>`);
-    if (fx.clientPays) out.push(`<span class="gold">Khách trả thêm ${money(fx.clientPays)}</span>`);
+    if (fx.cost) out.push(`<span class="neg">${esc(voice(`Agency chi ${cashStr(fx.cost)}`))}</span>`);
+    if (fx.clientPays) out.push(`<span class="gold">Khách trả thêm ${cashStr(fx.clientPays)}</span>`);
     const mood = moodChips(fx, who); if (mood) out.push(mood);
     return out.join("") || `<span>Không tốn gì</span>`;
   }
@@ -10860,6 +11210,7 @@ window.WP_COPY = {
     const sum = D.crises.reduce((s, c) => s + E.crisisChance(D, state, c).pct, 0) / 100;
     return sum >= 3 ? ["hot", "Cao"] : sum >= 1.5 ? ["warm", "Vừa"] : ["cool", "Thấp"];
   }
+  // Ô Lời/Lỗ: trong ngày cưới tụt dần theo sự cố; ở Tổng kết là đúng con số đã quyết toán (đã trừ phần khách giữ lại, phí phục vụ luxury…), khớp dòng "Lãi dự án".
   function hud() {
     const p = state.phase;
     if (p === "title" || p === "setup" || p === "over") return "";
@@ -10870,10 +11221,12 @@ window.WP_COPY = {
     return `<header class="hud"><div class="hud-in">
       <div class="hud-who">${img(planner().look, "hud-face")}<div><b>${esc(label)}</b><small>${esc(p === "hub" ? `${planner().name} · ${stageOf().name}` : state.project ? state.project.couple : "")}</small></div></div>
       ${p === "prep" ? `<button class="pips" data-act="sheet" data-id="time" aria-label="Còn ${state.ap} trên ${total} lượt">${"○".repeat(Math.min(used, total))}${"●".repeat(Math.max(0, state.ap))}<small>${state.ap} lượt</small></button>` : ""}
-      ${m && p !== "prep" ? `<button class="coin ${m.profit < 0 ? "neg" : ""}" data-act="sheet" data-id="money">${m.profit < 0 ? "Lỗ" : "Lời"} ${money(Math.abs(m.profit))}</button>` : ""}
+      ${m && p !== "prep" ? (() => { const pf = p === "review" && state.result ? state.result.profit : m.profit; return `<button class="coin ${pf < 0 ? "neg" : ""}" data-act="sheet" data-id="money">${pf < 0 ? "Lỗ" : "Lời"} ${money(Math.abs(pf))}</button>`; })() : ""}
       <button class="icon-btn" data-act="menu" aria-label="Menu">≡</button>
     </div>
-    ${need ? `<button class="need" data-act="sheet" data-id="book">${need.who ? img(speakerLook(need.who), "face") : `<span class="need-mark ${need.soft ? "soft" : ""}">!</span>`}<span>${esc(need.text)}</span><span class="chev">›</span></button>` : ""}</header>`;
+    ${need ? (need.short
+      ? `<button class="need one" data-act="sheet" data-id="book"><span class="need-mark soft">!</span><span>${esc(need.title)}${need.hint ? ` · ${esc(need.hint.replace(/\.$/, ""))}` : ""}</span><span class="chev">›</span></button>`
+      : `<button class="need" data-act="sheet" data-id="book">${need.who ? img(speakerLook(need.who), "face") : `<span class="need-mark ${need.soft ? "soft" : ""}">!</span>`}<span>${esc(need.text)}${need.hint ? `<small class="need-hint">${esc(need.hint)}</small>` : ""}</span><span class="chev">›</span></button>`) : ""}</header>`;
   }
 
   // Sự nghiệp kết thúc: phá sản theo kỳ hoặc không trả nổi khoản vay tới hạn.
@@ -10917,18 +11270,18 @@ window.WP_COPY = {
       <label class="field"><span>Tên planner</span><input id="me-name" type="text" maxlength="16" autocomplete="off" placeholder="VD: Thanh" value="${esc(s.name)}"></label>`;
     if (s.step === 1) body = `<h2 class="h">Chọn 1 kỹ năng khởi đầu</h2><p class="muted">Mỗi lần lên cấp bạn học thêm 1 kỹ năng. Tới Agency là có 5.</p>
       <div class="list">${C.SKILLS.map(k => `<button class="opt ${s.skill === k.id ? "on" : ""}" data-act="setupSkill" data-id="${k.id}" aria-pressed="${s.skill === k.id}"><b>${esc(k.name)}</b><small>${esc(k.note)}</small></button>`).join("")}</div>`;
-    if (s.step === 2) body = `<h2 class="h">Bắt đầu vào mùa nào?</h2>
+    if (s.step === 2) body = `<h2 class="h">Bắt đầu vào mùa nào?</h2><p class="muted">Tháng trong game là tháng dương lịch. Riêng tháng cô hồn là tháng 7 âm lịch, game đặt vào tháng 8 dương.</p>
       <div class="list">${C.SEASONS.map(x => `<button class="opt ${s.month === x.month ? "on" : ""}" data-act="setupMonth" data-id="${x.month}" aria-pressed="${s.month === x.month}"><b>${esc(x.name)}</b><small>${esc(x.note)}</small></button>`).join("")}</div>`;
     if (s.step === 3) body = `<h2 class="h">Khởi nghiệp ở đâu?</h2>
-      <div class="list">${Object.values(C.CITIES).map(x => `<button class="opt ${s.city === x.id ? "on" : ""}" data-act="setupCity" data-id="${x.id}" aria-pressed="${s.city === x.id}"><b>${esc(x.name)}</b><small>${esc(x.pitch)}</small><small>Cưới xa gần: ${esc(x.dests.join(", "))}.</small></button>`).join("")}</div>
+      <div class="list">${Object.values(C.CITIES).map(x => `<button class="opt ${s.city === x.id ? "on" : ""}" data-act="setupCity" data-id="${x.id}" aria-pressed="${s.city === x.id}"><b>${esc(x.name)}</b><small>${esc(x.pitch)}</small><small>Cưới xa gần: ${esc(x.dests.join(", "))}.</small>${C.transitionMonths(x.id).map(m => `<small>Tháng ${m} là tháng chuyển mùa: vừa vào mùa cưới, vừa còn mưa. Khách hỏi nhiều và vendor đắt, nhưng tiệc ngoài trời vẫn có rủi ro mưa.</small>`).join("")}</button>`).join("")}</div>
       <p class="muted">Lên tới Agency thì có khách book cưới ở nước ngoài: ${esc(C.OVERSEAS.join(", "))}.</p>`;
     return `<section class="stack">${dots}${body}
-      <div class="row-btns">${s.step ? `<button class="btn" data-act="setupBack">Quay lại</button>` : ""}<button id="setup-next" class="btn primary" data-act="${last ? "startCareer" : "setupNext"}" ${setupReady() ? "" : "disabled"}>${last ? "Bắt đầu" : "Tiếp"}</button></div>
+      <div class="row-btns setup-nav">${s.step ? `<button class="btn" data-act="setupBack">Quay lại</button>` : ""}<button id="setup-next" class="btn primary" data-act="${last ? "startCareer" : "setupNext"}" ${setupReady() ? "" : "disabled"}>${last ? "Bắt đầu" : "Tiếp"}</button></div>
     </section>`;
   }
   function sheetSkill() {
     const c = state.career;
-    return `<h2 class="h">${c.skillPoints ? "Học kỹ năng mới" : "Kỹ năng của bạn"}</h2><p class="muted">${c.skillPoints ? `Còn ${c.skillPoints} lượt học. Chọn kỹ năng hợp với hướng đi của agency.` : "Lên cấp tiếp theo để học thêm."}</p>
+    return `<h2 class="h">${c.skillPoints ? "Học kỹ năng mới" : "Kỹ năng của bạn"}</h2><p class="muted">${c.skillPoints ? `Còn ${c.skillPoints} lượt học. Chọn kỹ năng hợp với hướng đi của ${subjectWord() === "agency" ? "agency" : "bạn"}.` : "Lên cấp tiếp theo để học thêm."}</p>
       <div class="list">${C.SKILLS.map(k => { const own = hasSkill(k.id); return `<button class="opt ${own ? "on" : c.skillPoints ? "" : "locked"}" data-act="learnSkill" data-id="${k.id}" ${own || !c.skillPoints ? "disabled" : ""}><b>${own ? "✓ " : ""}${esc(k.name)}</b><small>${esc(k.note)}</small></button>`; }).join("")}</div>`;
   }
 
@@ -11012,21 +11365,32 @@ window.WP_COPY = {
   const numsLink = () => `<button class="link nums" data-act="nums">${state.showNums ? "Ẩn con số" : "Xem con số"}</button>`;
 
   // Who needs the planner most right now: a late booking, a broken taboo, an upset person or a vendor at risk.
+  const PREP_HINT = { weather: "phương án mưa" };
+  // Đã làm xong việc chuẩn bị mở được cách xử lý sẵn cho sự cố này chưa.
+  const cr_ready = cr => cr.options.some(o => (o.requires || []).length && (o.requires || []).every(q => !q.flag || flag(q.flag)));
   function needLine() {
     const w = state.week; const dayof = state.project.type === "dayof"; const sat = moodNow();
     const cw = coupleVoice(), fw = familyVoice();
     const low = sat.couple <= sat.family ? [cw, sat.couple] : [fw, sat.family];
     const late = dayof ? null : D.categories.find(c => !state.selectedVendors[c.id] && c.deadline < w);
-    if (late) return { who: null, text: `Chưa chốt ${late.label.toLowerCase()}, đã trễ hạn. Vendor tốt đang kín lịch dần.` };
+    if (late) return { who: null, text: `Chưa chốt ${lower(late.label)}, đã trễ hạn. Vendor tốt đang kín lịch dần.` };
     const taboo = D.wishes.find(x => x.kind === "taboo" && state.revealed.includes(x.id) && tabooBroken(x));
-    if (taboo) return { who: momentActor(taboo), text: `${whoName(momentActor(taboo))} sẽ phật ý: ${taboo.title.toLowerCase()}.` };
+    if (taboo) return { who: momentActor(taboo), text: `${whoName(momentActor(taboo))} sẽ phật ý: ${lower(taboo.title)}.` };
     if (moodBand(low[1]) === 4) return { who: low[0], text: moodLine(low[0], low[1]) };
-    const risks = riskStatus().rows.filter(r => r.ok).sort((a, b) => b.pct - a.pct); const top = risks[0];
-    const riskNeed = r => ({ soft: true, who: D.categories.some(c => c.id === r.c.category) ? `v_${r.c.category}` : null, text: (COPY.risk[r.c.id] || r.c.title).split(";")[0].replace(/\.$/, "") + "." });
+    // Cảnh báo rủi ro (Đợt 2): mỗi sự cố chỉ cảnh báo một lần cho cả dự án. Tuần đầu hiện đủ; từ tuần sau thu lại một dòng.
+    // Kèm việc chuẩn bị giúp xử lý được; đã làm việc đó thì thôi cảnh báo.
+    const prepFor = cr => D.actions.find(a => cr.options.some(o => (o.requires || []).some(q => q.flag && (a.flag === q.flag || (a.flags || []).includes(q.flag)))));
+    const risks = riskStatus().rows.filter(r => r.ok && !(prepFor(r.c) && cr_ready(r.c))).sort((a, b) => b.pct - a.pct); const top = risks[0];
+    const riskNeed = r => {
+      const warned = (state.warned = state.warned || {}); if (warned[r.c.id] == null) warned[r.c.id] = w;
+      const a = prepFor(r.c); const hint = a ? `${a.title} để có ${PREP_HINT[r.c.id] || "cách xử lý sẵn"}.` : "";
+      const text = (COPY.risk[r.c.id] || r.c.title).split(";")[0].replace(/\.$/, "") + ".";
+      return { soft: true, who: D.categories.some(c => c.id === r.c.category) ? `v_${r.c.category}` : null, text, hint, short: warned[r.c.id] < w, title: r.c.title };
+    };
     if (top && top.pct >= 35) return riskNeed(top);
     if (moodBand(low[1]) === 3) return { who: low[0], text: moodLine(low[0], low[1]) };
     const due = D.actions.find(a => isContracted(a.id) && a.to === w && a.from <= w && !flag(a.flag));
-    if (due) return { who: null, text: `Bạn đã hứa "${due.title.toLowerCase()}" trong tuần này.` };
+    if (due) return { who: null, text: `Bạn đã hứa "${lower(due.title)}" trong tuần này.` };
     if (top && top.pct >= 20) return riskNeed(top);
     return { who: low[0], text: moodLine(low[0], low[1]) };
   }
@@ -11080,7 +11444,7 @@ window.WP_COPY = {
     if (!c.loan) opts.push(["loan", "Vay người quen 50tr", "Có tiền ngay, ba tháng sau phải trả 60tr.", `<span class="neg">Trả 60tr sau 3 tháng</span>`]);
     const room = CORE.advanceRoom(f), adv = Math.min(Math.ceil(sf.short), room);
     if (room > 0) opts.push(["advance", `Xin khách ứng thêm ${money(adv)}`, `Hai họ không vui vì bị hỏi tiền sát ngày. Khoản này trừ vào đợt cuối, nên khách chỉ ứng tối đa phần họ còn phải trả (${money(room)}). Mỗi đám chỉ xin được một lần.${adv < Math.ceil(sf.short) ? ` Vẫn còn thiếu ${money(Math.ceil(sf.short) - adv)}.` : ""}`, `<span class="neg">Hai họ phật ý</span>`]);
-    opts.push(["drop", drops.length ? `Không trả ${drops.map(r => r.label.toLowerCase()).join(", ")}` : "Đành chịu âm quỹ", drops.length ? "Vendor không được trả đủ sẽ không phục vụ: sự cố của hạng mục đó chắc chắn xảy ra trong ngày cưới. Mất luôn tiền cọc." : "Không còn khoản nào bỏ được. Quỹ sẽ âm sau khi trả.", `<span class="neg">${drops.length ? "Sự cố chắc chắn xảy ra" : "Quỹ âm"}</span>`]);
+    opts.push(["drop", drops.length ? `Không trả ${drops.map(r => lower(r.label)).join(", ")}` : "Đành chịu âm quỹ", drops.length ? "Vendor không được trả đủ sẽ không phục vụ: sự cố của hạng mục đó chắc chắn xảy ra trong ngày cưới. Mất luôn tiền cọc." : "Không còn khoản nào bỏ được. Quỹ sẽ âm sau khi trả.", `<span class="neg">${drops.length ? "Sự cố chắc chắn xảy ra" : "Quỹ âm"}</span>`]);
     return `<div class="card decision ${state.needDecision ? "flash" : ""}" id="decision"><div class="row-between"><span class="eyebrow">Thiếu tiền trả vendor trước lễ</span></div>
       <div class="speaker">${img(planner().look, "face", "worried")}<div><b>${esc(planner().name)}</b><p>Trước ngày cưới phải trả ${money(sf.due)} cho vendor, mà quỹ chỉ còn ${money(c.cash)}. Thiếu ${money(Math.ceil(sf.short))}.</p></div></div>
       <div class="list">${opts.map(([id, t, note, chip]) => `<button class="opt" data-act="short" data-id="${id}"><b>${esc(t)}</b><small>${esc(note)}</small><div class="chips">${chip}</div></button>`).join("")}</div></div>`;
@@ -11118,7 +11482,6 @@ window.WP_COPY = {
     if (o.later) out.push(`<span class="${o.later.cash < 0 ? "neg" : "pos"}">Tháng sau ${o.later.cash < 0 ? "−" : "+"}${cashStr(o.later.cash)}</span>`);
     if (o.risk) out.push(`<span class="gold">${Math.round(o.risk.p * 100)}% tháng sau${o.risk.cash ? ` −${cashStr(o.risk.cash)}` : ""}${o.risk.apNext ? ` và −${o.risk.apNext} lượt mỗi tuần` : ""}${o.risk.quit ? " một nhân viên nghỉ việc" : ""}</span>`);
     if (o.quit) out.push(`<span class="neg">Một nhân viên nghỉ việc</span>`);
-    if (o.grant) out.push(`<span class="pos">Tháng sau: 1 mối quen ${o.grant === "vendor" ? "vendor" : "khách"}</span>`);
     if (o.cool) out.push(`<span class="neg">Tháng sau không có mối quen</span>`);
     if (o.collect) out.push(`<span class="gold">${o.collect.p ? `${Math.round(o.collect.p * 100)}% thu đủ, không thì thu ${Math.round((o.collect.lose || 0) * 100)}%` : `Thu ${Math.round(o.collect.win * 100)}% khoản nợ`}</span>`);
     if (!out.length) out.push(`<span>Không tốn gì</span>`);
@@ -11126,19 +11489,22 @@ window.WP_COPY = {
   }
   // Nhân viên nói trong thẻ: thẻ theo tính cách là người mang tính cách đó; thẻ khác là người vào sau cùng.
   const cardStaff = card => { const own = CORE.cardStaff(state.career); if (own) return own; const k = CORE.cardTraitKey(card); const st = state.career.staff; return (k && CORE.staffWith(state.career, k)[0]) || st[st.length - 1] || null; };
-  const cardLook = card => card.who === "manager" ? (cardBranch() && cardBranch().manager ? staffLook(cardBranch().manager.role, cardBranch().manager.look || cardBranch().manager.id) : SP.PEOPLE.staff2) : card.who === "staff" ? (cardStaff(card) ? staffLook(cardStaff(card).role, cardStaff(card).look || cardStaff(card).id) : SP.PEOPLE.staff) : card.who === "vendor" ? Object.values(SP.VENDOR_LOOKS)[hash(card.id) % 18] : card.who === "family" ? SP.PEOPLE.mom_bride : card.who === "client" ? SP.PEOPLE.bride_casual : planner().look;
+  // Mẹ của planner (thẻ "Giỗ ở quê"): cùng màu lông với planner, lớn tuổi, áo bà ba ở quê (sửa 3.7.0, mục 1.12).
+  const plannerMom = () => { const p = planner().look; return { fur: p.fur, pattern: p.pattern, age: "elder", height: "short", ears: p.ears, tail: "low", lids: true, eyes: p.eyes, outfit: "aodai", top: "#5f7f5a", trim: "#d9c9a0", acc: ["glasses"] }; };
+  const LANDLORD = { fur: "tabby", pattern: "tabby", age: "elder", build: "wide", tail: "low", eyes: "#b98a2a", outfit: "tee", top: "#7a8a5a", bottom: "#4a4458", acc: ["glasses"] };
+  const cardLook = card => card.who === "manager" ? (cardBranch() && cardBranch().manager ? staffLook(cardBranch().manager.role, cardBranch().manager.look || cardBranch().manager.id) : SP.PEOPLE.staff2) : card.who === "staff" ? (cardStaff(card) ? staffLook(cardStaff(card).role, cardStaff(card).look || cardStaff(card).id) : SP.PEOPLE.staff) : card.who === "vendor" ? Object.values(SP.VENDOR_LOOKS)[hash(card.id) % 18] : card.look === "planner_mom" ? plannerMom() : card.look === "landlord" ? LANDLORD : card.who === "family" ? famLook("mom_bride") : card.who === "client" ? SP.PEOPLE.bride_casual : planner().look;
   // Thẻ "khách hỏi về giá": cùng ô tình huống, ba lựa chọn, mỗi lựa chọn đổi tiền hoặc quan hệ thật.
   function discoveryCard() {
     const d = state.discovery; const half = Math.max(1, Math.round(d.gap * CORE.DISCOVERY.refundShare)); const fee = E.tierFee(D, tierObj());
     const okPct = Math.round((d.below ? CORE.DISCOVERY.explainOkBelowPromise : CORE.DISCOVERY.explainOk) * 100) + (hasSkill("ngoai_giao") ? 15 : 0);
-    if (d.pick) return `<div class="card decision done"><span class="eyebrow">✓ Khách hỏi về giá ${esc(d.label.toLowerCase())}</span><b>${{ refund: "Hoàn lại một phần", explain: "Giải thích", feecut: "Giảm phí planning" }[d.pick]}</b><p>${esc(d.out || "")}</p></div>`;
+    if (d.pick) return `<div class="card decision done"><span class="eyebrow">✓ Khách hỏi về giá ${esc(lower(d.label))}</span><b>${{ refund: "Hoàn lại một phần", explain: "Giải thích", feecut: "Giảm phí planning" }[d.pick]}</b><p>${esc(d.out || "")}</p></div>`;
     const opts = [
       ["refund", `Hoàn lại ${money(half)}`, "Trả lại một nửa phần chênh. Mất tiền ngay, khách yên tâm.", `<span class="neg">−${money(half)}</span><span class="pos">Khách bớt phật ý</span>`],
       ["explain", "Giải thích", `Nói rõ giá gồm công điều phối và rủi ro agency gánh. Nếu khách không tin thì khách trừ thẳng ${money(d.gap)} vào đợt cuối, hai họ mất lòng và đám này để lại thêm một review xấu.`, `<span class="gold">${okPct}% khách bỏ qua</span><span class="neg">Không thì −${money(d.gap)}</span>`],
       ["feecut", "Giảm 10% phí planning", `Bớt ${money(fee * 0.1)} phí, trừ vào đợt cuối khách trả.`, `<span class="neg">Đợt cuối −${money(fee * 0.1)}</span><span class="pos">Hai họ hài lòng</span>`]
     ];
     return `<div class="card decision ${state.needDecision ? "flash" : ""}" id="decision"><div class="row-between"><span class="eyebrow">Khách hỏi về giá</span></div>
-      <div class="speaker">${img(speakerLook("groom"), "face", "worried")}<div><b>Chú rể</b><p>Em hỏi thử bên ngoài thì ${esc(d.label.toLowerCase())} và vài khoản nữa rẻ hơn dự toán mình duyệt tổng cộng ${money(d.gap)}. Anh chị giải thích giúp em phần chênh này?</p></div></div>
+      <div class="speaker">${img(speakerLook("groom"), "face", "worried")}<div><b>Chú rể</b><p>Em hỏi thử bên ngoài thì ${esc(lower(d.label))} và vài khoản nữa rẻ hơn dự toán mình duyệt tổng cộng ${money(d.gap)}. Anh chị giải thích giúp em phần chênh này?</p></div></div>
       <div class="list">${opts.map(([id, t, note, chips]) => `<button class="opt" data-act="disc" data-id="${id}"><b>${esc(t)}</b><small>${esc(note)}</small><div class="chips">${chips}</div></button>`).join("")}</div></div>`;
   }
   function monthCardHtml() {
@@ -11146,9 +11512,9 @@ window.WP_COPY = {
     const owed = card.when === "receivable" ? ` Khách còn nợ ${money(CORE.receivableTotal(c))}.` : "";
     const options = CORE.cardOptions(c, card);
     if (c.card.pick) { const o = options.find(x => x.id === c.card.pick); return `<div class="card decision done"><span class="eyebrow">✓ ${esc(card.title)}</span><b>${esc(fillCard(o.label, o))}</b><div class="chips">${cardChips(o)}</div></div>`; }
-    return `<div class="card decision ${state.needDecision ? "flash" : ""}" id="decision"><div class="row-between"><span class="eyebrow">Chuyện tháng này</span><span class="small muted">Quỹ ${money(c.cash)}</span></div>
-      <div class="speaker">${img(cardLook(card), "face")}<div><b>${esc(cardBranch() ? `${cardBranch().manager ? cardBranch().manager.name : BU.speakerNoManager} · ${bt(BU.speaker, { city: cardBranch().name })}` : card.who === "staff" && cardStaff(card) ? `${cardStaff(card).name} · ${roleOf(cardStaff(card).role).name}` : card.speaker || planner().name)}</b><p>${esc(fillCard(card.text, {}) + owed)}</p></div></div>
-      <div class="list">${options.map(o => `<button class="opt" data-act="mcard" data-id="${o.id}" ${o.needCash && c.cash < o.needCash ? "disabled" : ""}><b>${esc(fillCard(o.label, o))}</b><small>${esc(fillCard(o.note, o))}</small><div class="chips">${cardChips(o)}</div>${o.needCash && c.cash < o.needCash ? `<em>Quỹ không đủ</em>` : ""}</button>`).join("")}</div></div>`;
+    return `<div class="card decision ${state.needDecision ? "flash" : ""}" id="decision"><span class="eyebrow">Chuyện tháng này</span>
+      <div class="speaker">${img(cardLook(card), "face")}<div><b>${esc(cardBranch() ? `${cardBranch().manager ? cardBranch().manager.name : BU.speakerNoManager} · ${bt(BU.speaker, { city: cardBranch().name })}` : card.who === "staff" && cardStaff(card) ? `${cardStaff(card).name} · ${roleOf(cardStaff(card).role).name}` : card.speaker || planner().name)}</b><p>${esc(voice(fillCard(card.text, {})) + owed)}</p></div></div>
+      <div class="list">${options.map(o => `<button class="opt" data-act="mcard" data-id="${o.id}" ${o.needCash && c.cash < o.needCash ? "disabled" : ""}><b>${esc(voice(fillCard(o.label, o)))}</b><small>${esc(voice(fillCard(o.note, o)))}</small><div class="chips">${cardChips(o)}</div>${o.needCash && c.cash < o.needCash ? `<em>Quỹ không đủ</em>` : ""}</button>`).join("")}</div></div>`;
   }
   function dilemmaCard() {
     // Một ô, một thẻ. Thứ tự: thẻ tháng đang chờ → khách hỏi giá đang chờ → thiếu tiền trước lễ → rồi mới tới thẻ đã chọn xong của tuần này.
@@ -11162,13 +11528,19 @@ window.WP_COPY = {
     const d = weekDilemma(); if (!d) return "";
     const copy = COPY.dilemma[d.id] || {};
     const pick = state.dilemmaPick[d.id]; const chosen = pick && d.options.find(o => o.id === pick);
-    const cost = o => (o.ap ? `<span>${o.ap} lượt</span>` : "") + (o.cost > 0 ? `<span class="neg">Agency chi ${money(o.cost)}</span>` : "") + (o.cost < 0 ? `<span class="pos">Agency lời ${money(-o.cost)}</span>` : "");
+    const cost = o => (o.ap ? `<span>${o.ap} lượt</span>` : "") + (o.cost > 0 ? `<span class="neg">${esc(voice(`Agency chi ${money(o.cost)}`))}</span>` : "") + (o.cost < 0 ? `<span class="pos">${esc(voice(`Agency lời ${money(-o.cost)}`))}</span>` : "");
     const nums = o => state.showNums ? moodChips(o, d.who) + (o.mark ? `<span class="gold">Đổi xác suất sự cố ngày cưới</span>` : "") : "";
-    if (chosen) return `<div class="card decision done"><span class="eyebrow">✓ ${esc(d.title)}</span><b>${esc(chosen.label)}</b><p>${esc((copy[chosen.id] || {}).re || chosen.note)}</p>${cost(chosen) || nums(chosen) ? `<div class="chips">${cost(chosen)}${nums(chosen)}</div>` : ""}</div>`;
+    if (chosen) return `<div class="card decision done"><span class="eyebrow">✓ ${esc(d.title)}</span><b>${esc(voice(chosen.label))}</b><p>${esc(voice((copy[chosen.id] || {}).re || chosen.note))}</p>${cost(chosen) || nums(chosen) ? `<div class="chips">${cost(chosen)}${nums(chosen)}</div>` : ""}</div>`;
     return `<div class="card decision ${state.needDecision ? "flash" : ""}" id="decision"><div class="row-between"><span class="eyebrow">${state.needDecision ? "Cần chọn trước khi sang tuần" : "Tình huống tuần này"}</span>${numsLink()}</div>
-      <div class="speaker">${img(speakerLook(d.who), "face")}<div><b>${esc(whoName(d.who))}</b><p>${esc(d.text)}</p></div></div>
-      <div class="list">${d.options.map(o => `<button class="opt" data-act="dilemma" data-id="${o.id}" ${(o.ap || 0) > state.ap ? "disabled" : ""}><b>${esc(o.label)}</b><small>${esc((copy[o.id] || {}).fx || o.note)}</small>${cost(o) || nums(o) ? `<div class="chips">${cost(o)}${nums(o)}</div>` : ""}${(o.ap || 0) > state.ap ? `<em>Cần ${o.ap} lượt</em>` : ""}</button>`).join("")}</div></div>`;
+      <div class="speaker">${img(speakerLook(d.who), "face")}<div><b>${esc(whoName(d.who))}</b><p>${esc(voice(d.text))}</p></div></div>
+      <div class="list">${d.options.map(o => `<button class="opt" data-act="dilemma" data-id="${o.id}" ${(o.ap || 0) > state.ap ? "disabled" : ""}><b>${esc(voice(o.label))}</b><small>${esc(voice((copy[o.id] || {}).fx || o.note))}</small>${cost(o) || nums(o) ? `<div class="chips">${cost(o)}${nums(o)}</div>` : ""}${(o.ap || 0) > state.ap ? `<em>Cần ${o.ap} lượt</em>` : ""}</button>`).join("")}</div></div>`;
   }
+  // Bấm vào thanh chất lượng / độ tin cậy thì mở lời giải thích ngay tại chỗ (Đợt 2). Số trong câu đọc thẳng từ mô hình của game.
+  const barWhy = (label, n, text) => `<details class="v-why"><summary>${esc(label)} ${bar5(n, label)}</summary><p>${esc(text)}</p></details>`;
+  const qualityWhy = q => q < 3 ? `${q}/5 là thấp: cặp đôi và gia đình sẽ chê. Mỗi bậc dưới 3 trừ hài lòng gấp đôi mức một bậc trên 3 được cộng.`
+    : q === 3 ? "3/5 là mức khách chấp nhận: không cộng, không trừ hài lòng."
+    : `${q}/5 là cao: mỗi bậc trên 3 cộng thêm hài lòng cho cặp đôi và gia đình. Mức đầu tư bạn chọn cộng hoặc trừ thêm một bậc.`;
+  const reliabilityWhy = r => { const rb = D.riskModel.reliabilityBase; return `${r}/5: hạng mục này có sẵn ${rb[String(r)]}% gặp sự cố ngày cưới, trước khi trừ phần việc chuẩn bị (5/5 chỉ ${rb["5"]}%, 2/5 tới ${rb["2"]}%).`; };
   const bar5 = (n, label) => `<span class="bar5" role="img" aria-label="${label} ${n} trên 5">${[1, 2, 3, 4, 5].map(i => `<i class="${i <= n ? "on" : ""}"></i>`).join("")}</span>`;
   // The incident this vendor is most likely to cause, computed as if it were booked.
   function vendorRisk(v) {
@@ -11180,30 +11552,31 @@ window.WP_COPY = {
     if (isFull(v)) out.push("Đã kín lịch vì chốt trễ.");
     else if (lo && v.price < lo) out.push("Giá dưới range của khách, họ sẽ thấy rẻ.");
     else if (price > hi) out.push("Vượt range của khách, agency phải bù phần chênh.");
-    if (isLate(c) && !isFull(v)) out.push(`Chốt trễ hạn nên giá cao hơn ${Math.round(TIME.rushFee * 100)}%.`);
+    if (isLate(c) && !isFull(v)) out.push(`Chốt trễ hạn thì giá cao hơn ${Math.round(TIME.rushFee * 100)}%.`);
     const wish = D.wishes.find(x => x.kind === "wish" && x.needs === c.id && state.revealed.includes(x.id) && !flag(`wish_${x.id}`));
-    if (wish) out.push(`Khách có mong muốn cần hạng mục này: ${wish.title.toLowerCase()}.`);
+    if (wish) out.push(`Khách có mong muốn cần hạng mục này: ${lower(wish.title)}.`);
     return out.filter(Boolean).slice(0, 3).join(" ");
   }
   function vendorDetail(v, c, readOnly) {
     const [, hi] = rangeOf(c); const price = priceFor(v); const mg = hi - price; const r = vendorRisk(v);
     const why = readOnly ? "" : canBook(v); const tags = v.localTags || (COPY.vendors[v.id] || {}).tags || v.tags || [];
     return `<div class="v-card">
-      <div class="v-head">${img(SP.VENDOR_LOOKS[v.id], "face")}<div><b>${esc(v.name)}</b><small>${esc(tags.join(" · "))}</small></div></div>
-      <div class="v-bars"><span>Chất lượng ${bar5(v.quality, "Chất lượng")}</span><span>Độ tin cậy ${bar5(v.reliability, "Độ tin cậy")}</span></div>
+      <div class="v-head">${img(SP.VENDOR_LOOKS[v.id], "face")}<div><b>${esc(v.name)}</b><small>${esc((readOnly && isDayof(state.project) ? ["Khách tự chốt"] : []).concat(tags).join(" · "))}</small></div></div>
+      <div class="v-bars">${barWhy("Chất lượng", v.quality, qualityWhy(v.quality))}${barWhy("Độ tin cậy", v.reliability, reliabilityWhy(v.reliability))}</div>
       <div class="v-nums">${readOnly ? "" : `<span><small>${mg >= 0 ? "Lời dự kiến" : "Agency bù"}</small><b class="${mg < 0 ? "neg" : "pos"}">${mg >= 0 ? "+" : "−"}${money(Math.abs(mg))}</b></span>`}${r ? `<span><small>${esc(r.c.title)}</small><b class="${r.pct >= 35 ? "neg" : r.pct >= 20 ? "gold" : ""}">${r.pct}%</b></span>` : ""}</div>
       <p class="v-note">${esc(vendorNote(v, c, price))}</p>
       ${readOnly ? "" : `<button class="btn primary" data-act="book" data-id="${v.id}" ${why ? "disabled" : ""}>Chọn ${esc(v.name)} · 1 lượt${state.fin ? ` · cọc ${money(CORE.vendorDepositFor(price, state.fin))}${state.fin.partner ? " (đối tác)" : ""}` : ""}</button>${why ? `<em class="why-not">${esc(why)}</em>` : ""}${/tiền cọc/.test(why) && !state.career.loan ? `<button class="btn" data-act="loan">Vay 50tr, trả 60tr sau 3 tháng</button>` : ""}`}
     </div>`;
   }
+  const CAT_SHORT = { venue: "Địa điểm", decor: "Hoa", rental: "Rental", catering: "Ẩm thực", photo: "Ảnh", mc: "MC" };
   function vendorSlot() {
     const w = state.week;
     if (state.project.type === "dayof") {
       const v = watchVendor(); if (!v) return "";
       const c = getCat(v.category); const t = state.fg && state.fg.watch ? getAction(state.fg.watch) : null;
-      return `<div class="card v-slot"><div class="row-between"><span class="eyebrow">Vendor cần để mắt · ${c.icon} ${esc(c.label)}</span><span class="small muted">Khách tự chốt</span></div>
+      return `<div class="card v-slot"><span class="eyebrow">Để mắt · ${esc(CAT_SHORT[c.id] || c.label)}</span>
         ${vendorDetail(v, c, true)}
-        ${t && openNow(t) ? `<div class="list">${taskCard(t)}</div>` : t && flag(t.flag) ? `<small class="pos">✓ Đã làm: ${esc(t.title.toLowerCase())}</small>` : ""}</div>`;
+        ${t && openNow(t) ? `<div class="list">${taskCard(t)}</div>` : t && flag(t.flag) ? `<small class="pos">✓ Đã làm: ${esc(lower(t.title))}</small>` : ""}</div>`;
     }
     const c = D.categories.filter(x => !state.selectedVendors[x.id] && x.from <= w).sort((a, b) => a.deadline - b.deadline)[0];
     if (!c) return "";
@@ -11220,7 +11593,18 @@ window.WP_COPY = {
     const moreDue = D.actions.filter(a => openNow(a) && isContracted(a.id) && a.to === w && !shown.has(a.id)).length;
     if (!fg.length) return `<p class="empty">Tuần này không có việc gấp.</p>`;
     return `<h2 class="sec">Việc cần làm</h2><div class="list">${fg.map(a => flag(a.flag) ? `<div class="task-done">✓ ${esc(a.title)}</div>` : openNow(a) ? taskCard(a) : "").join("")}</div>
-      ${moreDue ? `<button class="link block" data-act="sheet" data-id="book">Còn ${moreDue} việc đã hứa tới hạn tuần này ›</button>` : ""}`;
+      ${moreDue ? `<button class="link block" data-act="sheet" data-id="book">Còn ${moreDue} việc đã hứa tới hạn tuần này ›</button>` : ""}
+      ${nextWeekLine()}`;
+  }
+  // Cho thấy trước số lượt sắp cần (mục 1.8): việc đã hứa tới hạn tuần tới, so với số lượt mỗi tuần.
+  function nextWeekNeed() {
+    const w = state.week + 1; if (w > D.config.weeks) return null;
+    const due = D.actions.filter(a => isContracted(a.id) && a.to === w && !flag(a.flag));
+    return due.length ? { need: due.reduce((s, a) => s + (a.cost || 1), 0), have: baseAP(), n: due.length } : null;
+  }
+  function nextWeekLine() {
+    const x = nextWeekNeed(); if (!x) return "";
+    return `<p class="small ${x.need > x.have ? "neg" : "muted"}">Tuần tới: việc đã hứa tới hạn cần ${x.need} lượt · bạn có ${x.have}${x.need > x.have ? ". Làm bớt từ tuần này, hoặc sẽ phải bỏ một lời hứa." : ""}</p>`;
   }
   function bookSummary() {
     const w = state.week; const dayof = state.project.type === "dayof";
@@ -11319,17 +11703,27 @@ window.WP_COPY = {
   function helps(a) {
     const fl = [a.flag, ...(a.flags || [])];
     const names = D.crises.filter(c => (c.risk || []).some(t => t.ifMissing && fl.includes(t.ifMissing)) || c.options.some(o => (o.requires || []).some(r => fl.includes(r.flag) || (r.anyFlag || []).some(f => fl.includes(f)))))
-      .map(c => c.title.toLowerCase());
+      .map(c => lower(c.title));
     return [...new Set(names)];
   }
-  function taskCard(a) {
-    const why = actionBlock(a); const cost = a.cost || 1; const meet = meetingFor(a.id);
-    return `<button class="task ${why ? "locked" : ""} ${meet ? "meet" : ""}" data-act="task" data-id="${a.id}">
-      <div class="task-main"><b>${esc(a.title)}</b><small>${esc(COPY.why[a.id] || a.detail)}</small>
-        <div class="chips">${isContracted(a.id) ? `<span class="gold">Bạn đã hứa trong gói</span>` : ""}${a.to - state.week <= 0 ? `<span class="neg">Hạn tuần này</span>` : ""}</div>
-        ${why ? `<em>${esc(why)}</em>` : ""}</div>
-      <span class="cost" aria-label="${cost} lượt${actionMoney(a) ? `, ${cashStr(actionMoney(a))}` : ""}">${"●".repeat(cost)}${actionMoney(a) ? `<small class="money">${cashStr(actionMoney(a))}</small>` : ""}</span></button>`;
+  // Thẻ việc (Đợt 2): gọn hơn, và bốn trạng thái nhìn là biết: đã hứa (viền vàng), quá hạn (viền đỏ), chưa đủ lượt (viền đứt, mờ), đã xong (dòng xanh).
+  function taskState(a) {
+    if (flag(a.flag)) return "done";
+    if (state.week > a.to) return "overdue";
+    if (state.ap < (a.cost || 1)) return "noap";
+    return isContracted(a.id) ? "promised" : "open";
   }
+  function taskCard(a) {
+    const why = actionBlock(a); const cost = a.cost || 1; const meet = meetingFor(a.id); const st = taskState(a);
+    if (st === "done") return `<div class="task-done">✓ ${esc(a.title)}</div>`;
+    const tag = st === "overdue" ? `<span class="neg">Quá hạn</span>` : a.to === state.week ? `<span class="neg">Hạn tuần này</span>` : `<span>Hạn tuần ${a.to}</span>`;
+    return `<button class="task st-${st} ${isContracted(a.id) ? "promised" : ""} ${why ? "locked" : ""} ${meet ? "meet" : ""}" data-act="task" data-id="${a.id}">
+      <div class="task-main"><b>${esc(a.title)}</b><small>${esc(COPY.why[a.id] || a.detail)}</small>
+        <div class="chips">${isContracted(a.id) ? `<span class="gold">Đã hứa</span>` : ""}${tag}${st === "noap" ? `<span class="muted-chip">Chưa đủ lượt</span>` : ""}</div>
+        ${why && !["noap", "overdue"].includes(st) ? `<em>${esc(why)}</em>` : ""}</div>
+      <span class="cost" aria-label="${cost} lượt${actionMoney(a) ? `, ${cashStr(actionMoney(a))}` : ""}"><b class="cost-n">${cost} lượt</b><i class="dots" aria-hidden="true">${"●".repeat(cost)}</i>${actionMoney(a) ? `<small class="money">${cashStr(actionMoney(a))}</small>` : ""}</span></button>`;
+  }
+
 
   function timeCard() {
     const flLeft = TIME.freelancer.maxPerWeek - state.weekExtra.fl;
@@ -11350,15 +11744,20 @@ window.WP_COPY = {
     const done = flag(`wish_${w.id}`); const why = wishBlock(w); const joy = w.couple + w.family;
     const btns = w.cost
       ? `<div class="wish-btns"><button class="mini" data-act="wish" data-id="${w.id}:client" ${why ? "disabled" : ""}><b>Khách trả</b><small>Lời +${money(wishMarkup(w))} · khách vui +${Math.round(joy * 0.6)}</small></button>
-         <button class="mini primary" data-act="wish" data-id="${w.id}:gift" ${why ? "disabled" : ""}><b>Agency tặng</b><small>Chi ${money(w.cost)} · khách vui +${joy}, bớt đòi giảm phí</small></button></div>`
+         <button class="mini primary" data-act="wish" data-id="${w.id}:gift" ${why ? "disabled" : ""}><b>${esc(voice("Agency tặng"))}</b><small>Chi ${money(w.cost)} · khách vui +${joy}, bớt đòi giảm phí</small></button></div>`
       : `<button class="mini primary" data-act="wish" data-id="${w.id}:free" ${why ? "disabled" : ""}>Đưa vào kế hoạch · miễn phí · khách vui +${joy}</button>`;
     return `<div class="wish ${done ? "done" : ""}"><div><b>${done ? "✓" : "♥"} ${esc(w.title)}</b><small>${esc(w.detail)}</small><small>Tốn 1 lượt.</small></div>
-      ${done ? `<span class="pos">Đã có trong kế hoạch${state.wishMode[w.id] === "client" ? " · khách trả" : state.wishMode[w.id] === "gift" ? " · agency tặng" : ""}</span>` : `${btns}${why ? `<em>${esc(why)}</em>` : ""}`}</div>`;
+      ${done ? `<span class="pos">Đã có trong kế hoạch${state.wishMode[w.id] === "client" ? " · khách trả" : state.wishMode[w.id] === "gift" ? voice(" · agency tặng") : ""}</span>` : `${btns}${why ? `<em>${esc(why)}</em>` : ""}`}</div>`;
   }
 
 
+  // Lý do bằng lời đi kèm nhãn cảm xúc (mục 1.2). Không có tác động cảm xúc thì không có nhãn, cũng không cần lý do.
+  const crisisReason = (cr, o) => { const fx = o.effects || {}; if (!fx.couple && !fx.family) return ""; const r = ((C.CRISIS_REASONS || {})[cr.id] || {})[o.id]; return r ? r[0].toUpperCase() + r.slice(1) : ""; };
+  // Lựa chọn dùng được đứng trước; lựa chọn bị khoá gom dưới một dòng, vẫn ghi việc nào lẽ ra mở được (Đợt 2).
   function crisisOptions(cr) {
-    return `<div class="list">${cr.options.map(o => { const why = optionBlock(o); const ch = successChance(cr, o); return `<button class="opt ${why ? "locked" : ""}" data-act="opt" data-id="${o.id}" ${why ? 'aria-disabled="true"' : ""}><b>${esc(o.title)}</b><div class="chips">${effectChips(o.effects || {}, (D.reactions[cr.id] || {}).who)}${why ? "" : ch < 100 ? `<span class="${ch < 65 ? "neg" : ""}">${ch >= 85 ? "Chắc ăn" : ch >= 65 ? "Khá chắc" : "Hên xui"} ${ch}%</span>` : `<span class="pos">Chắc chắn</span>`}${o.mark ? `<span class="gold">Có hệ quả về sau</span>` : ""}</div>${why ? `<em>${esc(why)}</em>` : ""}</button>`; }).join("")}</div>`;
+    const one = o => { const why = optionBlock(o); const ch = successChance(cr, o); return `<button class="opt ${why ? "locked" : ""}" data-act="opt" data-id="${o.id}" ${why ? 'aria-disabled="true"' : ""}><b>${esc(o.title)}</b><div class="chips">${effectChips(o.effects || {}, (D.reactions[cr.id] || {}).who)}${why ? "" : ch < 100 ? `<span class="${ch < 65 ? "neg" : ""}">${ch >= 85 ? "Chắc ăn" : ch >= 65 ? "Khá chắc" : "Hên xui"} ${ch}%</span>` : `<span class="pos">Chắc chắn</span>`}${ch < 100 && !why && hasSkill("xu_ly") ? `<span class="pos">+10% nhờ Xử lý sự cố</span>` : ""}${o.mark ? `<span class="gold">Có hệ quả về sau</span>` : ""}${o.afterRisk ? `<span class="gold">${o.afterRisk.p}% ${esc(lower(o.afterRisk.label))}:</span>${moodChips({ couple: o.afterRisk.couple, family: o.afterRisk.family }, (D.reactions[cr.id] || {}).who)}` : ""}</div>${crisisReason(cr, o) ? `<small class="reason">${esc(crisisReason(cr, o))}</small>` : ""}${why ? `<em>${esc(why)}</em>` : ""}</button>`; };
+    const open = cr.options.filter(o => !optionBlock(o)), locked = cr.options.filter(o => optionBlock(o));
+    return `<div class="list">${open.map(one).join("")}</div>${locked.length ? `<details class="locked-group"><summary>${locked.length} cách khác cần chuẩn bị trước</summary><div class="list">${locked.map(one).join("")}</div></details>` : ""}`;
   }
   function crisisDone(item, n) {
     const cr = getCrisis(item.id); const out = item.out; const chosen = cr.options.find(o => o.id === out.id);
@@ -11370,7 +11769,7 @@ window.WP_COPY = {
       <p><span class="muted">Bạn chọn:</span> ${esc(chosen.title)}. ${esc(out.success ? chosen.why : (re?.fail || "Không kịp xử lý như mong muốn."))}</p>
       ${re ? `<div class="msg solo">${img(speakerLook(reWho), "face")}<p>${esc(out.tone === "fail" ? re.bad : re[out.tone])}</p></div>` : ""}
       <div class="chips">${effectChips(out.fx, reWho)}${out.recovered ? `<span class="pos">Đòi lại vendor ${money(out.recovered)}</span>` : ""}</div>
-      ${out.mark ? `<p class="mark">Hệ quả: ${esc(out.mark)}</p>` : ""}</details>`;
+      ${out.afterText ? `<p class="mark">${esc(out.afterText)}</p>` : ""}${out.mark ? `<p class="mark">Hệ quả: ${esc(out.mark)}</p>` : ""}</details>`;
   }
   function screenEvent() {
     const ev = state.stage; const wed = ev === "WEDDING";
@@ -11380,7 +11779,7 @@ window.WP_COPY = {
     const feed = state.queue.map((item, i) => {
       if (item.k === "intro") {
         const moments = state.queue.filter(x => x.k === "moment").length;
-        return `<div class="ev-head"><span class="eyebrow">${wed ? "17:00" : "07:00"} · ${esc(venueName)}</span><h2 class="h big">${evName}</h2><p class="muted">Sự cố được tung xúc xắc đúng lúc nó tới, nên cách bạn xử lý cái trước ảnh hưởng cái sau.${moments ? ` ${moments} khoảnh khắc từ quá trình chuẩn bị.` : ""}</p></div>`;
+        return `<div class="ev-head"><span class="eyebrow">${wed ? "17:00" : "07:00"} · ${esc(venueName)}</span><h2 class="h big">${evName}</h2><p class="muted">Sự cố đến lần lượt trong ngày; cách bạn xử lý chuyện trước ảnh hưởng chuyện sau.${moments ? ` ${moments} khoảnh khắc từ quá trình chuẩn bị.` : ""}</p></div>`;
       }
       if (item.k === "moment") {
         const w = getWish(item.id);
@@ -11410,7 +11809,7 @@ window.WP_COPY = {
     const item = state.settlement[state.settlementIndex]; if (!item) return "";
     const fee = E.tierFee(D, tierObj()); const missed = E.missedContracted(D, state);
     const ask = item.type === "discount"
-      ? `Hôm đó có ${crisisCount()} sự cố${missed.length ? `, và có ${missed.length} việc anh chị cam kết mà không làm` : ""}. Tụi em xin giảm ${item.pct}% phí planning (${money(fee * item.pct / 100)}) nha.`
+      ? `Hôm đó có ${crisisCount()} sự cố${missed.length ? `, và có ${missed.length} việc anh chị cam kết mà không làm` : ""}. Tụi em xin giảm ${item.pct}% ${feeName()} (${money(fee * item.pct / 100)}) nha.`
       : `Khoản phát sinh ${money(item.amount)} hôm cưới là lỗi bên vendor mà, tụi em không muốn trả đâu.`;
     const o = state.settlementOutcome;
     return `<section class="stack">
@@ -11422,41 +11821,100 @@ window.WP_COPY = {
     </section>`;
   }
 
+  // Mong muốn có việc để đáp ứng không (mục 1.13): gói day-of không chọn vendor, nên mong muốn cần vendor mà khách tự chốt thì không tính là lỗi;
+  // mong muốn của một buổi lễ không có trong gói cũng vậy.
+  function wishPossible(w) {
+    if (w.event && !evList().includes(w.event)) return false;
+    if (isDayof(state.project) && w.needs && !state.selectedVendors[w.needs]) return false;
+    return true;
+  }
+  // Quyết định nào làm sự cố nào dễ xảy ra hơn, và sự cố đó đã xảy ra (mục 1.13, Nhìn lại ý 2).
+  function markLinks() {
+    const src = state.markSrc || {}; const out = [];
+    (state.rolls || []).filter(x => x.happened).forEach(x => { const c = getCrisis(x.id); (c.risk || []).forEach(t => { if (t.ifMark && t.add > 0 && state.marks.includes(t.ifMark) && src[t.ifMark]) out.push({ from: src[t.ifMark], crisis: c.title, add: t.add }); }); });
+    return out;
+  }
   function lessons(r) {
     const out = [];
     if (r.withheld) out.push(`Khách quá thất vọng nên giữ lại ${money(r.withheld)} đợt thanh toán cuối.`);
-    const missedWishes = D.wishes.filter(w => w.kind === "wish" && state.revealed.includes(w.id) && !flag(`wish_${w.id}`));
-    if (missedWishes.length) out.push(`Biết khách muốn ${missedWishes.map(w => w.title.toLowerCase()).join(", ")} mà chưa làm.`);
+    const missedWishes = D.wishes.filter(w => w.kind === "wish" && state.revealed.includes(w.id) && !flag(`wish_${w.id}`) && wishPossible(w));
+    if (missedWishes.length) out.push(`Bạn biết ${missedWishes.length} mong muốn của khách nhưng chưa đáp ứng: ${missedWishes.map(w => lower(w.title)).join(", ")}.`);
     const unknown = D.wishes.filter(w => w.kind === "wish" && !state.revealed.includes(w.id)).length;
     if (unknown >= 4) out.push(`Còn ${unknown} mong muốn của khách bạn chưa từng hỏi ra. Đám sau thử hỏi câu khác.`);
-    const cheap = D.categories.filter(c => (state.specs[c.id] || "full") === "cheap" && !flag(`fallback_${c.id}`)).map(c => c.label.toLowerCase());
+    const cheap = D.categories.filter(c => (state.specs[c.id] || "full") === "cheap" && !flag(`fallback_${c.id}`)).map(c => lower(c.label));
     if (cheap.length) out.push(`Ép giá ở ${cheap.join(", ")}: lời thêm nhưng rủi ro và chất lượng ở đó đi xuống.`);
-    if (state.marks.length) out.push("Có quyết định ở lễ ăn hỏi kéo theo rắc rối ở tiệc cưới.");
+    markLinks().forEach(x => out.push(`Quyết định "${x.from}" làm ${x.crisis.toLowerCase()} dễ xảy ra hơn (+${x.add}%), và nó đã xảy ra.`));
     if (r.missed?.length) out.push(`${r.missed.length} việc cam kết bị bỏ, khách lấy đó làm lý do đòi giảm phí.`);
     const lucky = state.rolls.filter(x => !x.happened && x.pct >= 35);
-    if (lucky.length) out.push(`May mắn: ${lucky.map(x => getCrisis(x.id).title.toLowerCase()).join(", ")} có xác suất cao mà không xảy ra.`);
+    if (lucky.length) out.push(`May mắn: ${lucky.map(x => lower(getCrisis(x.id).title)).join(", ")} có xác suất cao mà không xảy ra.`);
     if (!out.length) out.push("Dự án cân bằng tốt. Khách cũ sẽ giới thiệu thêm khách mới.");
     return out.slice(0, 5);
   }
+  // Tổng chi trong tháng gồm những gì (mục 1.6): đọc thẳng sổ tiền mặt của tháng này, gom theo nhóm, nói bằng tên.
+  const SPEND_GROUP = { living: "sinh hoạt", office: "văn phòng", staff: "lương", ads: "quảng cáo", vendorDeposit: "trả vendor", vendorBalance: "trả vendor", vendor: "trả vendor", payable: "trả vendor",
+    crisis: "chi xử lý sự cố", dispute: "chi xử lý sự cố", extra: "chi phát sinh của đám", travel: "đi lại", action: "đi gặp, khảo sát", card: "chuyện trong tháng", branch: "chi nhánh", loan: "trả nợ", loanCost: "trả nợ" };
+  function monthSpendParts(c = state.career) {
+    const sum = {}; (c.cashLog || []).filter(x => x.m === c.monthNo && x.amount < 0).forEach(x => { const k = SPEND_GROUP[x.kind === "monthly" ? x.cause : x.kind] || (x.kind === "monthly" ? "chi phí tháng" : "khoản khác"); sum[k] = (sum[k] || 0) - x.amount; });
+    return Object.entries(sum).sort((a, b) => b[1] - a[1]).map(([k]) => k);
+  }
+  // Chi phí vận hành tháng phát sinh từ lúc nhận đám (mục 1.6): chỉ các khoản "monthly" của sổ tiền mặt, không bao giờ trùng với chi phí dự án.
+  function opsRows() {
+    const c = state.career, from = state.projStartWeek == null ? Infinity : state.projStartWeek; const sum = {};
+    (c.cashLog || []).filter(x => x.kind === "monthly" && x.w >= from && x.amount < 0).forEach(x => { const k = x.label || "Chi phí tháng"; sum[k] = (sum[k] || 0) - x.amount; });
+    return Object.entries(sum).map(([k, v]) => [k, r1(v)]);
+  }
   function careerAfter(r) {
-    const c = state.career; const now = state.fin ? c.cash : c.cash + r.profit;
+    const c = state.career; const now = state.fin ? c.cash : c.cash + r.profit; const parts = monthSpendParts(c);
     return `<div class="career-stats">
-      <div><small>Lời đám này</small><b class="${r.profit < 0 ? "neg" : ""}">${money(r.profit)}</b></div>
-      <div><small>Tháng này đã chi</small><b class="${c.spentThisMonth ? "neg" : ""}">${c.spentThisMonth ? "−" + money(c.spentThisMonth) : "0tr"}</b></div>
-      <div><small>Quỹ hiện có</small><b class="${now < 0 ? "neg" : ""}">${money(now)}</b></div></div>
+      <div><small>Lãi dự án</small><b class="${r.profit < 0 ? "neg" : ""}">${r.profit >= 0 ? "+" : "−"}${money(Math.abs(r.profit))}</b></div>
+      <div><small>Tổng chi trong tháng</small><b>${money(c.spentThisMonth || 0)}</b>${parts.length ? `<small class="muted">${esc(parts.slice(0, 4).join(", "))}${parts.length > 4 ? "…" : ""}</small>` : ""}</div>
+      <div><small>Quỹ sau quyết toán</small><b class="${now < 0 ? "neg" : ""}">${money(now)}</b></div></div>
       ${r.receivable ? `<p class="note">Khách còn giữ ${money(r.receivable)} chưa trả. Khoản này ghi vào công nợ, chưa phải tiền trong quỹ.</p>` : ""}`;
   }
   // Break the final satisfaction down into the decisions that produced it.
   function decisionLog() {
     const out = [];
-    const q = state.project.quote; if (q) out.push(`Gói planning: ${{ low: "Cơ bản", mid: "Tiêu chuẩn", high: "Toàn diện" }[q.level]} · ${money(state.project.fee)}`);
+    const q = state.project.quote; if (q) out.push(`${packName()}: ${{ low: "Cơ bản", mid: "Tiêu chuẩn", high: "Toàn diện" }[q.level]} · ${money(state.project.fee)}`);
     if (state.project.type !== "dayof") D.categories.forEach(c => { const v = E.vendorFor(D, state, c.id); if (v) out.push(`${c.label}: ${flag(`fallback_${c.id}`) ? "đặt khẩn" : TIER_NAMES[D.vendorTier[v.id]]} · ${v.name}${flag(`rush_${c.id}`) ? " (chốt trễ)" : ""}`); });
     const concept = D.concepts.find(c => c.id === state.selectedConcept); if (concept && state.project.type !== "dayof") out.push(`Concept: ${concept.name}`);
     Object.entries(state.dilemmaPick).forEach(([id, opt]) => { const d = C.DILEMMAS.find(x => x.id === id); const o = d && d.options.find(x => x.id === opt); if (o) out.push(`${d.title}: ${o.label}`); });
-    Object.entries(state.wishMode).forEach(([id, m]) => { const w = getWish(id); if (w) out.push(`${w.title}: ${m === "client" ? "khách trả" : m === "gift" ? "agency tặng" : "miễn phí"}`); });
+    Object.entries(state.wishMode).forEach(([id, m]) => { const w = getWish(id); if (w) out.push(`${w.title}: ${m === "client" ? "khách trả" : m === "gift" ? voice("agency tặng") : "miễn phí"}`); });
     state.queue.filter(x => x.k === "crisis" && x.out).forEach(x => { const cr = getCrisis(x.id); out.push(`${cr.title}: ${cr.options.find(o => o.id === x.out.id).title}`); });
     if (state.settlementOutcome) out.push(`Quyết toán: ${state.settlementOutcome.title}`);
     return out;
+  }
+  const fmtPts = v => (Math.abs(v - Math.round(v)) < 0.05 ? String(Math.round(v)) : v.toFixed(1).replace(".", ","));
+  // Câu "Sau đám cưới" theo kết quả đám (mục 1.13): mỗi người nhớ gì, khen gì, trách gì, lấy từ chính các dòng đã cộng trừ điểm của họ.
+  const PERSON = { bride: "Cô dâu", groom: "Chú rể", mom_bride: "Mẹ cô dâu", mom_groom: "Mẹ chú rể" };
+  const lc = t => (t ? t[0].toLowerCase() + t.slice(1) : t);
+  function afterPhrase(label, v) {
+    let m;
+    if ((m = /^Khoảnh khắc: (.*)$/.exec(label))) return lc(m[1]);
+    if ((m = /^Phạm điều kiêng: (.*)$/.exec(label))) return `chuyện không giữ được điều kiêng "${lc(m[1])}"`;
+    if ((m = /^Sự cố: (.*)$/.exec(label))) return v > 0 ? `cách xử lý chuyện ${m[1]}` : `chuyện ${m[1]}`;
+    if ((m = /^Lời hứa của (.*) không thành: (.*)$/.exec(label))) return `lời hứa ${lc(m[2])} không thành`;
+    if ((m = /^Quyết toán: (.*)$/.exec(label))) return `lúc quyết toán, bạn ${m[1]}`;
+    if ((m = /^(.*): (.*)$/.exec(label))) return `lựa chọn "${m[2]}" khi ${lc(m[1]).replace(/\?$/, "")}`; // tình huống trong tuần: "tiêu đề: lựa chọn"
+    return lc(label);
+  }
+  function afterFacts(key) {
+    const out = []; const vb = E.vendorBonus(D, state);
+    const q = key === "c" ? vb.couple : vb.family; if (Math.abs(q) >= 0.5) out.push({ t: q > 0 ? "dàn vendor làm đẹp hơn mong đợi" : "dàn vendor chưa tới", v: q, generic: true });
+    const missed = E.missedContracted(D, state).length; if (missed) out.push({ t: `${missed} việc đã hứa mà không làm`, v: -1.5 * missed });
+    state.ledger.forEach(x => { const v = x[key] || 0; if (Math.abs(v) >= 0.5) out.push({ t: afterPhrase(voice(x.label), v), v }); });
+    return out;
+  }
+  function afterLine(who, score) {
+    const N = PERSON[who]; const facts = afterFacts(who === "bride" || who === "groom" ? "c" : "f");
+    const off = who === "groom" || who === "mom_groom" ? 1 : 0; // hai người cùng phía không nói y hệt nhau
+    // chuyện cụ thể của đám đứng trước câu chung về vendor; câu chung chỉ dùng khi không còn gì khác
+    const rank = (a, b, s) => (a.generic - b.generic) || s * (b.v - a.v);
+    const pos = facts.filter(x => x.v > 0).sort((a, b) => rank(a, b, 1)), neg = facts.filter(x => x.v < 0).sort((a, b) => rank(a, b, -1));
+    const p = pos[Math.min(off, pos.length - 1)], n = neg[Math.min(off, neg.length - 1)];
+    const b = moodBand(score);
+    if (b <= 1) return p ? `${N} nhớ nhất ${p.t}.${n ? ` Còn ${n.t} thì đã cho qua.` : ""}` : `${N} vui vì cả ngày trôi chảy, không có chuyện gì phải lo.`;
+    if (b === 2) return p && n ? `${N} khen ${p.t}, nhưng vẫn nhắc ${n.t}.` : p ? `${N} thấy ổn, nhớ nhất ${p.t}.` : n ? `${N} thấy tạm ổn, chỉ nhắc ${n.t}.` : `${N} thấy đám cưới ổn, không có gì nổi bật để kể.`;
+    return n ? `${N} vẫn trách ${n.t}.${p ? ` Chỉ có ${p.t} là còn được khen.` : ""}` : `${N} không vui với cả ngày, dù không có chuyện gì lớn.`;
   }
   function satReasons() {
     const t = tierObj(); const vb = E.vendorBonus(D, state); const avg = (c, f) => (c + f) / 2;
@@ -11470,29 +11928,30 @@ window.WP_COPY = {
     state.ledger.forEach(x => out.push({ t: x.label, v: avg(x.c, x.f) }));
     const prep = avg(state.coupleScore, state.familyScore) - CFG.startScore - led;
     if (Math.abs(prep) >= 1) out.push({ t: "Chuẩn bị: gặp khách, concept, các việc đã làm", v: prep });
-    return out.filter(x => Math.abs(x.v) >= 1).sort((a, b) => Math.abs(b.v) - Math.abs(a.v)).slice(0, 7);
+    // Mọi dòng có tác động đều hiện (sửa 3.7.0, mục 1.3): nhãn cảm xúc nào cũng phải có dòng điểm tương ứng. Dòng "Chuẩn bị" là phần còn lại, chỉ hiện khi đủ 1 điểm.
+    return out.filter(x => Math.abs(x.v) >= 0.25).sort((a, b) => Math.abs(b.v) - Math.abs(a.v));
   }
   function screenReview() {
     const r = state.result;
     const quote = r.stars >= 5 ? "Hoàn hảo! Tụi em sẽ giới thiệu anh chị cho cả nhóm bạn." : r.stars === 4 ? "Đám cưới rất đẹp, có chút trục trặc nhưng xử lý ổn." : r.stars === 3 ? "Cũng được, nhưng tụi em kỳ vọng nhiều hơn." : r.stars === 2 ? "Nhiều chuyện không như đã hứa. Tụi em khá thất vọng." : "Tệ thật sự. Tụi em sẽ review cho mọi người biết.";
     const rows = [
-      ["Chênh lệch dự toán − vendor", r.margin], ["Phí planning", r.fee], r.feeDiscount ? ["Khách đòi giảm phí", -r.feeDiscount] : null,
-      r.staffCost + r.travel ? [r.staffCost ? "Lương team" + (r.travel ? " + công tác" : "") : "Đi lại, lưu trú cho team", -(r.staffCost + r.travel)] : null, ...(state.extras?.length ? extraRows() : r.extraCost ? [["Freelancer + mong muốn khách", -r.extraCost]] : []),
+      isDayof(state.project) ? null : ["Chênh lệch dự toán − vendor", r.margin], [FeeName(), r.fee], r.feeDiscount ? [`Khách đòi giảm ${feeName()}`, -r.feeDiscount] : null,
+      r.staffCost + r.travel ? [r.staffCost ? "Lương team" + (r.travel ? " + công tác" : "") : (state.career.staff.length ? "Đi lại, lưu trú cho team" : "Đi lại, lưu trú"), -(r.staffCost + r.travel)] : null, ...(state.extras?.length ? extraRows() : r.extraCost ? [["Freelancer + mong muốn khách", -r.extraCost]] : []),
       r.crisisCost ? ["Chi xử lý sự cố", -r.crisisCost] : null, r.recovered ? ["Đòi lại từ vendor", r.recovered] : null,
       r.disputePaid ? ["Gánh phát sinh khách không trả", -r.disputePaid] : null, r.withheld ? ["Khách giữ lại thanh toán", -r.withheld] : null
     ].filter(Boolean);
     const good = state.moments.filter(m => m.good);
-    return `<section class="stack">
+    return `<section class="stack">${isDayof(state.project) ? "" : ""}
       <div class="card center"><span class="eyebrow">${["", "Thất bại", "Chưa ổn", "Ổn", "Rất tốt", "Xuất sắc"][r.stars]}</span><div class="stars-big" aria-label="${r.stars} sao">${"★".repeat(r.stars)}<i>${"★".repeat(5 - r.stars)}</i></div>
         <div class="msg bride solo">${img(CL("bride"), "face")}<p>${esc(quote)}</p></div></div>
       ${careerAfter(r)}
       <div class="card"><h2 class="h">Vì sao được ${r.stars}★</h2><p class="muted">Điểm hài lòng trung bình ${Math.round((r.couple + r.family) / 2)}/100, bắt đầu từ ${CFG.startScore}. Từ 86 là 5★, 74 là 4★, 62 là 3★.</p>
-        <ul class="reasons">${satReasons().map(x => `<li class="${x.v >= 0 ? "pos" : "neg"}"><b>${x.v >= 0 ? "+" : "−"}${Math.round(Math.abs(x.v))}</b><span>${esc(x.t)}</span></li>`).join("")}</ul></div>
+        <ul class="reasons">${satReasons().map(x => `<li class="${x.v >= 0 ? "pos" : "neg"}"><b>${x.v >= 0 ? "+" : "−"}${fmtPts(Math.abs(x.v))}</b><span>${esc(x.t)}</span></li>`).join("")}</ul></div>
       <div class="card"><div class="row-between"><span>Cặp đôi</span><b>${r.couple}/100</b></div><div class="bar"><i style="width:${r.couple}%"></i></div>
         <div class="row-between"><span>Hai họ</span><b>${r.family}/100</b></div><div class="bar"><i style="width:${r.family}%"></i></div></div>
-      <div class="card"><h2 class="h">Sau đám cưới</h2><div class="people">${[["bride", r.couple], ["groom", r.couple], ["mom_bride", r.family], ["mom_groom", r.family]].map(([who, s]) => `<div class="person">${img(speakerLook(who), "face", bandMood(s))}<p>${esc(moodLine(who, s))}</p></div>`).join("")}</div></div>
+      <div class="card"><h2 class="h">Sau đám cưới</h2><div class="people">${[["bride", r.couple], ["groom", r.couple], ["mom_bride", r.family], ["mom_groom", r.family]].map(([who, s]) => `<div class="person">${img(speakerLook(who), "face", bandMood(s))}<p>${esc(afterLine(who, s))}</p></div>`).join("")}</div></div>
       ${good.length ? `<div class="card"><h2 class="h">Khoảnh khắc đáng nhớ</h2><ul class="bul">${good.map(m => `<li>${esc(getWish(m.id).title)}</li>`).join("")}</ul></div>` : ""}
-      <details class="card" open><summary class="h">Quyết toán</summary><dl class="rows">${rows.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd class="${v < 0 ? "neg" : ""}">${signed(v)}</dd></div>`).join("")}<div class="sum"><dt>Lợi nhuận</dt><dd>${money(r.profit)}</dd></div></dl></details>
+      <details class="card" open><summary class="h">Quyết toán</summary><p class="muted small">Chi phí của dự án</p><dl class="rows">${rows.map(([k, v]) => `<div><dt>${esc(voice(k))}</dt><dd class="${v < 0 ? "neg" : ""}">${signed(v)}</dd></div>`).join("")}<div class="sum"><dt>Lãi dự án</dt><dd>${money(r.profit)}</dd></div></dl>${opsRows().length ? `<p class="muted small">Chi phí vận hành trong thời gian làm đám (trừ thẳng vào quỹ đầu mỗi tháng, không tính vào lãi dự án)</p><dl class="rows">${opsRows().map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${money(v)}</dd></div>`).join("")}</dl>` : ""}</details>
       <div class="card"><h2 class="h">Nhìn lại</h2><ul class="bul">${lessons(r).map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>
       <details class="card"><summary class="h">Các quyết định của bạn</summary><ul class="bul">${decisionLog().map(x => `<li>${esc(x)}</li>`).join("")}</ul></details>
       <details class="card"><summary class="h">Rủi ro đã đối mặt</summary><div class="risks">${state.rolls.filter(x => x.pct > 0).sort((a, b) => b.pct - a.pct).map(x => `<div class="risk"><span>${esc(getCrisis(x.id).title)}</span><b class="${x.happened ? "neg" : "pos"}">${x.pct}% · ${x.happened ? "xảy ra" : "thoát"}</b></div>`).join("")}</div></details>
@@ -11509,7 +11968,7 @@ window.WP_COPY = {
     return `<h2 class="h">Gặp riêng · ${esc(def.who)}</h2>
       <div class="chat">${asked.map(q => `<div class="msg me">${img(planner().look, "face")}<p>${esc(q.q)}</p></div><div class="msg ${q.speaker === "groom" ? "groom-l" : ""}">${img(speakerLook(q.speaker), "face")}<p>${esc(q.a)}</p></div>${getWish(q.reveal) ? `<div class="unlock ${getWish(q.reveal).kind}">${getWish(q.reveal).kind === "taboo" ? "⚠ Điều kiêng" : getWish(q.reveal).kind === "info" ? "★ Mở brief ẩn" : "♥ Mong muốn mới"}: ${esc(getWish(q.reveal).title)}</div>` : ""}`).join("")}</div>
       ${left > 0 ? `<p class="muted">Còn ${left} câu hỏi. Chọn câu bạn nghĩ sẽ mở ra điều quan trọng nhất.</p><div class="list">${def.questions.filter(q => !m.asked.includes(q.id)).map(q => `<button class="opt" data-act="ask" data-id="${q.id}"><b>${esc(q.q)}</b></button>`).join("")}</div>`
-        : `<div class="card"><b>Buổi gặp kết thúc</b><p class="muted">${unlocked.filter(w => w.kind === "wish").length ? "Mong muốn mới đã vào tab Khách. Đưa vào kế hoạch thì ngày cưới sẽ có khoảnh khắc đặc biệt." : "Lần này chưa mở được mong muốn nào."}</p></div>
+        : `<div class="card"><b>Buổi gặp kết thúc</b><p class="muted">${unlocked.filter(w => w.kind === "wish").length ? "Mong muốn mới đã vào Sổ dự án. Đưa vào kế hoạch thì ngày cưới sẽ có khoảnh khắc đặc biệt." : "Lần này chưa mở được mong muốn nào."}</p></div>
         <div class="sheet-actions"><button class="btn primary" data-act="meetDone">Xong</button></div>`}`;
   }
   function sheetConcept() {
@@ -11526,14 +11985,14 @@ window.WP_COPY = {
   }
   function sheetMoney() {
     const m = moneyNow();
-    const rows = [["Dự toán khách duyệt", E.clientBudget(D)], ["Chi vendor thật", -D.categories.reduce((s, c) => s + (state.selectedVendors[c.id] ? E.vendorCost(D, state, c.id) : 0), 0)], ["Phí planning", m.feeKept]];
+    const rows = isDayof(state.project) ? [[FeeName(), m.feeKept]] : [["Dự toán khách duyệt", E.clientBudget(D)], ["Chi vendor thật", -D.categories.reduce((s, c) => s + (state.selectedVendors[c.id] ? E.vendorCost(D, state, c.id) : 0), 0)], [FeeName(), m.feeKept]];
     if (m.staffCost + m.travel) rows.push([m.staffCost ? "Lương team" + (m.travel ? " + công tác" : "") : "Đi lại, lưu trú cho team", -(m.staffCost + m.travel)]);
     if (m.extraCost) rows.push(...(state.extras?.length ? extraRows() : [["Freelancer, mong muốn khách", -m.extraCost]]));
     if (m.crisisCost) rows.push(["Xử lý sự cố", -(m.crisisCost - m.recovered)]);
     const svcDue = state.luxuryPaid ? 0 : CORE.luxuryServiceCost(state.project); // khách luxury: khoản này thanh toán lúc quyết toán, đã tính sẵn vào lời dự kiến
     if (svcDue) rows.push([`${CORE.LUXURY_SERVICE.label}, thanh toán lúc quyết toán`, -svcDue]);
     return `<h2 class="h">Tiền lời tính thế nào</h2>
-      <p class="muted">Khách trả theo dự toán, bạn trả vendor theo giá thật. Phần chênh cộng phí planning, trừ chi phát sinh, là lời của đám này. Lương nhân viên và văn phòng trừ theo tháng ở văn phòng.</p>
+      <p class="muted">${isDayof(state.project) ? "Khách tự chốt và tự trả vendor, không có chênh lệch vendor. Phí điều phối trừ chi phát sinh là lời của đám này." : "Khách trả theo dự toán, bạn trả vendor theo giá thật. Phần chênh cộng phí planning, trừ chi phát sinh, là lời của đám này."} Lương nhân viên và văn phòng trừ theo tháng ở văn phòng.</p>
       <dl class="rows">${rows.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd class="${v < 0 ? "neg" : ""}">${k === "Dự toán khách duyệt" ? money(v) : signed(v)}</dd></div>`).join("")}<div class="sum"><dt>Lời dự kiến</dt><dd>${money(m.profit - svcDue)}</dd></div></dl>`;
   }
   function sheetRisk() {
@@ -11581,8 +12040,20 @@ window.WP_COPY = {
     if (s.type === "log") return `<h2 class="h">Nhật ký</h2><ol class="log">${state.log.map(l => `<li class="${l.type}">${l.week ? `<small>T${l.week}</small>` : ""}${esc(l.text)}</li>`).join("") || "<li>Chưa có gì.</li>"}</ol>`;
     if (s.type === "restart") return `<h2 class="h">Bắt đầu lại từ đầu?</h2><p>Quỹ, team và các đám đã làm sẽ mất hết.</p><div class="sheet-actions"><button class="btn primary" data-act="restartNow">Chơi lại</button><button class="btn" data-act="close">Thôi</button></div>`;
     if (s.type === "book") return sheetBook();
-    if (s.type === "confirmWeek") return `<h2 class="h">Bạn còn lời hứa chưa làm</h2><p>Bạn đã hứa ${esc(promisedDue().map(a => a.title.toLowerCase()).join(", "))} trong tuần này. Bỏ qua thì lúc quyết toán khách sẽ nhắc lại và đòi giảm phí.</p><div class="sheet-actions"><button class="btn" data-act="weekForce">${state.week >= D.config.weeks ? "Vẫn vào ngày cưới" : `Vẫn sang tuần ${state.week + 1}`}</button><button class="btn primary" data-act="close">Ở lại làm</button></div>`;
+    if (s.type === "confirmWeek") return sheetConfirmWeek();
     return "";
+  }
+
+  // Hộp lời hứa chưa làm (mục 1.8): mỗi nút có dòng hệ quả; hết lượt (hoặc không đủ cho việc nào) thì không có nút "Ở lại làm".
+  function sheetConfirmWeek() {
+    const due = promisedDue(); const need = due.reduce((s, a) => s + (a.cost || 1), 0); const minCost = Math.min(...due.map(a => a.cost || 1));
+    const canStay = state.ap >= minCost; const last = state.week >= D.config.weeks;
+    const go = `<div><button class="btn${canStay ? "" : " primary"}" data-act="weekForce">${last ? "Vào ngày cưới" : `Sang tuần ${state.week + 1}`}</button><small class="muted">Bỏ ${due.length} việc đã hứa. Khách có thể đòi giảm phí khi quyết toán.</small></div>`;
+    const stay = canStay ? `<div><button class="btn primary" data-act="close">Ở lại làm</button><small class="muted">Còn ${state.ap} lượt; ${due.length > 1 ? `các việc này cần tổng ${need} lượt` : `việc này cần ${need} lượt`}.</small></div>` : "";
+    return `<h2 class="h">Bạn còn lời hứa chưa làm</h2>
+      <p>${state.ap ? (canStay ? "Bạn đã hứa trong gói và hạn là tuần này:" : `Tuần này còn ${state.ap} lượt, không đủ cho việc nào đã hứa:`) : "Tuần này hết lượt. Bạn đã hứa trong gói và hạn là tuần này:"}</p>
+      <ul class="bul">${due.map(a => `<li><b>${esc(a.title)}</b> · cần ${a.cost || 1} lượt</li>`).join("")}</ul>
+      <div class="sheet-actions stacked">${go}${stay}</div>`;
   }
 
   // ---- Layout and render ---------------------------------------------------------
@@ -11607,7 +12078,11 @@ window.WP_COPY = {
     const sb = sheetBody();
     const meetingOpen = state.sheet?.type === "meeting" && state.meeting && D.meetings[state.meeting.key].picks > state.meeting.asked.length;
     $("#sheet").innerHTML = sb ? `<div class="backdrop" ${meetingOpen ? "" : 'data-act="close"'}></div><div class="sheet" role="dialog" aria-modal="true">${meetingOpen ? "" : `<button class="sheet-x" data-act="close" aria-label="Đóng">×</button>`}${sb}</div>` : "";
-    $("#stage").classList.toggle("compact", ["hub", "brief", "quote", "prep", "settlement", "over"].includes(p));
+    $("#stage").classList.toggle("compact", ["hub", "brief", "quote", "prep", "over"].includes(p));
+    // Cảnh nền (Đợt 2): màn chuẩn bị dùng cảnh thấp và thu gọn khi cuộn; Tổng kết và Quyết toán cho cảnh cuộn theo trang, cao khoảng 30% màn hình.
+    const reading = ["review", "settlement"].includes(p);
+    $("#stage").classList.toggle("prep", p === "prep"); $("#stage").classList.toggle("read", reading); $("#top").classList.toggle("flow", reading);
+    if (p !== "prep") $("#stage").classList.remove("folded");
     const want = desiredScene();
     $("#stage").classList.toggle("meet", !!want.place);
     $("#place").hidden = !want.place; $("#place").textContent = want.place || "";
@@ -11650,6 +12125,13 @@ window.WP_COPY = {
   // Chiều cao khối dính trên đầu (HUD + cảnh), để các chỗ tự cuộn tới không bị khối đó che.
   function topHeight() { const t = $("#top"); if (t) document.documentElement.style.setProperty("--top-h", t.offsetHeight + "px"); }
   if (!HEADLESS && typeof ResizeObserver !== "undefined") new ResizeObserver(topHeight).observe(document.getElementById("app"));
+  // Màn chuẩn bị: cuộn xuống thì thu cảnh lại, chỉ còn dòng Tuần và số lượt; cuộn về đầu thì mở lại. Có khoảng đệm để không bật tắt liên tục.
+  if (!HEADLESS) window.addEventListener("scroll", () => {
+    const st = document.getElementById("stage"); if (!st) return;
+    const y = window.scrollY, folded = st.classList.contains("folded");
+    const want = state.phase === "prep" && (folded ? y > 8 : y > 60);
+    if (want !== folded) { st.classList.toggle("folded", want); topHeight(); }
+  }, { passive: true });
 
   const scrollTop = () => window.scrollTo({ top: 0 });
   if (!HEADLESS) document.addEventListener("click", e => {
@@ -11675,7 +12157,9 @@ window.WP_COPY = {
       case "upgrade": upgrade(); break;
       case "sideOpen": openSide(); break;
       case "side": workSide(id); break;
-      case "loan": takeLoan(); break;
+      case "loanAsk": state.loanAsk = true; break;
+      case "loanCancel": state.loanAsk = false; break;
+      case "loan": state.loanAsk = false; takeLoan(); break;
       case "openBranch": openBranch(id); break;
       case "closeBranch": closeBranchNow(id); break;
       case "assignManager": assignManager(id); break;
@@ -11753,7 +12237,7 @@ window.WP_COPY = {
     serialize: () => JSON.stringify({ v: BASE.version, s: state }), loadFrom(json) { const s = restore(JSON.parse(json)); if (s) state = s; return s; }, version: BASE.version,
     startCareer, genOffers, quoteOptions, takeOffer, startPrep, weekDilemma, chooseDilemma, canBook, book, research, negotiate, setSpec,
     actionBlock, doAction, ask, wishBlock, fulfil, confirmConcept, promisedDue, nextWeek, startEvent, optionBlock, successChance, resolveCrisis,
-    nextItem, stageNext, settlementOptions, resolveSettlement, nextSettlement, endProject, openSide, workSide, sideOffers: () => state.sideOffers || (state.sideOffers = CORE.sideOffers(state.career, SJ, CAL.rnd)), takeLoan, hire, fire, weekStartAP, CAL_FOR_TEST: () => CAL, branchCities, openBranch, closeBranchNow, assignManager, branchLine, candidates, rolesOpen, salaryOf, fireCost, teamFx, chooseBrand, learnSkill, upgrade,
+    nextItem, stageNext, settlementOptions, resolveSettlement, nextSettlement, endProject, openSide, workSide, sideOffers: () => state.sideOffers || (state.sideOffers = CORE.sideOffers(state.career, SJ, CAL.rnd)), takeLoan, hire, fire, opsRows: () => opsRows(), lower, crisisOptionsHtml: id => crisisOptions(getCrisis(id)), needLine: () => needLine(), hudHtml: () => hud(), monthCardHtml: () => monthCardHtml(), sideSheetHtml: () => sheetSide(), taskState: a => taskState(a), vendorDetailHtml: (v, c) => vendorDetail(v, c, true), offerProfile: o => offerProfile(o), promisedDue: () => promisedDue(), isContracted: id => isContracted(id), afterLine: (w, s) => afterLine(w, s), lessons: r => lessons(r), markLinks: () => markLinks(), wishPossible: w => wishPossible(w), famLook: id => famLook(id), coupleLook: k => CL(k), cardLook: k => cardLook(k), GROOM_TOPS: () => GROOM_TOPS, goalLines: g => goalLines(g), officeUnlocks: o => officeUnlocks(o), sheetCareerHtml: () => sheetCareer(), confirmWeekHtml: () => sheetConfirmWeek(), nextWeekNeed: () => nextWeekNeed(), taskCardHtml: a => taskCard(a), monthSpendParts: () => monthSpendParts(), html: name => ({ offer: sheetOffer, quote: sheetQuote, review: screenReview, settlement: screenSettlement, money: sheetMoney, brief: () => screenBrief ? screenBrief() : "" }[name] || (() => ""))(), voice, subjectWord, satReasons: () => satReasons(), weekStartAP, vendorTopRisk: v => vendorRisk(v), CAL_FOR_TEST: () => CAL, branchCities, openBranch, closeBranchNow, assignManager, branchLine, candidates, rolesOpen, salaryOf, fireCost, teamFx, chooseBrand, learnSkill, upgrade,
     checkStage, monthlyCost, monthlyParts, tierObj, moneyNow, riskStatus, hasSkill, avgStars, shortfall, shortActive, resolveShort, shortDrops, priceFor, catVendors, hireFreelancer, overtime, monthCard, cardOptions: () => (monthCard() ? CORE.cardOptions(state.career, monthCard()) : []), cardPending, resolveCard, setOffice, setLiving, tickWeek, actionMoney, discoveryPending, resolveDiscovery, chooseContact, assignContact, rollDiscovery, slotHtml: () => dilemmaCard(), decisionPending
   };
   window.WP_GAME = { get state() { return state; }, get D() { return D; }, render, _build: buildProject, api, HEADLESS };
