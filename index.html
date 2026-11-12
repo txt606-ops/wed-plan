@@ -269,6 +269,7 @@ button.pips { background: none; border: 0; padding: 6px 2px; flex-wrap: wrap; ma
 .wish.taboo { border-color: var(--gold); background: var(--gold-soft); }
 .wish.taboo.broken { border-color: var(--danger); background: var(--danger-soft); }
 .wish > span { font-weight: 700; font-size: 13px; }
+.wish small.tag-coord { align-self: flex-start; padding: 1px 6px; border: 1px solid var(--jade); color: var(--ink); background: var(--jade-soft); font-size: 11px; font-weight: 700; }
 .unlock { align-self: center; font-size: 13px; font-weight: 700; padding: 4px 10px; background: var(--jade-soft); color: var(--jade); border: 2px solid currentColor; }
 .unlock.taboo { background: var(--gold-soft); color: var(--gold); }
 .unlock.info { background: var(--surface); color: var(--ink); }
@@ -631,6 +632,21 @@ h3.sub { margin: 6px 0 0; font: 700 12px/1.3 var(--body); letter-spacing: .08em;
 .confirm-box { border-color: var(--danger); gap: 8px; }
 .confirm-box p { margin: 0; }
 
+.short-left { display: block; margin-top: 4px; font-weight: 600; font-size: 13px; }
+
+/* ---- Đợt 4: ô hội thoại theo vai ---- */
+/* Planner (người chơi): màu riêng, bên phải; không khách nào dùng màu này. Khách và gia đình: nền trung tính, bên trái, vạch mảnh màu áo. */
+:root { --bubble-me: #fde4ec; --bubble-me-line: var(--rose); --bubble-guest: #ffffff; }
+.chat-wrap { display: flex; flex-direction: column; gap: 10px; }
+.msg { align-items: flex-end; }
+.msg .bub { display: flex; flex-direction: column; gap: 2px; min-width: 0; max-width: 82%; }
+.msg.me .bub { align-items: flex-end; }
+.msg .bub p { max-width: none; }
+.msg .who { font-size: 11.5px; color: var(--muted); font-weight: 600; padding: 0 2px; }
+.msg.guest p, .msg.groom p, .msg.groom-l p { background: var(--bubble-guest); border: 2px solid var(--ink); border-left: 5px solid var(--stripe, #b9b2bf); }
+.msg.me p { background: var(--bubble-me); border: 2px solid var(--bubble-me-line); border-style: solid; }
+.chat.solo .msg .bub { max-width: none; flex: 1; }
+
 </style>
 </head>
 <body>
@@ -646,7 +662,7 @@ h3.sub { margin: 6px 0 0; font: 700 12px/1.3 var(--body); letter-spacing: .08em;
  * crises[].options[].effects: cost (agency pays), clientPays (client is charged), couple, family.
  */
 window.GAME_DATA = {
-  "version": "3.7.3",
+  "version": "3.7.5",
   "project": {
     "couple": "Linh & Minh",
     "location": "Sài Meo",
@@ -4413,6 +4429,8 @@ window.GAME_DATA = {
     ballroom(g, o) {
       rect(g, 0, 0, SW, 46, "#2c2a44"); rect(g, 0, 40, SW, 6, "#24223a");
       for (let x = 6; x < SW; x += 18) rect(g, x, 4, 2, 36, "#36345a");
+      // hai cửa sổ vòm hai bên (Đợt 4): khi có sự cố thời tiết, mưa hiện ở đây chứ không rơi trong phòng
+      [12, 158].forEach(x => { rect(g, x - 1, 7, 24, 30, SP.OUTLINE); rect(g, x, 8, 22, 28, "#3d4f7a"); rect(g, x + 2, 6, 18, 2, SP.OUTLINE); rect(g, x + 3, 7, 16, 1, "#3d4f7a"); rect(g, x + 10, 8, 2, 28, "#c9962e"); rect(g, x, 21, 22, 1, "#c9962e"); rect(g, x + 2, 10, 4, 2, "#5a6e9a"); });
       for (let y = 46; y < SH; y += 6) for (let x = 0; x < SW; x += 6) rect(g, x, y, 6, 6, ((x + y) / 6) % 2 ? "#7a2f3f" : "#6e2937");
       for (let y = 49; y < SH; y += 12) for (let x = 3; x < SW; x += 12) rect(g, x, y, 1, 1, "#c9962e");
       rect(g, 60, 8, 72, 30, "#fbf7f0"); rect(g, 62, 10, 68, 26, "#f4ece4"); rect(g, 56, 38, 80, 6, "#e6dccf");
@@ -4467,6 +4485,8 @@ window.GAME_DATA = {
     },
     hall(g, o) {
       rect(g, 0, 0, SW, 46, "#e8d9c5"); rect(g, 0, 40, SW, 6, "#d8c4aa");
+      // hai cửa sổ hai bên (Đợt 4): khi có sự cố thời tiết, mưa hiện ở đây
+      [12, 156].forEach(x => { rect(g, x - 1, 9, 26, 26, SP.OUTLINE); rect(g, x, 10, 24, 24, "#cfe9ef"); rect(g, x + 11, 10, 2, 24, "#fbf7f0"); rect(g, x, 21, 24, 2, "#fbf7f0"); rect(g, x + 2, 12, 6, 2, "#ffffff"); });
       for (let y = 46; y < SH; y += 8) for (let x = 0; x < SW; x += 8) rect(g, x, y, 8, 8, ((x + y) / 8) % 2 ? "#efe6d6" : "#e2d5bf");
       rect(g, 64, 8, 64, 28, "#d9577a"); rect(g, 66, 10, 60, 24, "#e26b8a"); rect(g, 60, 36, 72, 6, "#a9764a");
       rect(g, 86, 16, 20, 2, "#f6d36b"); rect(g, 86, 22, 20, 2, "#f6d36b");
@@ -4486,6 +4506,12 @@ window.GAME_DATA = {
   };
 
   const HEIGHT = { home: 144 };
+  // Mưa ở cảnh trong nhà chỉ thấy qua cửa sổ và cửa ra vào (Đợt 4). Cảnh không có trong bảng này (sân vườn) thì mưa phủ cả cảnh.
+  // living lật ngang ở nhà trai (o.side === "groom"), nên ô cửa cũng lật theo.
+  const RAIN_MASK = {
+    home: [[9, 17, 24, 48], [157, 17, 18, 25]], cafe: [[8, 16, 56, 23]], office: [[16, 10, 34, 24]], living: [[8, 12, 38, 30]],
+    hall: [[12, 10, 24, 24], [156, 10, 24, 24]], ballroom: [[12, 8, 22, 28], [158, 8, 22, 28]]
+  };
   const MOOD = { "!": "worried", "×": "upset", "♥": "happy", "✓": "happy", "♪": "happy" };
 
   // ---- Scene -------------------------------------------------------------------
@@ -4562,9 +4588,15 @@ window.GAME_DATA = {
         if (a.bubble) this.drawBubble(a.bubble, x + SP.W / 2, y - 2);
       }
       if (this.rain) {
-        g.fillStyle = "rgba(60,80,120,.18)"; g.fillRect(0, 0, SW, this.h);
-        g.fillStyle = "#cfe6f5";
-        for (const d of this.drops) { d.y += 3; d.x -= 0.6; if (d.y > this.h) { d.y = -4; d.x = Math.random() * SW + 20; } g.fillRect(Math.round(d.x), Math.round(d.y), 1, 3); }
+        for (const d of this.drops) { d.y += 3; d.x -= 0.6; if (d.y > this.h) { d.y = -4; d.x = Math.random() * SW + 20; } }
+        const mask = RAIN_MASK[this.kind];
+        const rects = mask ? mask.map(([x, y, w, h]) => (this.kind === "living" && this.opts && this.opts.side === "groom" ? [SW - x - w, y, w, h] : [x, y, w, h])) : [[0, 0, SW, this.h]];
+        for (const [x, y, w, h] of rects) {
+          g.save(); g.beginPath(); g.rect(x, y, w, h); g.clip();
+          g.fillStyle = "rgba(60,80,120,.28)"; g.fillRect(x, y, w, h);
+          g.fillStyle = "#cfe6f5"; for (const d of this.drops) { g.fillRect(Math.round(d.x), Math.round(d.y), 1, 3); if (mask) { g.fillRect(Math.round(d.x + 9) % SW, Math.round(d.y + 17) % this.h, 1, 3); g.fillRect(Math.round(d.x + 17) % SW, Math.round(d.y + 41) % this.h, 1, 3); } } // ô cửa nhỏ: dày hạt hơn để vẫn thấy mưa
+          g.restore();
+        }
       }
       if (this.confetti) {
         for (const b of this.bits) { b.y += 0.5; b.x += Math.sin((this.t + b.y) * 2) * 0.3; if (b.y > this.h) b.y = -2; g.fillStyle = b.c; g.fillRect(Math.round(b.x), Math.round(b.y), 2, 1); }
@@ -5191,7 +5223,7 @@ window.WP_CONTENT = {
      "id": "fashion_ban_gia_tien",
      "kind": "wish",
      "who": "family",
-     "title": "Gia tiên chỉnh chu",
+     "title": "Gia tiên chỉn chu",
      "detail": "Giữ bàn gia tiên đúng phong tục gia đình, chuẩn bị khăn phủ, hoa và các vật phẩm đồng bộ với lễ phục.",
      "cost": 3,
      "needs": "decor",
@@ -9161,14 +9193,26 @@ window.WP_COPY = {
   const SKILLS = [ // note: khi nào có tác dụng, rồi tác dụng gì (sửa 3.7.0, mục 1.9). Số trong câu phải khớp với code ở game.js.
     { id: "ngoai_giao", name: "Ngoại giao hai họ", note: "Mỗi dự án: hai họ bắt đầu ở mức hài lòng +4. Khi khách phát hiện phần chênh giá vendor và bạn giải thích: khả năng khách chấp nhận thêm 15%." },
     { id: "tham_my", name: "Mắt thẩm mỹ", note: "Mỗi dự án: cặp đôi bắt đầu ở mức hài lòng +4." },
-    { id: "ep_gia", name: "Ép giá vendor", note: "Khi chốt vendor: giá mọi vendor thấp hơn 5%." },
+    // Số tiền trong câu: trung vị trên một đám trọn gói, đo bằng node tools/balance-sim.js 500 (mục "Kỹ năng tính bằng tiền", 3.7.5). Đổi value thì đo lại.
+    { id: "ep_gia", name: "Ép giá vendor", value: 0.01, note: "Khi chốt vendor: vendor bớt cho bạn khoảng 4tr mỗi đám trọn gói (giá thấp hơn {v}%)." },
     { id: "nhanh_nhen", name: "Chạy việc nhanh", note: "Tuần đầu của mỗi dự án: thêm 1 lượt (chỉ tuần đó)." },
     { id: "binh_tinh", name: "Bình tĩnh", note: "Khi có sự cố ngày cưới: mỗi lần khách phật ý nhẹ đi nửa mức, nên lúc quyết toán khách ít đòi giảm phí hơn." },
     { id: "xu_ly", name: "Xử lý sự cố", note: "Khi xử lý sự cố: phương án tự xử lý (thường 75%) và phương án nhờ khách (thường 85%) thành công thêm 10%. Phương án gọi vendor hoặc chi tiền vốn đã chắc chắn, không cộng thêm." },
     { id: "moi_quan_he", name: "Quen vendor", note: "Khi chốt vendor trễ hạn: phụ phí chỉ +10% (thường +20%), và không vendor nào báo kín lịch với bạn." },
-    { id: "chot_sale", name: "Chốt sale", note: "Mọi lời hỏi của khách: phí bạn báo cao hơn 10%, khách vẫn nhận như thường." },
+    { id: "chot_sale", name: "Chốt sale", value: 0.05, note: "Mọi lời hỏi của khách: bạn thu thêm khoảng 2,7tr phí mỗi đám trọn gói, khách vẫn nhận như thường (phí cao hơn {v}%)." },
     { id: "ngoai_ngu", name: "Ngoại ngữ", note: "Khách cưới ở nước ngoài tìm tới sớm hơn một cấp, và tính là khách đúng gu. Đám ở nước ngoài: chi phí bay và lưu trú giảm 30%." }
-  ];
+  ];  // Mức của kỹ năng có số (value) điền thẳng vào câu mô tả, để câu luôn khớp số đang dùng (Đợt 4).
+  SKILLS.forEach(k => { if (k.value == null) return; const tpl = k.note; Object.defineProperty(k, "note", { get() { return tpl.replace("{v}", String(Math.round(this.value * 1000) / 10).replace(".", ",")); }, enumerable: true }); });
+
+
+  // Mong muốn planner điều phối được bằng timeline, cue sheet, dặn MC, xếp chỗ, không cần thêm vendor (Thanh, 3.7.5).
+  // Ở day-of chỉ nhóm này đưa vào kế hoạch được; nhóm còn lại cần decor, catering, ảnh, địa điểm nên khách tự lo với vendor của họ.
+  const COORD_WISHES = ["dad_walk", "genealogy", "elder_seats",
+    "it_khong_game_san_khau", "it_uu_tien_nguoi_lon",
+    "bac_le_gon_gang", "bac_khoanh_khac_ong_ba", "bac_qua_tang_cha_me", "bac_gio_dep", "bac_dai_dien_hai_ho",
+    "fashion_khu_vuc_ho_hang",
+    "tainhon_gioi_thieu_tinh_te", "tainhon_gia_dinh_ghep", "tainhon_le_nho",
+    "cholon_nghi_thuc_tra", "cholon_khong_gian_gan_ket"];
 
   // Extra content (content.js): client personalities with their own meetings and hidden wishes, brief variants, more traits and names.
   const X = root.WP_CONTENT || {};
@@ -9179,6 +9223,52 @@ window.WP_COPY = {
   Object.keys(BRIEFS).forEach(k => { ALL_BRIEFS[k] = [BRIEFS[k]].concat((X.briefs || {})[k] || []); });
   // One strategic decision per prep week. phase: which week it can land in; when: extra condition; risks: crisis odds tied to a choice.
   // Lý do bằng lời cho nhãn cảm xúc của từng lựa chọn sự cố (sửa 3.7.0, mục 1.2): hiện ngay dưới nhãn, để hai lựa chọn không bao giờ trông giống hệt nhau.
+  // "Sau đám cưới" (Đợt 4). WITNESS: chuyện người trong cuộc tận mắt thấy, viết như chuyện đã xảy ra.
+  // Lựa chọn nào chỉ là chuyện nội bộ của planner (kèm cặp nhân viên, tổng duyệt của team, giữ hợp đồng với vendor, ăn chênh) thì không có ở đây,
+  // nên không ai nhắc tới. Không bao giờ có giá vendor, phí, người đi thay.
+  const WITNESS = {
+    crisis: {
+      flower_delay: "hoa tới trễ", tray_team_short: "đội bê tráp tới thiếu người", extra_guests_engagement: "nhà gái báo thêm khách sát giờ ăn hỏi",
+      ritual_conflict: "hai họ bất đồng thứ tự nghi lễ", loadin_late: "sảnh bàn giao trễ, mọi thứ dựng vội", rental_missing: "bàn ghế giao thiếu",
+      weather: "trời đổ mưa giữa tiệc", catering_shortage: "khách tới đông hơn số bàn", sound_failure: "micro rè ngay trước nghi thức",
+      mc_mistake: "MC đọc sai thứ tự chương trình", photo_moment: "suýt lỡ khoảnh khắc chụp ảnh quan trọng", overtime: "tiệc kéo dài quá giờ",
+      eng_thieu_phong_bao_be_trap: "thiếu phong bao cho đội bê tráp", eng_ao_dai_nguoi_lon_sai_size: "áo dài của người lớn giao sai size",
+      eng_dai_dien_hai_ho_mat_giong: "người đại diện bị mất giọng", wed_so_do_ban_tiec_nham: "sơ đồ bàn tiệc bị nhầm",
+      wed_banh_cuoi_sai_ten: "bánh cưới ghi sai tên", wed_guestbook_mat_ket_noi: "góc lưu bút bị bỏ quên"
+    },
+    dilemma: {
+      hall_choice: { out: "tiệc được tổ chức ở sảnh ngoài trời như cặp đôi muốn", in: "tiệc vẫn ở sảnh trong chứ không ra ngoài trời" },
+      dress_fitting: { go: "planner đi thử váy cùng cô dâu", send: "có người đi thử váy cùng cô dâu", skip: "cô dâu chỉ được xem ảnh mẫu qua tin nhắn chứ không ai đi thử váy cùng" },
+      ritual_time: { yes: "giờ rước được đổi theo ý mẹ chú rể", no: "giờ rước vẫn giữ như cũ dù mẹ chú rể muốn đổi" },
+      extra_guests: { yes: "30 khách mời thêm vẫn có chỗ ngồi", pay: "phải trả thêm bàn cho khách mời thêm", no: "không mời thêm được khách nào ngoài số đã chốt" },
+      flycam: { client: "có cảnh quay flycam", gift: "có cảnh quay flycam làm quà", no: "không được quay flycam" },
+      decor_swap: { swap: "hoa nhập bị đổi sang loại hoa khác", pay: "vẫn giữ được đúng hoa nhập" },
+      rain_tent: { yes: "có sẵn lều phòng khi mưa" },
+      speech: { keep: "bố cô dâu nói gọn đúng 10 phút", cut: "bài phát biểu của bố cô dâu bị rút còn 3 phút" },
+      envelope_desk: { staff: "có người trông bàn phong bì giúp gia đình", family: "người nhà phải tự trông bàn phong bì" }
+    }
+  };
+  // Mỗi loại chuyện: 2 câu cho cặp đôi (cô dâu dùng câu 1, chú rể câu 2) và 2 câu cho phụ huynh (mẹ cô dâu câu 1, mẹ chú rể câu 2),
+  // nên bốn người luôn có bốn kiểu câu khác nhau. {N}: người nói, {x}: chuyện họ chứng kiến.
+  const AFTER_TEXT = {
+    couple: { pos: ["{N} nhớ nhất cảnh {x}.", "{N} vẫn hay kể với bạn bè chuyện {x}."], neg: ["{N} vẫn buồn vì {x}.", "{N} tiếc nhất là {x}."] },
+    parent: { pos: ["{N} vui vì {x}.", "{N} khen với họ hàng chuyện {x}."], neg: ["{N} vẫn trách chuyện {x}.", "{N} không hài lòng vì {x}."] },
+    // chất lượng chung của tiệc (không gắn với một chuyện cụ thể): câu riêng cho từng người
+    look: {
+      pos: { bride: "Cô dâu khen trang trí, món ăn và ảnh đều đẹp hơn mình tưởng.", groom: "Chú rể kể khách khen tiệc đẹp suốt buổi.", mom_bride: "Mẹ cô dâu vui vì tiệc tươm tất, họ hàng ai cũng khen.", mom_groom: "Mẹ chú rể hài lòng vì mâm cỗ và trang trí đều đàng hoàng." },
+      neg: { bride: "Cô dâu thấy tiệc trông sơ sài hơn mình mong.", groom: "Chú rể ngại vì có khách chê tiệc đơn giản quá.", mom_bride: "Mẹ cô dâu chê trang trí và món ăn chưa xứng với tiền bỏ ra.", mom_groom: "Mẹ chú rể thấy tiệc chưa được tươm tất." }
+    },
+    none: {
+      bride: ["Cô dâu thấy cả ngày trôi chảy, không có gì phải bận lòng.", "Cô dâu thấy ngày cưới không như mình hình dung."],
+      groom: ["Chú rể nói ngày cưới diễn ra đúng như kế hoạch.", "Chú rể ít nói, nhưng rõ là chưa hài lòng."],
+      mom_bride: ["Mẹ cô dâu thấy mọi việc chu đáo.", "Mẹ cô dâu thấy nhiều việc chưa được chu đáo."],
+      mom_groom: ["Mẹ chú rể yên tâm vì mọi thứ đâu vào đấy.", "Mẹ chú rể không vui với cả ngày hôm đó."]
+    }
+  };
+  // Nhãn cảm xúc riêng của một lựa chọn sự cố (Đợt 4), khi câu chung ("hơi hụt hẫng với lựa chọn này") không khớp lý do của lựa chọn.
+  const CRISIS_MOOD = {
+    weather: { rain_plan: "Cô dâu hơi tiếc vì lều che mất khung cảnh", venue_backup: "Cô dâu buồn vì mất sân vườn đã mong" }
+  };
   const CRISIS_REASONS = {
    "flower_delay": {
     "backup": "đổi một phần hoa so với mẫu đã duyệt",
@@ -9608,7 +9698,7 @@ window.WP_COPY = {
   };
 
 
-  root.WP_CAREER = { CRISIS_REASONS, OVERSEAS_VENDORS: GPT.overseasVendors, BRANCH_CARDS, BRANCH_TEXT, SIDE_JOBS, MONTH_CARDS, STAGES, ROLES, STAFF_TRAITS, TRAIT_FX, CANDIDATES, MORALE, HIRING, STAFF_NAMES, BRANDS, COUPLES: ALL_COUPLES, TRAITS: ALL_TRAITS, TYPES, CONTRACTS, BRIEFS: ALL_BRIEFS, CLIENTS, EXTRA_CRISES: X.crises || [], EXTRA_REACTIONS: X.reactions || {}, DESTS, CITIES, transitionMonths, OVERSEAS, DEST_FEES, SEASONS, SKILLS, DILEMMAS, monthInfo };
+  root.WP_CAREER = { COORD_WISHES, WITNESS, AFTER_TEXT, CRISIS_MOOD, CRISIS_REASONS, OVERSEAS_VENDORS: GPT.overseasVendors, BRANCH_CARDS, BRANCH_TEXT, SIDE_JOBS, MONTH_CARDS, STAGES, ROLES, STAFF_TRAITS, TRAIT_FX, CANDIDATES, MORALE, HIRING, STAFF_NAMES, BRANDS, COUPLES: ALL_COUPLES, TRAITS: ALL_TRAITS, TYPES, CONTRACTS, BRIEFS: ALL_BRIEFS, CLIENTS, EXTRA_CRISES: X.crises || [], EXTRA_REACTIONS: X.reactions || {}, DESTS, CITIES, transitionMonths, OVERSEAS, DEST_FEES, SEASONS, SKILLS, DILEMMAS, monthInfo };
 })(typeof window !== "undefined" ? window : globalThis);
 
 </script>
@@ -9731,6 +9821,7 @@ window.WP_COPY = {
     const c = state.career; if (c.stage <= c.maxStage) return;
     c.maxStage = c.stage; c.skillPoints += 1; log("Mở thêm 1 kỹ năng mới.", "good");
   }
+  const skillValue = id => (C.SKILLS.find(k => k.id === id) || {}).value || 0; // mức của kỹ năng có số (Đợt 4: cân bằng Ép giá vendor, Chốt sale)
   const hasSkill = id => !!state.me && state.me.skills.includes(id);
   function learnSkill(id) {
     const c = state.career; const sk = C.SKILLS.find(x => x.id === id);
@@ -9933,7 +10024,7 @@ window.WP_COPY = {
     else if (type === "luxury" || type === "boss") fee = Math.round(budget * 0.12);
     else if (type === "overseas") fee = Math.max(90, budget * 0.18);
     else fee = (30 + steps * 6 + 10) * (type === "destination" ? 1.4 : 1);
-    fee = Math.round(fee * (trait?.feeMult || 1) * (mi.peak ? 1.1 : 1) * (hasSkill("chot_sale") ? 1.1 : 1) * (CORE.studioActive(state.career) ? 1 + CORE.STUDIO.feeBonus : 1) * (CORE.demandLevel(state.career) === "shunned" ? CORE.DEMAND.shunnedFee : 1) * (1 + fxNow("feeMult"))); // nhân viên ăn nói khéo: phí cao hơn; studio: +10%, áp một lần ở đây; tiếng xấu: khách ép phí
+    fee = Math.round(fee * (trait?.feeMult || 1) * (mi.peak ? 1.1 : 1) * (hasSkill("chot_sale") ? 1 + skillValue("chot_sale") : 1) * (CORE.studioActive(state.career) ? 1 + CORE.STUDIO.feeBonus : 1) * (CORE.demandLevel(state.career) === "shunned" ? CORE.DEMAND.shunnedFee : 1) * (1 + fxNow("feeMult"))); // nhân viên ăn nói khéo: phí cao hơn; studio: +10%, áp một lần ở đây; tiếng xấu: khách ép phí
     const preset = {};
     if (type === "dayof" || type === "comeback") BASE.categories.forEach(c => { const list = BASE.vendors.filter(v => v.category === c.id); preset[c.id] = type === "comeback" ? list.sort((a, b2) => b2.reliability - a.reliability)[0].id : pick(r, list).id; });
     const m = ((state.career.month + T.months - 1) % 12) + 1;
@@ -10046,6 +10137,7 @@ window.WP_COPY = {
     const ct = C.CLIENTS.find(x => x.profile.id === o.client);
     if (ct && ct.wishes) { P.meetings.couple.questions = clone(ct.coupleQuestions); P.meetings.family.questions = clone(ct.familyQuestions); P.wishes = clone(ct.wishes); }
     if (o.type === "dayof") P.wishes = P.wishes.filter(w => w.kind !== "taboo"); // concept and venue are the client's call, so a taboo could not be avoided
+    P.wishes.forEach(w => { if ((C.COORD_WISHES || []).includes(w.id)) w.coord = true; }); // nhóm "planner điều phối được"
     if (trait?.wishMult) P.wishes.forEach(w => { if (w.kind === "taboo" || (trait.wishCats || []).includes(w.needs)) { w.couple = Math.round(w.couple * trait.wishMult); } });
     if (trait?.deadlineShift) P.categories.forEach(c => { c.deadline = Math.max(c.from, c.deadline + trait.deadlineShift); });
     if (trait?.actionCost) P.actions.forEach(a => { if (trait.actionCost[a.id]) a.cost = (a.cost || 1) + trait.actionCost[a.id]; });
@@ -10130,7 +10222,7 @@ window.WP_COPY = {
     state.sheet = null;
     Object.assign(state, projectFields(), { project: o, seed: hash(`${state.seed}:${o.id}`), projStartWeek: state.career.elapsedWeeks || 0 });
     D = buildProject(o, state.career.staff, state.me.skills); TIME = D.config.time;
-    state.tier = "job"; state.negBonus = hasSkill("ep_gia") ? 0.05 : 0;
+    state.tier = "job"; state.negBonus = hasSkill("ep_gia") ? skillValue("ep_gia") : 0;
     if (hasSkill("ngoai_giao")) state.familyScore += 4;
     if (hasSkill("tham_my")) state.coupleScore += 4;
     if (o.type === "dayof") { state.selectedVendors = { ...o.preset }; state.selectedConcept = "modern"; state.flags.conceptChosen = true; state.negBonus = 0; } // day-of: khách tự chốt và trả vendor, agency không có chênh
@@ -10203,10 +10295,17 @@ window.WP_COPY = {
     return { due, short: Math.max(0, Math.round((due - state.career.cash) * 10) / 10), rows };
   }
   // Vendor sẽ phải bỏ nếu chọn "không trả nổi": bỏ từ khoản nhỏ nhất cho tới khi phần còn lại vừa quỹ.
+  // Thiếu tiền trước lễ, "không trả vendor" (Thanh duyệt 12/11/2026): bỏ ÍT hạng mục nhất mà vẫn đủ tiền; nếu số hạng mục bằng nhau
+  // thì chọn tổng tiền bỏ nhỏ nhất. Không bộ nào đủ thì bỏ hết những gì bỏ được. Tối đa 6 hạng mục nên thử hết mọi cách ghép (64 cách).
   function shortDrops() {
-    const sf = shortfall(); let need = sf.short; const out = [];
-    sf.rows.filter(r => r.cat && !r.emergency).sort((a, b) => a.amount - b.amount).forEach(r => { if (need > 0) { out.push(r); need -= r.amount; } });
-    return out;
+    const sf = shortfall(), need = sf.short; if (need <= 0) return [];
+    const rows = sf.rows.filter(r => r.cat && !r.emergency); let best = null;
+    for (let m = 1; m < (1 << rows.length); m++) {
+      const pick = rows.filter((_, i) => m & (1 << i)); const sum = pick.reduce((s, r) => s + r.amount, 0);
+      if (sum + 1e-9 < need) continue;
+      if (!best || pick.length < best.pick.length || (pick.length === best.pick.length && sum < best.sum)) best = { pick, sum };
+    }
+    return best ? best.pick : rows;
   }
   const shortActive = () => !!state.fin && state.fin.shortCard && !state.fin.shortForced && state.phase === "prep" && shortfall().short > 0;
   function resolveShort(id) {
@@ -10254,7 +10353,7 @@ window.WP_COPY = {
     if (o.mark && !state.marks.includes(o.mark)) { state.marks.push(o.mark); (state.markSrc = state.markSrc || {})[o.mark] = `${d.title}: ${voice(o.label).toLowerCase()}`; }
     if (o.morale && d.when) CORE.staffWith(state.career, d.when.slice(6)).forEach(s => { CORE.changeMorale(state.career, s, o.morale); log(`Tinh thần của ${s.name}: ${s.morale > 0 ? "+" : ""}${s.morale}.`, "good"); });
     state.dilemmaPick[d.id] = optId; state.needDecision = false;
-    state.ledger.push({ label: `${d.title}: ${voice(o.label).toLowerCase()}`, c: o.couple || 0, f: o.family || 0 });
+    state.ledger.push({ label: `${d.title}: ${voice(o.label).toLowerCase()}`, c: o.couple || 0, f: o.family || 0, src: { k: "dilemma", id: d.id, opt: optId } });
     log(`${d.title}: ${voice(o.label)}.`, "good");
   }
   // Risk shown as a count of real dangers among what is already decided, not a red label from day one.
@@ -10608,7 +10707,8 @@ window.WP_COPY = {
   //   Đám đang làm dở: không tạo cọc khách/vendor giả. Đám đó quyết toán kiểu cũ (lời cộng vào quỹ khi xong); dòng tiền mới áp dụng từ hợp đồng kế tiếp.
   const MIGRATE_FROM = ["3.5.1", "3.6.0"];
   // Bản cùng cấu trúc lưu: đọc thẳng, không chuyển đổi. 3.7.1–3.7.3 chỉ sửa giao diện; trường mới (warned, markSrc, sideWeek) đều có giá trị mặc định.
-  const SAME_SHAPE = ["3.7.0"];
+  // 3.7.4–3.7.5 không thêm trường lưu nào; nhãn "planner điều phối được" của mong muốn dựng lại từ dữ liệu khi nạp.
+  const SAME_SHAPE = ["3.7.0", "3.7.3"];
   const OFFICE_BY_OLD_STAGE = ["home", "cowork", "small", "studio", "studio"];
   function migrate(old, from) {
     const s = { ...fresh(), ...old, sheet: null };
@@ -10796,9 +10896,16 @@ window.WP_COPY = {
     if (w && w.kind === "info") (w.flags || []).forEach(f => { state.flags[f] = true; });
     log(`Hỏi: ${q.q} → ${w ? w.title : ""}`);
   }
+  // Day-of (Thanh duyệt 12/11/2026): khách tự chốt và tự lo với vendor của họ, planner không đưa mong muốn vào kế hoạch được.
+  // 3.7.5: trừ nhóm "planner điều phối được" (timeline, cue sheet, MC, xếp chỗ): không cần vendor nên day-of vẫn đưa vào kế hoạch được, miễn phí, 1 lượt.
+  const DAYOF_WISH = "Khách tự lo với vendor của họ";
+  const COORD_NOTE = "Day-of: bạn đưa vào kế hoạch được những mong muốn điều phối bằng timeline, cue sheet, dặn MC, xếp chỗ, không cần thêm vendor. Mong muốn cần decor, catering, ảnh, địa điểm thì khách tự lo với vendor của họ.";
+  const dayofCoord = w => isDayof(state.project) && !!w.coord;
+  const wishCost = w => dayofCoord(w) ? 0 : w.cost; // day-of: planner chỉ điều phối, khách không phải trả thêm vendor nào
   function wishBlock(w) {
     if (state.flags[`wish_${w.id}`]) return "Đã đưa vào kế hoạch";
-    if (w.needs && !state.selectedVendors[w.needs]) return `Cần chốt ${lower(getCat(w.needs).label)} trước`;
+    if (isDayof(state.project) && !w.coord) return DAYOF_WISH;
+    if (w.needs && !dayofCoord(w) && !state.selectedVendors[w.needs]) return `Cần chốt ${lower(getCat(w.needs).label)} trước`;
     if (state.ap < 1) return "Cần 1 lượt";
     return "";
   }
@@ -10809,11 +10916,12 @@ window.WP_COPY = {
     const [id, mode = "free"] = String(arg).split(":");
     const w = getWish(id); const why = wishBlock(w);
     if (why) { state.nudge = `wish:${id}`; return; }
-    state.ap -= 1; state.flags[`wish_${id}`] = true; state.wishMode[id] = w.cost ? mode : "free";
-    if (w.cost && mode === "client") { const m = wishMarkup(w); state.extraCost -= m; addExtra(voice(`${w.title} (khách trả, agency ăn chênh)`), -m); if (state.fin) state.fin.extraDue += m; } // khách trả cùng đợt cuối
-    if (w.cost && mode === "gift") { state.extraCost += w.cost; addExtra(voice(`${w.title} (agency tặng)`), w.cost); state.grievances = Math.max(0, state.grievances - 0.5); projCash(-w.cost, "extra", `${w.title} (agency tặng)`); }
-    log(voice(`Đưa vào kế hoạch: ${w.title}${w.cost ? (mode === "client" ? " (khách trả)" : ` (agency tặng ${money(w.cost)})`) : ""}.`), "good");
-    toast(`Đã thêm: ${w.title}${w.cost ? (mode === "client" ? ` · +${money(wishMarkup(w))}` : ` · −${money(w.cost)}`) : ""}`, "good");
+    const cost = wishCost(w);
+    state.ap -= 1; state.flags[`wish_${id}`] = true; state.wishMode[id] = cost ? mode : "free";
+    if (cost && mode === "client") { const m = wishMarkup(w); state.extraCost -= m; addExtra(voice(`${w.title} (khách trả, agency ăn chênh)`), -m); if (state.fin) state.fin.extraDue += m; } // khách trả cùng đợt cuối
+    if (cost && mode === "gift") { state.extraCost += w.cost; addExtra(voice(`${w.title} (agency tặng)`), w.cost); state.grievances = Math.max(0, state.grievances - 0.5); projCash(-w.cost, "extra", `${w.title} (agency tặng)`); }
+    log(voice(`Đưa vào kế hoạch: ${w.title}${cost ? (mode === "client" ? " (khách trả)" : ` (agency tặng ${money(w.cost)})`) : ""}.`), "good");
+    toast(`Đã thêm: ${w.title}${cost ? (mode === "client" ? ` · +${money(wishMarkup(w))}` : ` · −${money(w.cost)}`) : ""}`, "good");
   }
   const wishMult = id => state.wishMode[id] === "client" ? 0.6 : 1;
   function tabooBroken(w) {
@@ -10873,7 +10981,7 @@ window.WP_COPY = {
     state.pending = D.crises.filter(c => c.event === ev).map(c => c.id);
     const q = [{ k: "intro", event: ev }];
     const pr = state.promised && getWish(state.promised.id);
-    if (pr && (pr.event || evList()[evList().length - 1]) === ev && !flag(`wish_${pr.id}`)) { state.coupleScore -= 5; state.ledger.push({ label: `Lời hứa của ${state.promised.by} không thành: ${pr.title}`, c: -5, f: 0 }); }
+    if (pr && (pr.event || evList()[evList().length - 1]) === ev && !flag(`wish_${pr.id}`)) { state.coupleScore -= 5; state.ledger.push({ label: `Lời hứa của ${state.promised.by} không thành: ${pr.title}`, c: -5, f: 0 , src: { k: "promise", id: pr.id } }); }
     D.wishes.filter(w => w.event === ev).forEach(w => {
       if (w.kind === "wish" && flag(`wish_${w.id}`)) q.push({ k: "moment", event: ev, id: w.id, good: true });
       if (w.kind === "taboo" && tabooBroken(w)) q.push({ k: "moment", event: ev, id: w.id, good: false });
@@ -10882,7 +10990,7 @@ window.WP_COPY = {
       const w = getWish(x.id); const m = x.good ? wishMult(w.id) : 1;
       x.c = Math.round(w.couple * m); x.f = Math.round(w.family * m);
       state.coupleScore += x.c; state.familyScore += x.f; state.moments.push(x);
-      state.ledger.push({ label: x.good ? `Khoảnh khắc: ${w.title}` : `Phạm điều kiêng: ${w.title}`, c: x.c, f: x.f });
+      state.ledger.push({ label: x.good ? `Khoảnh khắc: ${w.title}` : `Phạm điều kiêng: ${w.title}`, c: x.c, f: x.f, src: { k: x.good ? "wish" : "taboo", id: w.id } });
     });
     state.queue = q; advanceEvent();
   }
@@ -10958,7 +11066,7 @@ window.WP_COPY = {
     let mark = null;
     if (o.mark && !state.marks.includes(o.mark.id)) { state.marks.push(o.mark.id); mark = o.mark.text; (state.markSrc = state.markSrc || {})[o.mark.id] = `${cr.title}: ${voice(o.title).toLowerCase()}`; }
     item.out = { id: o.id, kind, recovered, success, chance, tone, fx, mark, afterHit, afterText: afterHit ? ar.text : null };
-    state.ledger.push({ label: `Sự cố: ${lower(cr.title)}`, c: fx.couple || 0, f: fx.family || 0 });
+    state.ledger.push({ label: `Sự cố: ${lower(cr.title)}`, c: fx.couple || 0, f: fx.family || 0, src: { k: "crisis", id: cr.id, ok: tone === "good" || tone === "ok" } });
     log(`${cr.title}: ${o.title}${success ? "" : " (không thành)"}.${afterHit ? ` ${ar.text}` : ""}`, tone === "good" || tone === "ok" ? "info" : "bad");
     state.lastResolved = state.queue.length - 1;
     advanceEvent();
@@ -11154,11 +11262,32 @@ window.WP_COPY = {
   }
   // a crisis whose actor is not in the current scene falls back to the planner
   const onStage = id => (scene && scene.get(id) ? id : "me");
+  // Cảnh thấp (Đợt 4): văn phòng ở màn hub, khách mới, báo phí, chuẩn bị, quyết toán: mọi người đứng ngay trước bàn (chân y 62–70),
+  // để khung 84pt thấy trọn người cùng cửa sổ, kệ và bàn phía sau. Màn thiết lập, mở đầu, kết thúc vẫn dùng cảnh đầy đủ.
+  const OFFICE_BAND = { y0: 62, y1: 70 };
+  function officeBand(want) {
+    if (want.kind !== "office" || ["title", "over"].includes(want.key) || want.key.startsWith("setup")) return;
+    const b = OFFICE_BAND, cl = y => Math.max(b.y0, Math.min(b.y1, y - 26));
+    scene.walk = { ...scene.walk, y0: b.y0, y1: b.y1 };
+    scene.actors.forEach(a => { a.y = cl(a.y); a.ty = cl(a.ty); });
+  }
+  // Neo khung cắt của cảnh thấp: đáy khung ngay dưới chân người đứng thấp nhất, phần còn lại là tường và bàn phía sau.
+  function fitStage() {
+    const st = document.getElementById("stage"), cv = st && st.querySelector("canvas"); if (!cv || !scene) return;
+    if (!st.classList.contains("compact") || st.classList.contains("folded")) { cv.style.objectPosition = ""; return; }
+    const W = 192, H = scene.h || 120, cw = cv.clientWidth, ch = cv.clientHeight; if (!cw || !ch) return;
+    const k = Math.max(cw / W, ch / H), hc = ch / k; // số hàng điểm ảnh của cảnh lọt vào khung
+    const feet = scene.actors.filter(a => a.x > -10 && a.x < W + 10).map(a => (a.still || !a.wander ? Math.max(a.y, a.ty) : Math.max(a.y, scene.walk.y1)));
+    const bottom = Math.min(H, (feet.length ? Math.max(...feet) : H * 0.8) + 4);
+    const top = Math.max(0, Math.min(H - hc, bottom - hc));
+    cv.style.objectPosition = `50% ${-Math.round(top * k)}px`;
+  }
   function syncScene() {
     const host = $("#stage canvas"); if (!host) return;
     if (!scene || scene.canvas !== host) { scene = new SC.Scene(host); sceneKey = ""; }
     const want = desiredScene();
-    if (want.key !== sceneKey) { scene.set(want.kind, want.opts || {}); sceneKey = want.key; cast(want.key); }
+    if (want.key !== sceneKey) { scene.set(want.kind, want.opts || {}); sceneKey = want.key; cast(want.key); officeBand(want); }
+    fitStage();
     scene.start();
     scene.clearBubbles(); scene.rain = false;
     const p = state.phase;
@@ -11225,7 +11354,7 @@ window.WP_COPY = {
       <button class="icon-btn" data-act="menu" aria-label="Menu">≡</button>
     </div>
     ${need ? (need.short
-      ? `<button class="need one" data-act="sheet" data-id="book"><span class="need-mark soft">!</span><span>${esc(need.title)}${need.hint ? ` · ${esc(need.hint.replace(/\.$/, ""))}` : ""}</span><span class="chev">›</span></button>`
+      ? `<button class="need one" data-act="sheet" data-id="book"><span class="need-mark soft">!</span><span>${esc(need.brief)}${need.prep ? ` · cần ${esc(need.prep)}` : ""}</span><span class="chev">›</span></button>`
       : `<button class="need" data-act="sheet" data-id="book">${need.who ? img(speakerLook(need.who), "face") : `<span class="need-mark ${need.soft ? "soft" : ""}">!</span>`}<span>${esc(need.text)}${need.hint ? `<small class="need-hint">${esc(need.hint)}</small>` : ""}</span><span class="chev">›</span></button>`) : ""}</header>`;
   }
 
@@ -11285,6 +11414,24 @@ window.WP_COPY = {
       <div class="list">${C.SKILLS.map(k => { const own = hasSkill(k.id); return `<button class="opt ${own ? "on" : c.skillPoints ? "" : "locked"}" data-act="learnSkill" data-id="${k.id}" ${own || !c.skillPoints ? "disabled" : ""}><b>${own ? "✓ " : ""}${esc(k.name)}</b><small>${esc(k.note)}</small></button>`; }).join("")}</div>`;
   }
 
+  // Ô hội thoại (Đợt 4): màu theo VAI, không theo người. Planner (người chơi): một màu riêng, bên phải; mọi khách và gia đình:
+  // một màu nền trung tính, bên trái. Đổi người nói thì hiện tên nhỏ trên ô đầu tiên, và ô của khách có vạch mảnh màu áo nhân vật.
+  // l: { who, text, look?, name?, mood? }. who === "me" là planner. html: text đã an toàn sẵn (không esc lần nữa).
+  const bubbleName = who => {
+    if (who === "me") return planner().name;
+    const cp = String((state.project && state.project.couple) || "").split(" & ");
+    if (who === "bride") return cp[0] || "Cô dâu"; if (who === "groom") return cp[1] || "Chú rể";
+    return whoName(who);
+  };
+  function chat(list, cls = "") {
+    let prev = null;
+    return `<div class="chat ${cls}">${list.map(l => {
+      const me = l.who === "me"; const look = l.look || (me ? planner().look : speakerLook(l.who));
+      const name = l.name || bubbleName(l.who); const show = name !== prev; prev = name;
+      const stripe = me ? "" : ` style="--stripe:${(look && (look.top || look.trim)) || "#b9b2bf"}"`;
+      return `<div class="msg ${me ? "me" : "guest"}">${img(look, "face", l.mood)}<div class="bub">${show ? `<small class="who">${esc(name)}</small>` : ""}<p${stripe}>${l.html != null ? l.html : esc(l.text)}</p></div></div>`;
+    }).join("")}</div>`;
+  }
   function briefLines() {
     const P = D.project, cb = E.clientBudget(D), o = state.project;
     const where = P.location === D.feeModel.teamBase ? "" : ` ở ${P.location}`;
@@ -11299,9 +11446,9 @@ window.WP_COPY = {
     const lines = briefLines(); const n = lines.length; const done = true;
     return `<section class="stack">
       <div class="facts"><span><small>Chuẩn bị</small><b>${D.config.weeks} tuần</b></span><span><small>Khách</small><b>${D.project.engagementGuests ? `${D.project.engagementGuests} + ` : ""}${D.project.weddingGuests}</b></span><span><small>Phí</small><b>${money(state.project.fee)}</b></span></div>
-      <div class="chat">${lines.slice(0, n).map(l => `<div class="msg ${l.who}">${img(speakerLook(l.who), "face")}<p>${esc(l.text)}</p></div>`).join("")}</div>
+      ${chat(lines.slice(0, n).map(l => ({ who: l.who, text: l.text })))}
       <button id="brief-skip" class="link" data-act="briefSkip" hidden>Hiện hết ›</button>
-      ${done ? `<p class="hint after-brief">Họ chưa nói hết đâu. Gặp riêng cô dâu chú rể và hai họ ngay tuần đầu để mở những mong muốn ẩn.</p>` : ""}
+      ${done && (!isDayof(state.project) || D.wishes.some(w => w.kind === "wish" && w.coord && wishPossible(w))) ? `<p class="hint after-brief">Họ chưa nói hết đâu. Gặp riêng cô dâu chú rể và hai họ ngay tuần đầu để mở những mong muốn ẩn.</p>` : ""}
       <button class="btn primary after-brief" data-act="${done ? "startPrep" : "briefNext"}">${done ? "Bắt đầu chuẩn bị" : "Tiếp"}</button>
     </section>`;
   }
@@ -11355,6 +11502,12 @@ window.WP_COPY = {
     return set[a <= 2 ? 0 : a <= 5 ? 1 : 2].split(/ vì |;/)[0].replace(/\.$/, "");
   }
   // One sentence for the larger of the two changes; the raw points only show after "Xem con số".
+  // Câu cảm xúc cho một thay đổi, dạng chữ (dùng trong nhãn rủi ro gộp).
+  function moodText(fx, who) {
+    const c = fx.couple || 0, f = fx.family || 0; if (!c && !f) return "";
+    if (state.showNums) return [c ? `cặp đôi ${c > 0 ? "+" : ""}${c}` : "", f ? `hai họ ${f > 0 ? "+" : ""}${f}` : ""].filter(Boolean).join(", ");
+    const useC = Math.abs(c) >= Math.abs(f); return shiftLine(useC ? coupleVoice(who) : familyVoice(who), useC ? c : f);
+  }
   function moodChips(fx, who) {
     const c = fx.couple || 0, f = fx.family || 0;
     if (state.showNums) return (c ? `<span class="${c < 0 ? "neg" : "pos"}">Cặp đôi ${c > 0 ? "+" : ""}${c}</span>` : "") + (f ? `<span class="${f < 0 ? "neg" : "pos"}">Hai họ ${f > 0 ? "+" : ""}${f}</span>` : "");
@@ -11366,6 +11519,11 @@ window.WP_COPY = {
 
   // Who needs the planner most right now: a late booking, a broken taboo, an upset person or a vendor at risk.
   const PREP_HINT = { weather: "phương án mưa" };
+  // Tên ngắn của rủi ro cho dòng cảnh báo thu gọn (Đợt 4): đủ ngắn để phần việc cần làm không bị cắt.
+  const RISK_SHORT = { weather: "Thời tiết xấu", flower_delay: "Hoa giao trễ", tray_team_short: "Thiếu người bê tráp", extra_guests_engagement: "Thêm khách ăn hỏi",
+    ritual_conflict: "Hai họ bất đồng", loadin_late: "Sảnh giao trễ", rental_missing: "Rental giao thiếu", catering_shortage: "Đông khách hơn dự kiến", sound_failure: "Micro rè",
+    mc_mistake: "MC đọc sai", photo_moment: "Lỡ khoảnh khắc ảnh", overtime: "Quá giờ", eng_thieu_phong_bao_be_trap: "Thiếu phong bao", eng_ao_dai_nguoi_lon_sai_size: "Áo dài sai size",
+    eng_dai_dien_hai_ho_mat_giong: "Đại diện mất giọng", wed_so_do_ban_tiec_nham: "Sơ đồ bàn nhầm", wed_banh_cuoi_sai_ten: "Bánh cưới sai tên", wed_guestbook_mat_ket_noi: "Lưu bút bị quên" };
   // Đã làm xong việc chuẩn bị mở được cách xử lý sẵn cho sự cố này chưa.
   const cr_ready = cr => cr.options.some(o => (o.requires || []).length && (o.requires || []).every(q => !q.flag || flag(q.flag)));
   function needLine() {
@@ -11385,7 +11543,7 @@ window.WP_COPY = {
       const warned = (state.warned = state.warned || {}); if (warned[r.c.id] == null) warned[r.c.id] = w;
       const a = prepFor(r.c); const hint = a ? `${a.title} để có ${PREP_HINT[r.c.id] || "cách xử lý sẵn"}.` : "";
       const text = (COPY.risk[r.c.id] || r.c.title).split(";")[0].replace(/\.$/, "") + ".";
-      return { soft: true, who: D.categories.some(c => c.id === r.c.category) ? `v_${r.c.category}` : null, text, hint, short: warned[r.c.id] < w, title: r.c.title };
+      return { soft: true, who: D.categories.some(c => c.id === r.c.category) ? `v_${r.c.category}` : null, text, hint, short: warned[r.c.id] < w, title: r.c.title, brief: RISK_SHORT[r.c.id] || r.c.title, prep: a ? a.title : "" };
     };
     if (top && top.pct >= 35) return riskNeed(top);
     if (moodBand(low[1]) === 3) return { who: low[0], text: moodLine(low[0], low[1]) };
@@ -11438,16 +11596,24 @@ window.WP_COPY = {
       <small class="cashline">Quỹ <b class="${c.cash < 0 ? "neg" : ""}">${money(c.cash)}</b> · tháng này đã chi ${money(c.spentThisMonth)}</small>`;
   }
   // Thẻ thiếu tiền trước lễ: dùng chung ô tình huống của tuần, không bao giờ hiện cùng lúc với tình huống khác.
+  // Phần còn thiếu sau khi chọn một lựa chọn của thẻ thiếu tiền (Đợt 4). Tính đúng như resolveShort làm.
+  function shortAfter(id) {
+    const sf = shortfall(), short = Math.ceil(sf.short), f = state.fin;
+    if (id === "loan") return Math.max(0, short - CORE.LOAN.amount);
+    if (id === "advance") return Math.max(0, short - Math.min(short, CORE.advanceRoom(f)));
+    if (id === "drop") { const d = shortDrops(); return d.length ? Math.max(0, short - d.reduce((s, r) => s + r.amount, 0)) : 0; }
+    return short;
+  }
   function shortCard() {
     const sf = shortfall(), f = state.fin, c = state.career; const drops = shortDrops();
     const opts = [];
     if (!c.loan) opts.push(["loan", "Vay người quen 50tr", "Có tiền ngay, ba tháng sau phải trả 60tr.", `<span class="neg">Trả 60tr sau 3 tháng</span>`]);
     const room = CORE.advanceRoom(f), adv = Math.min(Math.ceil(sf.short), room);
-    if (room > 0) opts.push(["advance", `Xin khách ứng thêm ${money(adv)}`, `Hai họ không vui vì bị hỏi tiền sát ngày. Khoản này trừ vào đợt cuối, nên khách chỉ ứng tối đa phần họ còn phải trả (${money(room)}). Mỗi đám chỉ xin được một lần.${adv < Math.ceil(sf.short) ? ` Vẫn còn thiếu ${money(Math.ceil(sf.short) - adv)}.` : ""}`, `<span class="neg">Hai họ phật ý</span>`]);
-    opts.push(["drop", drops.length ? `Không trả ${drops.map(r => lower(r.label)).join(", ")}` : "Đành chịu âm quỹ", drops.length ? "Vendor không được trả đủ sẽ không phục vụ: sự cố của hạng mục đó chắc chắn xảy ra trong ngày cưới. Mất luôn tiền cọc." : "Không còn khoản nào bỏ được. Quỹ sẽ âm sau khi trả.", `<span class="neg">${drops.length ? "Sự cố chắc chắn xảy ra" : "Quỹ âm"}</span>`]);
+    if (room > 0) opts.push(["advance", `Xin khách ứng thêm ${money(adv)}`, `Hai họ không vui vì bị hỏi tiền sát ngày. Khoản này trừ vào đợt cuối, nên khách chỉ ứng tối đa phần họ còn phải trả (${money(room)}). Mỗi đám chỉ xin được một lần.`, `<span class="neg">Hai họ phật ý</span>`]);
+    opts.push(["drop", drops.length ? `Không trả ${drops.map(r => `${lower(r.label)} (${(getVendor(state.selectedVendors[r.cat]) || {}).name || "vendor"})`).join(", ")}` : "Đành chịu âm quỹ", drops.length ? "Vendor không được trả đủ sẽ không phục vụ: sự cố của hạng mục đó chắc chắn xảy ra trong ngày cưới. Mất luôn tiền cọc." : "Không còn khoản nào bỏ được. Quỹ sẽ âm sau khi trả.", `<span class="neg">${drops.length ? "Sự cố chắc chắn xảy ra" : "Quỹ âm"}</span>`]);
     return `<div class="card decision ${state.needDecision ? "flash" : ""}" id="decision"><div class="row-between"><span class="eyebrow">Thiếu tiền trả vendor trước lễ</span></div>
-      <div class="speaker">${img(planner().look, "face", "worried")}<div><b>${esc(planner().name)}</b><p>Trước ngày cưới phải trả ${money(sf.due)} cho vendor, mà quỹ chỉ còn ${money(c.cash)}. Thiếu ${money(Math.ceil(sf.short))}.</p></div></div>
-      <div class="list">${opts.map(([id, t, note, chip]) => `<button class="opt" data-act="short" data-id="${id}"><b>${esc(t)}</b><small>${esc(note)}</small><div class="chips">${chip}</div></button>`).join("")}</div></div>`;
+      ${chat([{ who: "me", mood: "worried", text: `Trước ngày cưới phải trả ${money(sf.due)} cho vendor, mà quỹ chỉ còn ${money(c.cash)}. Thiếu ${money(Math.ceil(sf.short))}.` }])}
+      <div class="list">${opts.map(([id, t, note, chip]) => { const left = shortAfter(id); return `<button class="opt" data-act="short" data-id="${id}"><b>${esc(t)}</b><small>${esc(note)}</small><div class="chips">${chip}</div><small class="short-left ${left > 0 ? "neg" : "pos"}">${left > 0 ? `Chọn xong vẫn còn thiếu ${money(left)}.` : "Chọn xong là đủ tiền trả vendor."}</small></button>`; }).join("")}</div></div>`;
   }
   // Chip trên từng lựa chọn của thẻ tháng, sinh thẳng từ hiệu ứng thật nên không thể nói khác đi.
   // Điền số tiền thật (đã nhân theo cấp) vào chỗ trống trong câu chữ của thẻ.
@@ -11504,7 +11670,7 @@ window.WP_COPY = {
       ["feecut", "Giảm 10% phí planning", `Bớt ${money(fee * 0.1)} phí, trừ vào đợt cuối khách trả.`, `<span class="neg">Đợt cuối −${money(fee * 0.1)}</span><span class="pos">Hai họ hài lòng</span>`]
     ];
     return `<div class="card decision ${state.needDecision ? "flash" : ""}" id="decision"><div class="row-between"><span class="eyebrow">Khách hỏi về giá</span></div>
-      <div class="speaker">${img(speakerLook("groom"), "face", "worried")}<div><b>Chú rể</b><p>Em hỏi thử bên ngoài thì ${esc(lower(d.label))} và vài khoản nữa rẻ hơn dự toán mình duyệt tổng cộng ${money(d.gap)}. Anh chị giải thích giúp em phần chênh này?</p></div></div>
+      ${chat([{ who: "groom", mood: "worried", text: `Em hỏi thử bên ngoài thì ${lower(d.label)} và vài khoản nữa rẻ hơn dự toán mình duyệt tổng cộng ${money(d.gap)}. Anh chị giải thích giúp em phần chênh này?` }])}
       <div class="list">${opts.map(([id, t, note, chips]) => `<button class="opt" data-act="disc" data-id="${id}"><b>${esc(t)}</b><small>${esc(note)}</small><div class="chips">${chips}</div></button>`).join("")}</div></div>`;
   }
   function monthCardHtml() {
@@ -11513,7 +11679,7 @@ window.WP_COPY = {
     const options = CORE.cardOptions(c, card);
     if (c.card.pick) { const o = options.find(x => x.id === c.card.pick); return `<div class="card decision done"><span class="eyebrow">✓ ${esc(card.title)}</span><b>${esc(fillCard(o.label, o))}</b><div class="chips">${cardChips(o)}</div></div>`; }
     return `<div class="card decision ${state.needDecision ? "flash" : ""}" id="decision"><span class="eyebrow">Chuyện tháng này</span>
-      <div class="speaker">${img(cardLook(card), "face")}<div><b>${esc(cardBranch() ? `${cardBranch().manager ? cardBranch().manager.name : BU.speakerNoManager} · ${bt(BU.speaker, { city: cardBranch().name })}` : card.who === "staff" && cardStaff(card) ? `${cardStaff(card).name} · ${roleOf(cardStaff(card).role).name}` : card.speaker || planner().name)}</b><p>${esc(voice(fillCard(card.text, {})) + owed)}</p></div></div>
+      ${chat([{ who: !cardBranch() && card.who === "me" ? "me" : "card", look: cardLook(card), name: cardBranch() ? `${cardBranch().manager ? cardBranch().manager.name : BU.speakerNoManager} · ${bt(BU.speaker, { city: cardBranch().name })}` : card.who === "staff" && cardStaff(card) ? `${cardStaff(card).name} · ${roleOf(cardStaff(card).role).name}` : card.speaker || planner().name, text: voice(fillCard(card.text, {})) + owed }])}
       <div class="list">${options.map(o => `<button class="opt" data-act="mcard" data-id="${o.id}" ${o.needCash && c.cash < o.needCash ? "disabled" : ""}><b>${esc(voice(fillCard(o.label, o)))}</b><small>${esc(voice(fillCard(o.note, o)))}</small><div class="chips">${cardChips(o)}</div>${o.needCash && c.cash < o.needCash ? `<em>Quỹ không đủ</em>` : ""}</button>`).join("")}</div></div>`;
   }
   function dilemmaCard() {
@@ -11532,7 +11698,7 @@ window.WP_COPY = {
     const nums = o => state.showNums ? moodChips(o, d.who) + (o.mark ? `<span class="gold">Đổi xác suất sự cố ngày cưới</span>` : "") : "";
     if (chosen) return `<div class="card decision done"><span class="eyebrow">✓ ${esc(d.title)}</span><b>${esc(voice(chosen.label))}</b><p>${esc(voice((copy[chosen.id] || {}).re || chosen.note))}</p>${cost(chosen) || nums(chosen) ? `<div class="chips">${cost(chosen)}${nums(chosen)}</div>` : ""}</div>`;
     return `<div class="card decision ${state.needDecision ? "flash" : ""}" id="decision"><div class="row-between"><span class="eyebrow">${state.needDecision ? "Cần chọn trước khi sang tuần" : "Tình huống tuần này"}</span>${numsLink()}</div>
-      <div class="speaker">${img(speakerLook(d.who), "face")}<div><b>${esc(whoName(d.who))}</b><p>${esc(voice(d.text))}</p></div></div>
+      ${chat([{ who: d.who, name: whoName(d.who), text: voice(d.text) }])}
       <div class="list">${d.options.map(o => `<button class="opt" data-act="dilemma" data-id="${o.id}" ${(o.ap || 0) > state.ap ? "disabled" : ""}><b>${esc(voice(o.label))}</b><small>${esc(voice((copy[o.id] || {}).fx || o.note))}</small>${cost(o) || nums(o) ? `<div class="chips">${cost(o)}${nums(o)}</div>` : ""}${(o.ap || 0) > state.ap ? `<em>Cần ${o.ap} lượt</em>` : ""}</button>`).join("")}</div></div>`;
   }
   // Bấm vào thanh chất lượng / độ tin cậy thì mở lời giải thích ngay tại chỗ (Đợt 2). Số trong câu đọc thẳng từ mô hình của game.
@@ -11608,7 +11774,7 @@ window.WP_COPY = {
   }
   function bookSummary() {
     const w = state.week; const dayof = state.project.type === "dayof";
-    const wishes = D.wishes.filter(x => x.kind === "wish" && state.revealed.includes(x.id) && !flag(`wish_${x.id}`)).length;
+    const wishes = D.wishes.filter(x => x.kind === "wish" && state.revealed.includes(x.id) && !flag(`wish_${x.id}`) && (!dayof || x.coord)).length;
     const cats = dayof ? 0 : D.categories.filter(c => !state.selectedVendors[c.id] && c.from <= w).length;
     const m = moneyNow(); const parts = [];
     if (wishes) parts.push(`${wishes} mong muốn`);
@@ -11632,7 +11798,7 @@ window.WP_COPY = {
     const rs = riskStatus(); const hot = rs.rows.filter(r => r.ok && r.pct >= 20).sort((a, b) => b.pct - a.pct);
     const t = tierObj(); const shown = new Set((state.fg ? state.fg.ids : []).concat(state.fg && state.fg.watch ? [state.fg.watch] : []));
     const known = D.wishes.filter(x => x.kind !== "info" && state.revealed.includes(x.id));
-    const wishes = known.filter(x => x.kind === "wish" || tabooBroken(x));
+    const wishes = known.filter(x => x.kind === "wish" || tabooBroken(x)).sort((a, b) => (dayof ? !!b.coord - !!a.coord : 0)); // day-of: nhóm điều phối được lên trước
     const slotCat = dayof ? null : D.categories.filter(x => !state.selectedVendors[x.id] && x.from <= w).sort((a, b) => a.deadline - b.deadline)[0];
     const otherCats = dayof ? [] : D.categories.filter(c => !state.selectedVendors[c.id] && c.from <= w && c !== slotCat);
     const booked = D.categories.filter(c => state.selectedVendors[c.id]);
@@ -11643,7 +11809,7 @@ window.WP_COPY = {
       ${cashRows()}
       <h3 class="sub">Nguy cơ ngày cưới <button class="link" data-act="sheet" data-id="risk">Tất cả ›</button></h3>${hot.length ? `<ul class="bul">${hot.slice(0, 3).map(r => `<li>${esc(COPY.risk[r.c.id] || r.c.title)} <b class="${r.pct >= 35 ? "neg" : "gold"}">${r.pct}%</b></li>`).join("")}</ul>` : `<p class="pos">Chưa có nguy cơ đáng lo.</p>`}
       <h3 class="sub">Việc đã hứa trong gói</h3><ul class="checks">${t.contracted.map(id => { const a = getAction(id); return `<li class="${flag(a.flag) ? "ok" : ""}">${flag(a.flag) ? "✓" : "○"} ${esc(a.title)} <small>${flag(a.flag) ? "" : a.to < w ? "đã quá hạn" : `tới tuần ${a.to}`}</small></li>`; }).join("")}</ul>
-      ${wishes.length ? `<h3 class="sub">Mong muốn của khách</h3>${wishes.map(wishRow).join("")}` : ""}
+      ${wishes.length ? `<h3 class="sub">Mong muốn của khách</h3>${dayof ? `<p class="small muted">${COORD_NOTE}</p>` : ""}${wishes.map(wishRow).join("")}` : ""}
       ${otherCats.length ? `<h3 class="sub">Vendor khác chốt sớm được</h3>${otherCats.map(pickerCard).join("")}` : ""}
       ${booked.length ? `<h3 class="sub">${dayof ? "Vendor khách tự chốt" : "Vendor đã chốt"}</h3><div class="list">${booked.map(bookedCard).join("")}</div>` : ""}
       ${tasks.length ? `<h3 class="sub">Việc khác</h3><div class="list lite">${tasks.map(taskCard).join("")}</div>` : ""}
@@ -11742,11 +11908,12 @@ window.WP_COPY = {
         ${broken && w.check.startsWith("venue") ? `<button class="mini" data-act="expand" data-id="venue">Đổi venue</button>` : ""}</div>`;
     }
     const done = flag(`wish_${w.id}`); const why = wishBlock(w); const joy = w.couple + w.family;
-    const btns = w.cost
+    const btns = wishCost(w)
       ? `<div class="wish-btns"><button class="mini" data-act="wish" data-id="${w.id}:client" ${why ? "disabled" : ""}><b>Khách trả</b><small>Lời +${money(wishMarkup(w))} · khách vui +${Math.round(joy * 0.6)}</small></button>
          <button class="mini primary" data-act="wish" data-id="${w.id}:gift" ${why ? "disabled" : ""}><b>${esc(voice("Agency tặng"))}</b><small>Chi ${money(w.cost)} · khách vui +${joy}, bớt đòi giảm phí</small></button></div>`
       : `<button class="mini primary" data-act="wish" data-id="${w.id}:free" ${why ? "disabled" : ""}>Đưa vào kế hoạch · miễn phí · khách vui +${joy}</button>`;
-    return `<div class="wish ${done ? "done" : ""}"><div><b>${done ? "✓" : "♥"} ${esc(w.title)}</b><small>${esc(w.detail)}</small><small>Tốn 1 lượt.</small></div>
+    if (!done && isDayof(state.project) && !w.coord) return `<div class="wish dayof"><div><b>♥ ${esc(w.title)}</b><small>${esc(w.detail)}</small></div><small class="muted">${DAYOF_WISH}.</small></div>`;
+    return `<div class="wish ${done ? "done" : ""}"><div><b>${done ? "✓" : "♥"} ${esc(w.title)}</b>${dayofCoord(w) ? `<small class="tag-coord">Planner điều phối</small>` : ""}<small>${esc(w.detail)}</small><small>Tốn 1 lượt.</small></div>
       ${done ? `<span class="pos">Đã có trong kế hoạch${state.wishMode[w.id] === "client" ? " · khách trả" : state.wishMode[w.id] === "gift" ? voice(" · agency tặng") : ""}</span>` : `${btns}${why ? `<em>${esc(why)}</em>` : ""}`}</div>`;
   }
 
@@ -11755,7 +11922,18 @@ window.WP_COPY = {
   const crisisReason = (cr, o) => { const fx = o.effects || {}; if (!fx.couple && !fx.family) return ""; const r = ((C.CRISIS_REASONS || {})[cr.id] || {})[o.id]; return r ? r[0].toUpperCase() + r.slice(1) : ""; };
   // Lựa chọn dùng được đứng trước; lựa chọn bị khoá gom dưới một dòng, vẫn ghi việc nào lẽ ra mở được (Đợt 2).
   function crisisOptions(cr) {
-    const one = o => { const why = optionBlock(o); const ch = successChance(cr, o); return `<button class="opt ${why ? "locked" : ""}" data-act="opt" data-id="${o.id}" ${why ? 'aria-disabled="true"' : ""}><b>${esc(o.title)}</b><div class="chips">${effectChips(o.effects || {}, (D.reactions[cr.id] || {}).who)}${why ? "" : ch < 100 ? `<span class="${ch < 65 ? "neg" : ""}">${ch >= 85 ? "Chắc ăn" : ch >= 65 ? "Khá chắc" : "Hên xui"} ${ch}%</span>` : `<span class="pos">Chắc chắn</span>`}${ch < 100 && !why && hasSkill("xu_ly") ? `<span class="pos">+10% nhờ Xử lý sự cố</span>` : ""}${o.mark ? `<span class="gold">Có hệ quả về sau</span>` : ""}${o.afterRisk ? `<span class="gold">${o.afterRisk.p}% ${esc(lower(o.afterRisk.label))}:</span>${moodChips({ couple: o.afterRisk.couple, family: o.afterRisk.family }, (D.reactions[cr.id] || {}).who)}` : ""}</div>${crisisReason(cr, o) ? `<small class="reason">${esc(crisisReason(cr, o))}</small>` : ""}${why ? `<em>${esc(why)}</em>` : ""}</button>`; };
+    // Nhãn của lựa chọn (Đợt 4): lựa chọn có rủi ro không bao giờ ghi "Chắc chắn"; mỗi rủi ro gộp thành MỘT nhãn "N% chuyện gì: ai ra sao";
+    // nhãn cảm xúc chính dùng câu riêng của lựa chọn (CRISIS_MOOD) khi có, để khớp với dòng lý do bên dưới.
+    const one = o => {
+      const why = optionBlock(o); const ch = successChance(cr, o); const who = (D.reactions[cr.id] || {}).who; const ar = o.afterRisk;
+      const own = ((C.CRISIS_MOOD || {})[cr.id] || {})[o.id];
+      const fx = o.effects || {};
+      const base = own && !state.showNums ? effectChips({ ...fx, couple: 0, family: 0 }, who).replace(/<span>Không tốn gì<\/span>/, "") + `<span class="neg">${esc(own)}</span>` : effectChips(fx, who);
+      const risk = why ? "" : ar ? `<span class="gold risk">${ar.p}% ${esc(lower(ar.label))}: ${esc(lc(moodText({ couple: ar.couple, family: ar.family }, who)))}</span>`
+        : ch < 100 ? `<span class="${ch < 65 ? "neg" : "gold"} risk">${ch >= 85 ? "Chắc ăn" : ch >= 65 ? "Khá chắc" : "Hên xui"} ${ch}% · hỏng thì cả hai bên phật ý thêm</span>`
+        : `<span class="pos">Chắc chắn</span>`;
+      return `<button class="opt ${why ? "locked" : ""}" data-act="opt" data-id="${o.id}" ${why ? 'aria-disabled="true"' : ""}><b>${esc(o.title)}</b><div class="chips">${base}${risk}${ch < 100 && !why && hasSkill("xu_ly") ? `<span class="pos">+10% nhờ Xử lý sự cố</span>` : ""}${o.mark ? `<span class="gold">Có hệ quả về sau</span>` : ""}</div>${crisisReason(cr, o) ? `<small class="reason">${esc(crisisReason(cr, o))}</small>` : ""}${why ? `<em>${esc(why)}</em>` : ""}</button>`;
+    };
     const open = cr.options.filter(o => !optionBlock(o)), locked = cr.options.filter(o => optionBlock(o));
     return `<div class="list">${open.map(one).join("")}</div>${locked.length ? `<details class="locked-group"><summary>${locked.length} cách khác cần chuẩn bị trước</summary><div class="list">${locked.map(one).join("")}</div></details>` : ""}`;
   }
@@ -11767,7 +11945,7 @@ window.WP_COPY = {
     const fresh = state.lastResolved != null && state.queue[state.lastResolved] === item;
     return `<details class="card ev-item ev-done outcome ${out.tone}" ${fresh ? "open" : ""}><summary><span class="ev-sum"><span class="eyebrow">${esc(cr.time)} · Sự cố ${n}</span><b>${esc(cr.title)}</b></span><span class="small ${out.tone === "ok" || out.tone === "good" ? "pos" : "neg"}">${toneLabel}</span></summary>
       <p><span class="muted">Bạn chọn:</span> ${esc(chosen.title)}. ${esc(out.success ? chosen.why : (re?.fail || "Không kịp xử lý như mong muốn."))}</p>
-      ${re ? `<div class="msg solo">${img(speakerLook(reWho), "face")}<p>${esc(out.tone === "fail" ? re.bad : re[out.tone])}</p></div>` : ""}
+      ${re ? chat([{ who: reWho, text: out.tone === "fail" ? re.bad : re[out.tone] }], "solo") : ""}
       <div class="chips">${effectChips(out.fx, reWho)}${out.recovered ? `<span class="pos">Đòi lại vendor ${money(out.recovered)}</span>` : ""}</div>
       ${out.afterText ? `<p class="mark">${esc(out.afterText)}</p>` : ""}${out.mark ? `<p class="mark">Hệ quả: ${esc(out.mark)}</p>` : ""}</details>`;
   }
@@ -11784,7 +11962,7 @@ window.WP_COPY = {
       if (item.k === "moment") {
         const w = getWish(item.id);
         return `<div class="card ev-item moment ${item.good ? "" : "bad"}"><span class="eyebrow">${item.good ? "Khoảnh khắc đặc biệt" : "Phạm điều khách kiêng"}</span><b>${esc(w.title)}</b>
-          <div class="msg solo">${img(speakerLook(momentActor(w)), "face")}<p>${esc(w.moment)}</p></div><div class="chips">${effectChips({ couple: item.c ?? w.couple, family: item.f ?? w.family }, momentActor(w))}</div></div>`;
+          ${chat([{ who: momentActor(w), text: w.moment }], "solo")}<div class="chips">${effectChips({ couple: item.c ?? w.couple, family: item.f ?? w.family }, momentActor(w))}</div></div>`;
       }
       if (item.k === "crisis") {
         n += 1;
@@ -11813,8 +11991,7 @@ window.WP_COPY = {
       : `Khoản phát sinh ${money(item.amount)} hôm cưới là lỗi bên vendor mà, tụi em không muốn trả đâu.`;
     const o = state.settlementOutcome;
     return `<section class="stack">
-      <div class="chat"><div class="msg bride">${img(CL("bride_casual"), "face")}<p>${esc(ask)}</p></div>
-      ${o ? `<div class="msg me">${img(planner().look, "face")}<p>${esc(o.title)}.</p></div><div class="msg bride">${img(CL("bride_casual"), "face")}<p>${esc(o.reply)}</p></div>` : ""}</div>
+      ${chat([{ who: "bride", look: CL("bride_casual"), text: ask }].concat(o ? [{ who: "me", text: `${o.title}.` }, { who: "bride", look: CL("bride_casual"), text: o.reply }] : []))}
       ${missed.length && item.type === "discount" ? `<details class="why"><summary>Việc cam kết đã bỏ</summary><ul>${missed.map(id => `<li>${esc(getAction(id).title)}</li>`).join("")}</ul></details>` : ""}
       ${o ? `<button class="btn primary" data-act="nextSettle">${state.settlementIndex >= state.settlement.length - 1 ? "Xem tổng kết" : "Tiếp"}</button>`
         : `<div class="list">${settlementOptions(item).map(x => `<button class="opt" data-act="settle" data-id="${x.id}"><b>${esc(x.title)}</b><small>${esc(x.note)}</small></button>`).join("")}</div>`}
@@ -11825,7 +12002,7 @@ window.WP_COPY = {
   // mong muốn của một buổi lễ không có trong gói cũng vậy.
   function wishPossible(w) {
     if (w.event && !evList().includes(w.event)) return false;
-    if (isDayof(state.project) && w.needs && !state.selectedVendors[w.needs]) return false;
+    if (isDayof(state.project) && w.needs && !w.coord) return false; // day-of: khách tự chốt và tự trả vendor, planner không có việc nào đổi được hạng mục đó
     return true;
   }
   // Quyết định nào làm sự cố nào dễ xảy ra hơn, và sự cố đó đã xảy ra (mục 1.13, Nhìn lại ý 2).
@@ -11884,37 +12061,46 @@ window.WP_COPY = {
     return out;
   }
   const fmtPts = v => (Math.abs(v - Math.round(v)) < 0.05 ? String(Math.round(v)) : v.toFixed(1).replace(".", ","));
-  // Câu "Sau đám cưới" theo kết quả đám (mục 1.13): mỗi người nhớ gì, khen gì, trách gì, lấy từ chính các dòng đã cộng trừ điểm của họ.
+  // "Sau đám cưới" (Đợt 4): mỗi người chỉ nhớ chuyện họ chứng kiến, kể như chuyện đã xảy ra; không nhắc chuyện nội bộ của planner
+  // (ăn chênh, giá vendor, người đi thay, phí); chỉ nhắc sự cố đã xảy ra; một chuyện chỉ về tay một người; bốn người bốn kiểu câu.
+  // Câu viết sẵn ở C.AFTER_TEXT (career.js): mỗi loại chuyện 2 câu cho cặp đôi, 2 câu cho phụ huynh; cụm từ chứng kiến ở C.WITNESS.
   const PERSON = { bride: "Cô dâu", groom: "Chú rể", mom_bride: "Mẹ cô dâu", mom_groom: "Mẹ chú rể" };
   const lc = t => (t ? t[0].toLowerCase() + t.slice(1) : t);
-  function afterPhrase(label, v) {
-    let m;
-    if ((m = /^Khoảnh khắc: (.*)$/.exec(label))) return lc(m[1]);
-    if ((m = /^Phạm điều kiêng: (.*)$/.exec(label))) return `chuyện không giữ được điều kiêng "${lc(m[1])}"`;
-    if ((m = /^Sự cố: (.*)$/.exec(label))) return v > 0 ? `cách xử lý chuyện ${m[1]}` : `chuyện ${m[1]}`;
-    if ((m = /^Lời hứa của (.*) không thành: (.*)$/.exec(label))) return `lời hứa ${lc(m[2])} không thành`;
-    if ((m = /^Quyết toán: (.*)$/.exec(label))) return `lúc quyết toán, bạn ${m[1]}`;
-    if ((m = /^(.*): (.*)$/.exec(label))) return `lựa chọn "${m[2]}" khi ${lc(m[1]).replace(/\?$/, "")}`; // tình huống trong tuần: "tiêu đề: lựa chọn"
-    return lc(label);
+  const WHO_SIDE = { bride: "bride", groom: "groom", mom_bride: "mom_bride", dad_bride: "mom_bride", mom_groom: "mom_groom", dad_groom: "mom_groom" };
+  // Một chuyện người trong cuộc thấy được, từ một dòng của sổ điểm. null = chuyện nội bộ, không ai ngoài ekip biết.
+  function witnessed(x) {
+    const s = x.src; if (!s) return null; const W = C.WITNESS;
+    if (s.k === "crisis") { const p = W.crisis[s.id] || lower(getCrisis(s.id).title); return { key: `crisis:${s.id}`, kind: "crisis", phrase: p, who: WHO_SIDE[(D.reactions[s.id] || {}).who], pos: !!s.ok }; }
+    if (s.k === "dilemma") { const p = (W.dilemma[s.id] || {})[s.opt]; if (!p) return null; const d = C.DILEMMAS.find(z => z.id === s.id); return { key: `dilemma:${s.id}`, kind: "choice", phrase: p, who: WHO_SIDE[d && d.who] }; }
+    if (s.k === "wish") return { key: `wish:${s.id}`, kind: "wish", phrase: `có ${lower(getWish(s.id).title)}` };
+    if (s.k === "taboo") return { key: `taboo:${s.id}`, kind: "taboo", phrase: `điều kiêng ${lower(getWish(s.id).title)} không được giữ` };
+    if (s.k === "promise") return { key: "promise", kind: "promise", phrase: "lời hứa trong gói không thành" };
+    return null;
   }
-  function afterFacts(key) {
-    const out = []; const vb = E.vendorBonus(D, state);
-    const q = key === "c" ? vb.couple : vb.family; if (Math.abs(q) >= 0.5) out.push({ t: q > 0 ? "dàn vendor làm đẹp hơn mong đợi" : "dàn vendor chưa tới", v: q, generic: true });
-    const missed = E.missedContracted(D, state).length; if (missed) out.push({ t: `${missed} việc đã hứa mà không làm`, v: -1.5 * missed });
-    state.ledger.forEach(x => { const v = x[key] || 0; if (Math.abs(v) >= 0.5) out.push({ t: afterPhrase(voice(x.label), v), v }); });
-    return out;
-  }
-  function afterLine(who, score) {
-    const N = PERSON[who]; const facts = afterFacts(who === "bride" || who === "groom" ? "c" : "f");
-    const off = who === "groom" || who === "mom_groom" ? 1 : 0; // hai người cùng phía không nói y hệt nhau
-    // chuyện cụ thể của đám đứng trước câu chung về vendor; câu chung chỉ dùng khi không còn gì khác
-    const rank = (a, b, s) => (a.generic - b.generic) || s * (b.v - a.v);
-    const pos = facts.filter(x => x.v > 0).sort((a, b) => rank(a, b, 1)), neg = facts.filter(x => x.v < 0).sort((a, b) => rank(a, b, -1));
-    const p = pos[Math.min(off, pos.length - 1)], n = neg[Math.min(off, neg.length - 1)];
-    const b = moodBand(score);
-    if (b <= 1) return p ? `${N} nhớ nhất ${p.t}.${n ? ` Còn ${n.t} thì đã cho qua.` : ""}` : `${N} vui vì cả ngày trôi chảy, không có chuyện gì phải lo.`;
-    if (b === 2) return p && n ? `${N} khen ${p.t}, nhưng vẫn nhắc ${n.t}.` : p ? `${N} thấy ổn, nhớ nhất ${p.t}.` : n ? `${N} thấy tạm ổn, chỉ nhắc ${n.t}.` : `${N} thấy đám cưới ổn, không có gì nổi bật để kể.`;
-    return n ? `${N} vẫn trách ${n.t}.${p ? ` Chỉ có ${p.t} là còn được khen.` : ""}` : `${N} không vui với cả ngày, dù không có chuyện gì lớn.`;
+  function afterLines(r) {
+    const T = C.AFTER_TEXT; const vb = E.vendorBonus(D, state); const facts = [];
+    state.ledger.forEach(x => { const w = witnessed(x); if (!w) return; ["c", "f"].forEach(side => { const v = x[side] || 0; if (Math.abs(v) >= 0.5) facts.push({ ...w, side, v }); }); });
+    const missed = E.missedContracted(D, state).length; if (missed) ["c", "f"].forEach(side => facts.push({ key: "missed", kind: "promise", phrase: `${missed} việc đã hứa trong gói không ai làm`, side, v: -1.5 * missed }));
+    [["c", vb.couple], ["f", vb.family]].forEach(([side, q]) => { if (Math.abs(q) >= 1) facts.push({ key: "vendor", kind: "look", side, v: q, generic: true }); });
+    facts.forEach(f => { if (f.pos == null) f.pos = f.v > 0; }); // sự cố: vui hay buồn theo kết quả xử lý (lo được hay không), không theo điểm
+    const used = new Set(); const out = [];
+    const order = [["bride", r.couple, "c", 0], ["mom_bride", r.family, "f", 0], ["groom", r.couple, "c", 1], ["mom_groom", r.family, "f", 1]];
+    order.forEach(([who, score, side, style]) => {
+      const band = moodBand(score); const want = band <= 1 ? 1 : band >= 3 ? -1 : 0;
+      // người đang vui chỉ kể chuyện vui; người đang buồn trách cả sự cố đã xảy ra dù sau đó được lo
+      const pool = facts.filter(f => f.side === side && !used.has(f.key) && (want === 0 || (want > 0 ? f.pos : (!f.pos || f.kind === "crisis"))));
+      pool.sort((a, b) => (a.generic - b.generic) || ((b.who === who) - (a.who === who)) || (Math.abs(b.v) - Math.abs(a.v)));
+      const f = pool[0]; const group = side === "c" ? "couple" : "parent";
+      let text;
+      if (f) {
+        used.add(f.key); const tone = want < 0 ? "neg" : f.pos ? "pos" : "neg";
+        const phrase = f.kind === "crisis" && tone === "pos" ? `ekip lo gọn vụ ${f.phrase}` : f.phrase;
+        text = f.kind === "look" ? T.look[tone][who] : T[group][tone][style].replace("{N}", PERSON[who]).replace("{x}", phrase);
+      } else text = T.none[who][band <= 2 ? 0 : 1];
+      out.push({ who, text, key: f ? f.key : null });
+    });
+    const by = Object.fromEntries(out.map(o => [o.who, o]));
+    return ["bride", "groom", "mom_bride", "mom_groom"].map(w => by[w]);
   }
   function satReasons() {
     const t = tierObj(); const vb = E.vendorBonus(D, state); const avg = (c, f) => (c + f) / 2;
@@ -11943,13 +12129,13 @@ window.WP_COPY = {
     const good = state.moments.filter(m => m.good);
     return `<section class="stack">${isDayof(state.project) ? "" : ""}
       <div class="card center"><span class="eyebrow">${["", "Thất bại", "Chưa ổn", "Ổn", "Rất tốt", "Xuất sắc"][r.stars]}</span><div class="stars-big" aria-label="${r.stars} sao">${"★".repeat(r.stars)}<i>${"★".repeat(5 - r.stars)}</i></div>
-        <div class="msg bride solo">${img(CL("bride"), "face")}<p>${esc(quote)}</p></div></div>
+        ${chat([{ who: "bride", look: CL("bride"), text: quote }], "solo")}</div>
       ${careerAfter(r)}
       <div class="card"><h2 class="h">Vì sao được ${r.stars}★</h2><p class="muted">Điểm hài lòng trung bình ${Math.round((r.couple + r.family) / 2)}/100, bắt đầu từ ${CFG.startScore}. Từ 86 là 5★, 74 là 4★, 62 là 3★.</p>
         <ul class="reasons">${satReasons().map(x => `<li class="${x.v >= 0 ? "pos" : "neg"}"><b>${x.v >= 0 ? "+" : "−"}${fmtPts(Math.abs(x.v))}</b><span>${esc(x.t)}</span></li>`).join("")}</ul></div>
       <div class="card"><div class="row-between"><span>Cặp đôi</span><b>${r.couple}/100</b></div><div class="bar"><i style="width:${r.couple}%"></i></div>
         <div class="row-between"><span>Hai họ</span><b>${r.family}/100</b></div><div class="bar"><i style="width:${r.family}%"></i></div></div>
-      <div class="card"><h2 class="h">Sau đám cưới</h2><div class="people">${[["bride", r.couple], ["groom", r.couple], ["mom_bride", r.family], ["mom_groom", r.family]].map(([who, s]) => `<div class="person">${img(speakerLook(who), "face", bandMood(s))}<p>${esc(afterLine(who, s))}</p></div>`).join("")}</div></div>
+      <div class="card"><h2 class="h">Sau đám cưới</h2><div class="people">${afterLines(r).map(x => `<div class="person">${img(speakerLook(x.who), "face", bandMood(x.who.startsWith("mom") ? r.family : r.couple))}<p>${esc(x.text)}</p></div>`).join("")}</div></div>
       ${good.length ? `<div class="card"><h2 class="h">Khoảnh khắc đáng nhớ</h2><ul class="bul">${good.map(m => `<li>${esc(getWish(m.id).title)}</li>`).join("")}</ul></div>` : ""}
       <details class="card" open><summary class="h">Quyết toán</summary><p class="muted small">Chi phí của dự án</p><dl class="rows">${rows.map(([k, v]) => `<div><dt>${esc(voice(k))}</dt><dd class="${v < 0 ? "neg" : ""}">${signed(v)}</dd></div>`).join("")}<div class="sum"><dt>Lãi dự án</dt><dd>${money(r.profit)}</dd></div></dl>${opsRows().length ? `<p class="muted small">Chi phí vận hành trong thời gian làm đám (trừ thẳng vào quỹ đầu mỗi tháng, không tính vào lãi dự án)</p><dl class="rows">${opsRows().map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${money(v)}</dd></div>`).join("")}</dl>` : ""}</details>
       <div class="card"><h2 class="h">Nhìn lại</h2><ul class="bul">${lessons(r).map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>
@@ -11966,7 +12152,7 @@ window.WP_COPY = {
     const asked = m.asked.map(id => def.questions.find(q => q.id === id));
     const unlocked = asked.map(q => getWish(q.reveal)).filter(Boolean);
     return `<h2 class="h">Gặp riêng · ${esc(def.who)}</h2>
-      <div class="chat">${asked.map(q => `<div class="msg me">${img(planner().look, "face")}<p>${esc(q.q)}</p></div><div class="msg ${q.speaker === "groom" ? "groom-l" : ""}">${img(speakerLook(q.speaker), "face")}<p>${esc(q.a)}</p></div>${getWish(q.reveal) ? `<div class="unlock ${getWish(q.reveal).kind}">${getWish(q.reveal).kind === "taboo" ? "⚠ Điều kiêng" : getWish(q.reveal).kind === "info" ? "★ Mở brief ẩn" : "♥ Mong muốn mới"}: ${esc(getWish(q.reveal).title)}</div>` : ""}`).join("")}</div>
+      <div class="chat-wrap">${asked.map(q => `${chat([{ who: "me", text: q.q }, { who: q.speaker, text: q.a }])}${getWish(q.reveal) ? `<div class="unlock ${getWish(q.reveal).kind}">${getWish(q.reveal).kind === "taboo" ? "⚠ Điều kiêng" : getWish(q.reveal).kind === "info" ? "★ Mở brief ẩn" : "♥ Mong muốn mới"}: ${esc(getWish(q.reveal).title)}</div>` : ""}`).join("")}</div>
       ${left > 0 ? `<p class="muted">Còn ${left} câu hỏi. Chọn câu bạn nghĩ sẽ mở ra điều quan trọng nhất.</p><div class="list">${def.questions.filter(q => !m.asked.includes(q.id)).map(q => `<button class="opt" data-act="ask" data-id="${q.id}"><b>${esc(q.q)}</b></button>`).join("")}</div>`
         : `<div class="card"><b>Buổi gặp kết thúc</b><p class="muted">${unlocked.filter(w => w.kind === "wish").length ? "Mong muốn mới đã vào Sổ dự án. Đưa vào kế hoạch thì ngày cưới sẽ có khoảnh khắc đặc biệt." : "Lần này chưa mở được mong muốn nào."}</p></div>
         <div class="sheet-actions"><button class="btn primary" data-act="meetDone">Xong</button></div>`}`;
@@ -12123,13 +12309,16 @@ window.WP_COPY = {
     arrive();
   }
   // Chiều cao khối dính trên đầu (HUD + cảnh), để các chỗ tự cuộn tới không bị khối đó che.
-  function topHeight() { const t = $("#top"); if (t) document.documentElement.style.setProperty("--top-h", t.offsetHeight + "px"); }
+  function topHeight() { const t = $("#top"); if (t) document.documentElement.style.setProperty("--top-h", t.offsetHeight + "px"); fitStage(); }
   if (!HEADLESS && typeof ResizeObserver !== "undefined") new ResizeObserver(topHeight).observe(document.getElementById("app"));
   // Màn chuẩn bị: cuộn xuống thì thu cảnh lại, chỉ còn dòng Tuần và số lượt; cuộn về đầu thì mở lại. Có khoảng đệm để không bật tắt liên tục.
   if (!HEADLESS) window.addEventListener("scroll", () => {
     const st = document.getElementById("stage"); if (!st) return;
     const y = window.scrollY, folded = st.classList.contains("folded");
-    const want = state.phase === "prep" && (folded ? y > 8 : y > 60);
+    // Chỉ thu khi trang đủ dài: thu cảnh làm trang ngắn đi đúng chiều cao cảnh; trang ngắn thì trình duyệt kéo về đầu trang,
+    // cảnh lại mở ra, rồi lặp mãi (màn hình giật). Đủ dài nghĩa là thu xong vẫn còn cuộn được quá ngưỡng mở lại.
+    const cv = st.querySelector("canvas"), room = document.documentElement.scrollHeight - window.innerHeight - (cv ? cv.clientHeight : 0);
+    const want = state.phase === "prep" && (folded ? y > 8 : y > 60 && room > 80);
     if (want !== folded) { st.classList.toggle("folded", want); topHeight(); }
   }, { passive: true });
 
@@ -12237,7 +12426,7 @@ window.WP_COPY = {
     serialize: () => JSON.stringify({ v: BASE.version, s: state }), loadFrom(json) { const s = restore(JSON.parse(json)); if (s) state = s; return s; }, version: BASE.version,
     startCareer, genOffers, quoteOptions, takeOffer, startPrep, weekDilemma, chooseDilemma, canBook, book, research, negotiate, setSpec,
     actionBlock, doAction, ask, wishBlock, fulfil, confirmConcept, promisedDue, nextWeek, startEvent, optionBlock, successChance, resolveCrisis,
-    nextItem, stageNext, settlementOptions, resolveSettlement, nextSettlement, endProject, openSide, workSide, sideOffers: () => state.sideOffers || (state.sideOffers = CORE.sideOffers(state.career, SJ, CAL.rnd)), takeLoan, hire, fire, opsRows: () => opsRows(), lower, crisisOptionsHtml: id => crisisOptions(getCrisis(id)), needLine: () => needLine(), hudHtml: () => hud(), monthCardHtml: () => monthCardHtml(), sideSheetHtml: () => sheetSide(), taskState: a => taskState(a), vendorDetailHtml: (v, c) => vendorDetail(v, c, true), offerProfile: o => offerProfile(o), promisedDue: () => promisedDue(), isContracted: id => isContracted(id), afterLine: (w, s) => afterLine(w, s), lessons: r => lessons(r), markLinks: () => markLinks(), wishPossible: w => wishPossible(w), famLook: id => famLook(id), coupleLook: k => CL(k), cardLook: k => cardLook(k), GROOM_TOPS: () => GROOM_TOPS, goalLines: g => goalLines(g), officeUnlocks: o => officeUnlocks(o), sheetCareerHtml: () => sheetCareer(), confirmWeekHtml: () => sheetConfirmWeek(), nextWeekNeed: () => nextWeekNeed(), taskCardHtml: a => taskCard(a), monthSpendParts: () => monthSpendParts(), html: name => ({ offer: sheetOffer, quote: sheetQuote, review: screenReview, settlement: screenSettlement, money: sheetMoney, brief: () => screenBrief ? screenBrief() : "" }[name] || (() => ""))(), voice, subjectWord, satReasons: () => satReasons(), weekStartAP, vendorTopRisk: v => vendorRisk(v), CAL_FOR_TEST: () => CAL, branchCities, openBranch, closeBranchNow, assignManager, branchLine, candidates, rolesOpen, salaryOf, fireCost, teamFx, chooseBrand, learnSkill, upgrade,
+    nextItem, stageNext, settlementOptions, resolveSettlement, nextSettlement, endProject, openSide, workSide, sideOffers: () => state.sideOffers || (state.sideOffers = CORE.sideOffers(state.career, SJ, CAL.rnd)), takeLoan, hire, fire, opsRows: () => opsRows(), lower, shortAfter: id => shortAfter(id), shortCardHtml: () => shortCard(), shortfallNow: () => shortfall(), crisisOptionsHtml: id => crisisOptions(getCrisis(id)), needLine: () => needLine(), hudHtml: () => hud(), monthCardHtml: () => monthCardHtml(), sideSheetHtml: () => sheetSide(), taskState: a => taskState(a), vendorDetailHtml: (v, c) => vendorDetail(v, c, true), offerProfile: o => offerProfile(o), promisedDue: () => promisedDue(), isContracted: id => isContracted(id), afterLines: r => afterLines(r || state.result), lessons: r => lessons(r), markLinks: () => markLinks(), wishPossible: w => wishPossible(w), famLook: id => famLook(id), coupleLook: k => CL(k), cardLook: k => cardLook(k), GROOM_TOPS: () => GROOM_TOPS, goalLines: g => goalLines(g), officeUnlocks: o => officeUnlocks(o), sheetCareerHtml: () => sheetCareer(), confirmWeekHtml: () => sheetConfirmWeek(), nextWeekNeed: () => nextWeekNeed(), taskCardHtml: a => taskCard(a), monthSpendParts: () => monthSpendParts(), html: name => ({ meeting: () => sheetBody(), offer: sheetOffer, quote: sheetQuote, review: screenReview, settlement: screenSettlement, money: sheetMoney, brief: () => screenBrief ? screenBrief() : "" }[name] || (() => ""))(), voice, subjectWord, satReasons: () => satReasons(), weekStartAP, vendorTopRisk: v => vendorRisk(v), CAL_FOR_TEST: () => CAL, branchCities, openBranch, closeBranchNow, assignManager, branchLine, candidates, rolesOpen, salaryOf, fireCost, teamFx, chooseBrand, learnSkill, upgrade,
     checkStage, monthlyCost, monthlyParts, tierObj, moneyNow, riskStatus, hasSkill, avgStars, shortfall, shortActive, resolveShort, shortDrops, priceFor, catVendors, hireFreelancer, overtime, monthCard, cardOptions: () => (monthCard() ? CORE.cardOptions(state.career, monthCard()) : []), cardPending, resolveCard, setOffice, setLiving, tickWeek, actionMoney, discoveryPending, resolveDiscovery, chooseContact, assignContact, rollDiscovery, slotHtml: () => dilemmaCard(), decisionPending
   };
   window.WP_GAME = { get state() { return state; }, get D() { return D; }, render, _build: buildProject, api, HEADLESS };
