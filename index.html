@@ -43,8 +43,8 @@
 /* Nền đứng yên (Thanh, 11/11/2026): trang chỉ cuộn khi nội dung dài hơn màn hình.
    overscroll-behavior tắt kiểu "kéo nảy" của iPhone; 100dvh bên dưới là chiều cao phần màn hình thật sự nhìn thấy
    (100vh trên Safari iPhone cao hơn màn hình, nên màn nào cũng kéo được một đoạn). */
-html { background: var(--desk); overscroll-behavior: none; }
-body { margin: 0; overscroll-behavior: none; background: var(--desk); color: var(--ink); font: 15px/1.5 var(--body); -webkit-tap-highlight-color: transparent; }
+html { background: var(--desk); overscroll-behavior: none; overflow-anchor: none; } /* cảnh thu/mở ở màn chuẩn bị: trình duyệt không tự bù cuộn, nếu không cảnh mở lại rồi thu lại liên tục (giật màn hình) */
+body { margin: 0; overscroll-behavior: none; background: var(--desk); color: var(--ink); font: 15px/1.5 var(--body); -webkit-tap-highlight-color: transparent; overflow-anchor: none; }
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--surface); }
 button { font: inherit; color: inherit; cursor: pointer; }
 button:focus-visible, summary:focus-visible { outline: 3px solid var(--rose); outline-offset: 2px; }
@@ -646,6 +646,15 @@ h3.sub { margin: 6px 0 0; font: 700 12px/1.3 var(--body); letter-spacing: .08em;
 .msg.guest p, .msg.groom p, .msg.groom-l p { background: var(--bubble-guest); border: 2px solid var(--ink); border-left: 5px solid var(--stripe, #b9b2bf); }
 .msg.me p { background: var(--bubble-me); border: 2px solid var(--bubble-me-line); border-style: solid; }
 .chat.solo .msg .bub { max-width: none; flex: 1; }
+/* Đợt 5: biển tên thương hiệu đặt đè lên cảnh văn phòng; ba mức nhận diện */
+.sign { position: absolute; display: flex; align-items: center; justify-content: center; text-align: center; overflow: hidden; pointer-events: none; line-height: 1.05; font-family: var(--body); font-weight: 800; padding: 0 1px; box-sizing: border-box; overflow-wrap: anywhere; }
+.sign[hidden] { display: none; }
+.sign.basic { color: #2f4a8a; font-style: italic; font-weight: 600; }
+.sign.ok { color: var(--ink); letter-spacing: .01em; }
+.sign.polished { color: #fff3c0; text-shadow: 0 0 3px #f6d36b, 0 0 1px #f6d36b; }
+.hud-sub { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.name-sug { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip-btn { font: 600 13px/1.2 var(--body); padding: 6px 10px; border: 2px solid var(--ink); background: var(--surface); color: var(--ink); cursor: pointer; }
 
 </style>
 </head>
@@ -662,7 +671,7 @@ h3.sub { margin: 6px 0 0; font: 700 12px/1.3 var(--body); letter-spacing: .08em;
  * crises[].options[].effects: cost (agency pays), clientPays (client is charged), couple, family.
  */
 window.GAME_DATA = {
-  "version": "3.7.5",
+  "version": "3.8.0",
   "project": {
     "couple": "Linh & Minh",
     "location": "Sài Meo",
@@ -3032,14 +3041,15 @@ window.GAME_DATA = {
     if (c.bankrupt === undefined) c.bankrupt = null;
     if (!c.grant) c.grant = {};                              // { thángThứ: "vendor" | "client" | "none" } mối quen hẹn cho tháng đó
     initContacts(c);
+    initIdentity(c);
     return c;
   }
   // tuần thứ mấy trong tháng hiện tại (1–4); 0 khi sự nghiệp chưa bắt đầu tuần nào
   const monthWeek = c => (c.elapsedWeeks ? ((c.elapsedWeeks - 1) % WEEKS_PER_MONTH) + 1 : 0);
 
-  const CAUSE = { crisis: "crisis", extra: "extra", dispute: "crisis", travel: "travel", card: "card", action: "action", loanCost: "loan" };
+  const CAUSE = { identity: "identity", crisis: "crisis", extra: "extra", dispute: "crisis", travel: "travel", card: "card", action: "action", loanCost: "loan" };
   const CAUSE_LABEL = { living: "Sinh hoạt phí", office: "Tiền văn phòng", staff: "Lương nhân viên", ads: "Quảng cáo", branch: "Chi nhánh", crisis: "Chi xử lý sự cố", extra: "Chi phát sinh trong dự án", travel: "Đi lại, lưu trú",
-    card: "Chuyện phát sinh hàng tháng", action: "Chi phí đi gặp, khảo sát", loan: "Lãi vay", badDebt: "Khách không trả đợt cuối", loss: "Đám làm lỗ" };
+    card: "Chuyện phát sinh hàng tháng", identity: "Làm bộ nhận diện", action: "Chi phí đi gặp, khảo sát", loan: "Lãi vay", badDebt: "Khách không trả đợt cuối", loss: "Đám làm lỗ" };
   // ---- Sổ tiền mặt: mọi thay đổi quỹ đi qua đây, để không khoản nào bị tính hai lần ----
   function cash(c, amount, kind, label, extra) {
     amount = r1(amount); if (!amount) return 0;
@@ -3121,7 +3131,68 @@ window.GAME_DATA = {
     if ((c.elapsedWeeks - 1) % WEEKS_PER_MONTH === 0) ev.push(...beginMonth(c, cfg));
     const paid = payDuePayables(c); if (paid) ev.push(paid);
     ev.push(...settleSideReceivables(c, cfg));
+    ev.push(...identityTick(c));
     return ev;
+  }
+
+  // ---- Tên thương hiệu và bộ nhận diện (Đợt 5, 3.8.0; số liệu là ĐỀ XUẤT, chưa chốt) ----
+  // Ba mức chỉ chạm vào thứ đã có: tỉ lệ lời mời ngân sách cao (đám trọn gói, luxury, destination, nước ngoài) và mức phí khách chấp nhận
+  // (phí báo cao hơn, khách dễ nhận gói Toàn diện hơn). Không thêm chỉ số mới. Chưa xong thì là "cơ bản".
+  const IDENTITY = {
+    levels: { basic: "cơ bản", ok: "ổn", polished: "chỉn chu" },
+    fx: { basic: { fee: 0, accept: 0, high: 0 }, ok: { fee: 0.03, accept: 5, high: 0.2 }, polished: { fee: 0.06, accept: 10, high: 0.45 } },
+    highTypes: ["full", "luxury", "destination", "overseas"],   // khách gói và day-of chọn theo giá gói, không theo nhận diện
+    fixedFeeTypes: ["package"],                                 // gói phí cố định: nhận diện không đẩy phí lên (vẫn dễ nhận gói Toàn diện hơn)
+    methods: {
+      self: { cost: 1, weeks: 0, apDebt: 2, plain: { cost: 0, apDebt: 0 } },     // tự làm: xong ngay, mất lượt tuần làm việc kế tiếp, "ổn" nếu có Mắt thẩm mỹ;
+                                                                                  // không có Mắt thẩm mỹ (plain, Thanh 12/11/2026): không tốn gì, chỉ ra biển giấy viết tay, mức cơ bản
+      freelance: { cost: 10, weeks: 2, level: "ok", lateWeeks: 2, redoWeeks: 2, redoCost: 2 },
+      studio: { cost: 40, weeks: 4, level: "polished" },                          // công ty nhận diện: chắc chắn
+      designer: { cost: 0.5, weeks: 2, apDebt: 2 }                                 // designer trong team: mức theo đặc điểm designer; designer bận nên team mất 2 lượt
+    },
+    // Freelancer: dùng lại cách tính tính cách bên thuê của phần làm thêm, đảo vai. Kết quả mỗi lần book theo tính cách của người đó.
+    natures: { reliable: { ontime: 0.85, late: 0.1, redo: 0.05 }, slow: { ontime: 0.4, late: 0.55, redo: 0.05 }, careless: { ontime: 0.5, late: 0.1, redo: 0.4 }, moody: { ontime: 0.5, late: 0.3, redo: 0.2 } },
+    nameMin: 2, nameMax: 18, renames: 1
+  };
+  function initIdentity(c) {
+    if (c.brandName == null) c.brandName = "";               // save cũ: chưa có tên
+    if (!c.identity) c.identity = { level: "basic", job: null, method: null, renames: 0, askMethod: false, signed: false }; // signed: đã có biển (làm xong nhận diện lần nào chưa)
+    return c;
+  }
+  const identityLevel = c => (c.identity && c.identity.level) || "basic";
+  const identityFx = c => IDENTITY.fx[identityLevel(c)];
+  // Tên hợp lệ: 2–18 ký tự (đếm theo ký tự hiện ra, có dấu vẫn là một), chữ có dấu tiếng Việt, số, khoảng trắng, & ' . -; không emoji.
+  function cleanBrandName(raw) {
+    const t = String(raw == null ? "" : raw).normalize("NFC").replace(/\s+/g, " ").trim();
+    const n = [...t.normalize("NFC")].filter(ch => !/\p{M}/u.test(ch)).length;
+    if (!t) return { ok: false, name: t, why: "Chưa có tên." };
+    if (!/^[\p{L}\p{M}\p{N} &'.\-]+$/u.test(t)) return { ok: false, name: t, why: "Chỉ dùng chữ, số, khoảng trắng và & ' . -" };
+    if (n < IDENTITY.nameMin) return { ok: false, name: t, why: `Tên cần ít nhất ${IDENTITY.nameMin} ký tự.` };
+    if (n > IDENTITY.nameMax) return { ok: false, name: t, why: `Tên tối đa ${IDENTITY.nameMax} ký tự.` };
+    return { ok: true, name: t };
+  }
+  // Bắt đầu làm bộ nhận diện. o: { level (tự làm, designer), freelancer: { id, name, nature }, rnd(key) → [0,1) }.
+  function startIdentity(c, method, o = {}) {
+    initIdentity(c); const m0 = IDENTITY.methods[method]; if (!m0) return null;
+    const m = method === "self" && o.level === "basic" ? { ...m0, ...m0.plain } : m0;
+    if (c.cash < m.cost) return { type: "identityRefused", short: r1(m.cost - c.cash) };
+    if (m.cost) cash(c, -m.cost, "identity", "Làm bộ nhận diện");
+    const id = c.identity; id.method = method; id.askMethod = false;
+    if (m.apDebt) c.apDebt += m.apDebt;
+    if (method === "self") { id.level = o.level || "basic"; id.job = null; id.signed = true; return { type: "identityDone", method, level: id.level }; }
+    let outcome = "ontime";
+    if (method === "freelance") { const nat = IDENTITY.natures[(o.freelancer || {}).nature] || IDENTITY.natures.reliable; const x = o.rnd ? o.rnd(`identity:${c.elapsedWeeks}:${(o.freelancer || {}).id}`) : 0; let t = x; outcome = "redo"; for (const [k, v] of Object.entries(nat)) { t -= v; if (t < 0) { outcome = k; break; } } }
+    id.job = { method, level: o.level || m.level || "ok", due: c.elapsedWeeks + m.weeks, start: c.elapsedWeeks, outcome, freelancer: o.freelancer || null, step: 0 };
+    return { type: "identityStarted", method, due: id.job.due };
+  }
+  // Mỗi tuần làm việc: tới hạn thì xong; freelancer trễ thì lùi hạn, phải làm lại thì lùi hạn và tốn thêm tiền (mỗi chuyện xảy ra một lần).
+  function identityTick(c) {
+    const id = c.identity, j = id && id.job; if (!j || c.elapsedWeeks < j.due) return [];
+    const m = IDENTITY.methods[j.method];
+    if (j.outcome === "late" && !j.step) { j.step = 1; j.due += m.lateWeeks; return [{ type: "identityLate", freelancer: j.freelancer, weeks: m.lateWeeks }]; }
+    if (j.outcome === "redo" && !j.step) { j.step = 1; j.due += m.redoWeeks; cash(c, -m.redoCost, "identity", "Làm lại bộ nhận diện"); return [{ type: "identityRedo", freelancer: j.freelancer, weeks: m.redoWeeks, cost: m.redoCost }]; }
+    id.level = j.level; id.job = null; id.signed = true;
+    return [{ type: "identityDone", method: j.method, level: j.level }];
   }
 
   // ---- Vay: một khoản tại một thời điểm, hạn tính theo tháng game (mục 8) ----
@@ -3756,7 +3827,7 @@ window.GAME_DATA = {
   }
   const receivableTotal = c => r1((c.receivables || []).reduce((s, x) => s + x.amount, 0));
 
-  root.WP_CORE = { LUXURY_SERVICE, luxuryServiceCost, LUXURY_EXPECT, premiumExpectFor, cardSpeaker, cardStaff, loseContact, vendorSurchargeFor, cardOk, BRANCH, branchMonthlyCost, branchGate, canManage, openBranch, branchResult, branchMonth, pickBranchCard, closeBranch, applyBranchOption, addRep, registerTraits, traitOf, staffFx, staffSum, staffWith, pickQuitter, nextQuitter, leaveRisk, MORALE, addMorale, changeMorale, staffMonth, cardTraitKey, HIRING, onProbation, severanceFor, initSide, sideOffers, workSideDay, settleSideReceivables, recordPayable, payDuePayables, payableTotal, advanceRoom, STAFF, salaryAt, TRAVEL, travelCost, clientShares, DAYOF_SEASON, dayofAvailable, cardOptions, SLOPPY, withholdShare, noteProjectResult, takeLostReferral, DEMAND, recentReputation, demandLevel, OFFER_GATES, BIG_WEDDING, HIRE_GATE, STUDIO, offerAllowed, fallbackType, bigWeddingAllowed, canHire, studioActive, officeHint, ACTION_COSTS, actionMoneyCost, applyActionCost, DISCOVERY, marginDiscovery, grantMonthlyContact, chooseContact, assignVendorContact, vendorContactFor, useVendorContact, knowVendor, refreshOfferBonus,
+  root.WP_CORE = { IDENTITY, initIdentity, identityLevel, identityFx, cleanBrandName, startIdentity, identityTick, LUXURY_SERVICE, luxuryServiceCost, LUXURY_EXPECT, premiumExpectFor, cardSpeaker, cardStaff, loseContact, vendorSurchargeFor, cardOk, BRANCH, branchMonthlyCost, branchGate, canManage, openBranch, branchResult, branchMonth, pickBranchCard, closeBranch, applyBranchOption, addRep, registerTraits, traitOf, staffFx, staffSum, staffWith, pickQuitter, nextQuitter, leaveRisk, MORALE, addMorale, changeMorale, staffMonth, cardTraitKey, HIRING, onProbation, severanceFor, initSide, sideOffers, workSideDay, settleSideReceivables, recordPayable, payDuePayables, payableTotal, advanceRoom, STAFF, salaryAt, TRAVEL, travelCost, clientShares, DAYOF_SEASON, dayofAvailable, cardOptions, SLOPPY, withholdShare, noteProjectResult, takeLostReferral, DEMAND, recentReputation, demandLevel, OFFER_GATES, BIG_WEDDING, HIRE_GATE, STUDIO, offerAllowed, fallbackType, bigWeddingAllowed, canHire, studioActive, officeHint, ACTION_COSTS, actionMoneyCost, applyActionCost, DISCOVERY, marginDiscovery, grantMonthlyContact, chooseContact, assignVendorContact, vendorContactFor, useVendorContact, knowVendor, refreshOfferBonus,
     TERMS, OFFICES, LIVING, LOAN, officeOf, livingOf, monthlyParts, monthlyOperatingCost, setOffice, setLiving, pickMonthCard, applyCardOption, cardPending, runScheduled, topCauses, checkBankruptcy, CAUSE_LABEL, newProjectFinance, projectCash, signClientContract, collectClientTranche, midDueWeek, vendorDepositFor, previewBook, bookVendor, bookEmergency,
     vendorBalance, payVendorBalance, dropVendor, requestClientAdvance, collectFinalPayment, recordReceivable, collectReceivable, writeOffReceivable, receivableTotal, WEEKS_PER_MONTH, initCareer, monthWeek, cash, chargeMonthlyOperatingCost, processLoan, beginMonth, closeMonth, advanceCalendarWeek, takeLoan };
 })(typeof window !== "undefined" ? window : globalThis);
@@ -4202,7 +4273,7 @@ window.GAME_DATA = {
       // chậu cây nhỏ trên bậu
       box(41, 31, 5, 4, "#b5673f"); r(42, 28, 3, 3, GREEN); r(41, 27, 1, 2, LEAF); r(45, 27, 1, 2, LEAF);
       // tranh treo tường (từ cấp 1)
-      if (L >= 1) { box(84, 12, 20, 16, MILK); r(86, 14, 16, 12, "#f2b8c6"); r(86, 22, 16, 4, "#e9849f"); flower(g, 92, 17, ROSE); r(93, 9, 2, 3, O); }
+      if (L >= 1 && !o.sign) { box(84, 12, 20, 16, MILK); r(86, 14, 16, 12, "#f2b8c6"); r(86, 22, 16, 4, "#e9849f"); flower(g, 92, 17, ROSE); r(93, 9, 2, 3, O); }
       // tủ hồ sơ: gáy bìa màu
       box(124, 16, 26, 28, WOOD); r(124, 29, 26, 1, WOOD2); r(124, 16, 26, 1, WOOD3);
       ["#d9577a", "#8fb7d9", "#f1c45a", "#a8c69f", "#c9a0dc"].forEach((c, k) => { r(126 + k * 5, 19, 4, 9, c); r(126 + k * 5, 19, 4, 1, MILK); });
@@ -4238,8 +4309,23 @@ window.GAME_DATA = {
         box(3, 42, 12, 9, "#b5673f"); r(3, 42, 12, 2, "#c98058"); r(8, 24, 2, 18, "#5c3a24");
         [[2, 26, 6, 3], [10, 24, 6, 3], [1, 31, 6, 3], [11, 30, 6, 3], [4, 20, 5, 3], [9, 19, 5, 3], [3, 36, 5, 2], [10, 35, 5, 2]].forEach(([x, y, w, h], k) => r(x, y, w, h, k % 2 ? LEAF : GREEN));
       }
+      // Biển tên thương hiệu (Đợt 5) theo mức nhận diện: giấy viết tay / bảng in / logo có đèn. Chữ có dấu do game đặt đè bằng HTML
+      // đúng vùng SIGN.text (font pixel không vẽ được dấu tiếng Việt). Vùng nằm trên tường, lọt khung cảnh thấp ở màn văn phòng.
+      if (o.sign === "basic") { // tờ giấy dán băng keo, mép hơi lệch
+        box(60, 26, 42, 12, "#fffdf6"); r(60, 37, 42, 1, "#e9e2d2"); r(101, 26, 1, 3, "#efe8d8");
+        r(58, 25, 6, 2, "#f6e7a8"); r(98, 25, 6, 2, "#f6e7a8"); r(59, 25, 4, 1, "#fbf3c8");
+      } else if (o.sign === "ok") { // bảng in khung gỗ, hai đinh treo
+        box(57, 24, 48, 15, WOOD); r(59, 26, 44, 11, "#fbf7f0"); r(59, 36, 44, 1, "#e9e0d4"); r(57, 24, 48, 1, WOOD3);
+        r(66, 21, 1, 3, O); r(95, 21, 1, 3, O); r(66, 20, 1, 1, "#c9c2cc"); r(95, 20, 1, 1, "#c9c2cc");
+      } else if (o.sign === "polished") { // hộp đèn nền mực, viền bóng đèn vàng, quầng sáng trên tường
+        r(53, 20, 56, 23, "#f7ecd2"); r(55, 22, 52, 19, "#f9f0dc");
+        box(57, 24, 48, 15, "#2b1f33"); r(58, 25, 46, 13, "#3a2638");
+        for (let x = 58; x < 104; x += 4) { r(x, 25, 1, 1, "#f6d36b"); r(x + 2, 37, 1, 1, "#f6d36b"); }
+        for (let y = 27; y < 37; y += 3) { r(58, y, 1, 1, "#f6d36b"); r(103, y, 1, 1, "#f6d36b"); }
+        r(80, 21, 2, 3, O);
+      }
       if (L >= 4) { // biển hiệu và bảng dự án đang chạy
-        box(54, 2, 52, 7, ROSE); r(58, 4, 44, 3, MILK); r(61, 5, 3, 1, ROSE); r(68, 5, 10, 1, ROSE); r(81, 5, 15, 1, ROSE);
+        if (!o.sign) { box(54, 2, 52, 7, ROSE); r(58, 4, 44, 3, MILK); r(61, 5, 3, 1, ROSE); r(68, 5, 10, 1, ROSE); r(81, 5, 15, 1, ROSE); }
         box(108, 36, 44, 9, MILK); [0, 1, 2, 3].forEach(k => box(110 + k * 10, 38, 8, 5, ["#5fa05a", "#f1c45a", "#d9577a", "#8fc4dc"][k]));
       }
     },
@@ -4585,7 +4671,7 @@ window.GAME_DATA = {
         g.fillStyle = "rgba(58,38,56,.2)"; g.fillRect(x + 4, y + SP.H - 2, SP.W - 8, 2); g.fillRect(x + 6, y + SP.H, SP.W - 12, 1);
         if (a.flip) { g.save(); g.translate(x + SP.W, y); g.scale(-1, 1); g.drawImage(spr, 0, 0); g.restore(); }
         else g.drawImage(spr, x, y);
-        if (a.bubble) this.drawBubble(a.bubble, x + SP.W / 2, y - 2);
+        if (a.bubble) this.drawBubble(a.bubble, x + SP.W / 2, y - 2, x);
       }
       if (this.rain) {
         for (const d of this.drops) { d.y += 3; d.x -= 0.6; if (d.y > this.h) { d.y = -4; d.x = Math.random() * SW + 20; } }
@@ -4602,13 +4688,23 @@ window.GAME_DATA = {
         for (const b of this.bits) { b.y += 0.5; b.x += Math.sin((this.t + b.y) * 2) * 0.3; if (b.y > this.h) b.y = -2; g.fillStyle = b.c; g.fillRect(Math.round(b.x), Math.round(b.y), 2, 1); }
       }
     }
-    drawBubble(b, cx, top) {
+    drawBubble(b, cx, top, left) {
+      const g = this.g;
+      // Bong bóng không được che chữ trên biển văn phòng (Thanh, 12/11/2026): đụng vùng tránh (this.avoid) thì vẽ cạnh đầu, ngay dưới biển, không đuôi.
+      const A = this.avoid, by = Math.round(top - 9);
+      if (A && cx - 5 < A[0] + A[2] && cx + 5 > A[0] && by - 1 < A[1] + A[3] && by + 8 > A[1]) {
+        const side = left != null && left + SP.W + 11 <= SW ? left + SP.W + 1 : Math.max(1, (left || cx) - 11);
+        return this.drawBubbleAt(b, side, Math.max(by, A[1] + A[3] + 2), false);
+      }
+      return this.drawBubbleAt(b, Math.round(cx - 4), by, true);
+    }
+    drawBubbleAt(b, x0, y0, tail) {
       const g = this.g;
       const colors = { "!": ["#d64535", "#ffffff"], "♥": ["#ffffff", "#d9577a"], "?": ["#ffffff", "#2b1f33"], "₫": ["#f6d36b", "#2b1f33"], "…": ["#ffffff", "#2b1f33"], "✓": ["#2f8f7a", "#ffffff"], "×": ["#2b1f33", "#ffffff"] };
       const [bgc, fg] = colors[b] || colors["…"];
-      const x = Math.round(cx - 4), y = Math.round(top - 9 + (Math.sin(this.t * 6) > 0 ? 0 : 1));
+      const x = x0, y = y0 + (Math.sin(this.t * 6) > 0 ? 0 : 1);
       g.fillStyle = "#2b1f33"; g.fillRect(x - 1, y - 1, 10, 9); g.fillStyle = bgc; g.fillRect(x, y, 8, 7);
-      g.fillStyle = bgc; g.fillRect(x + 3, y + 7, 2, 1); g.fillStyle = "#2b1f33"; g.fillRect(x + 3, y + 8, 2, 1);
+      if (tail) { g.fillStyle = bgc; g.fillRect(x + 3, y + 7, 2, 1); g.fillStyle = "#2b1f33"; g.fillRect(x + 3, y + 8, 2, 1); }
       g.fillStyle = fg;
       const P = {
         "!": [[3, 1], [4, 1], [3, 2], [4, 2], [3, 3], [4, 3], [3, 5], [4, 5]],
@@ -4623,7 +4719,8 @@ window.GAME_DATA = {
     }
   }
 
-  root.WP_SCENE = { Scene, SW, SH };
+  const SIGN = { text: { basic: [61, 27, 40, 10], ok: [60, 26, 42, 10], polished: [59, 26, 44, 11] } }; // vùng chữ đặt đè: x, y, rộng, cao (điểm ảnh của cảnh)
+  root.WP_SCENE = { Scene, SW, SH, SIGN };
 })(typeof window !== "undefined" ? window : globalThis);
 
 </script>
@@ -9698,7 +9795,52 @@ window.WP_COPY = {
   };
 
 
-  root.WP_CAREER = { COORD_WISHES, WITNESS, AFTER_TEXT, CRISIS_MOOD, CRISIS_REASONS, OVERSEAS_VENDORS: GPT.overseasVendors, BRANCH_CARDS, BRANCH_TEXT, SIDE_JOBS, MONTH_CARDS, STAGES, ROLES, STAFF_TRAITS, TRAIT_FX, CANDIDATES, MORALE, HIRING, STAFF_NAMES, BRANDS, COUPLES: ALL_COUPLES, TRAITS: ALL_TRAITS, TYPES, CONTRACTS, BRIEFS: ALL_BRIEFS, CLIENTS, EXTRA_CRISES: X.crises || [], EXTRA_REACTIONS: X.reactions || {}, DESTS, CITIES, transitionMonths, OVERSEAS, DEST_FEES, SEASONS, SKILLS, DILEMMAS, monthInfo };
+  // ---- Tên thương hiệu và bộ nhận diện (Đợt 5, 3.8.0). Câu chữ do em viết, chờ Thanh duyệt. Luật và số ở WP_CORE.IDENTITY. ----
+  const IDENTITY_TEXT = {
+    // Gợi ý tên theo hướng thương hiệu; {n} là tên planner (rút gọn cho vừa 18 ký tự). Một ô là danh sách: thử lần lượt, mẫu đầu không vừa thì dùng mẫu sau.
+    suggest: {
+      atelier: ["{n} Atelier", "Xưởng Cưới {n}", "Nhà {n} Studio"],
+      package: ["{n} Wedding", "Cưới Gọn {n}", "Gói Cưới {n}"],
+      destination: [["Hành Trình Cưới {n}", "Hành Trình {n}"], "{n} Destination", "Cưới Xa {n}"]
+    },
+    levelNote: {
+      basic: "Khách chưa nhớ tới bạn qua hình ảnh.",
+      ok: "Khách thấy bạn chuyên nghiệp: thỉnh thoảng có khách ngân sách lớn hơn tìm tới, báo phí cao hơn một chút vẫn nhận (trừ gói cưới cố định).",
+      polished: "Khách thấy bạn đẳng cấp: khách ngân sách lớn tìm tới thường hơn, báo phí cao hơn vẫn nhận (trừ gói cưới cố định), dễ chốt gói Toàn diện."
+    },
+    // Mỗi lựa chọn nói bằng lời được gì, mất gì. Số liệu nằm sau "Xem con số".
+    methods: {
+      self: { name: "Tự làm", gain: "Gần như không tốn tiền, xong ngay. Bạn có mắt thẩm mỹ nên bộ nhận diện ở mức ổn.", lose: "Tuần làm việc tới mất 2 lượt.",
+        plainGain: "Không tốn tiền, không tốn lượt. Văn phòng có tờ giấy viết tay ghi tên.", plainLose: "Không có Mắt thẩm mỹ nên vẫn ở mức cơ bản: khách gần như không để ý." },
+      freelance: { name: "Book freelance", gain: "Rẻ hơn công ty nhiều, ra mức ổn.", lose: "Xong sau khoảng 2 tuần làm việc. Freelancer có thể trễ, hoặc phải làm lại và tốn thêm tiền." },
+      studio: { name: "Book công ty nhận diện", gain: "Chắc chắn chỉn chu: khách ngân sách lớn tìm tới thường hơn, chịu trả phí cao hơn.", lose: "Đắt, và mất 4 tuần làm việc mới xong. Trong lúc chờ vẫn là mức cơ bản." },
+      designer: { name: "Để designer trong team làm", gain: "Gần như không tốn tiền, xong sau 2 tuần làm việc.", lose: "{name} bận làm nhận diện nên tuần làm việc tới team mất 2 lượt. Ra mức ổn; {name} có tay decor lên bậc thì chỉn chu." }
+    },
+    // Freelancer: tính cách cố định, câu gợi ý luôn đúng tính cách (như bên thuê ở phần làm thêm, đảo vai).
+    freelancers: [
+      { id: "fl_bao_ngoc", name: "Bảo Ngọc", nature: "reliable", hint: "Gửi bản nháp đúng ngày hẹn, mỗi lúc chỉ nhận một việc." },
+      { id: "fl_khoi", name: "Khôi", nature: "slow", hint: "Mẫu rất đẹp, nhưng hay xin lùi vài ngày vì đang ôm nhiều việc." },
+      { id: "fl_duy_an", name: "Duy An", nature: "careless", hint: "Làm nhanh, giá mềm, nhưng file gửi về hay thiếu bản in hoặc lệch màu." },
+      { id: "fl_my_linh", name: "Mỹ Linh", nature: "moody", hint: "Hứng lên thì làm rất tới, có lúc tự đổi ý tưởng giữa chừng." },
+      { id: "fl_thuc_doan", name: "Thục Đoan", nature: "reliable", hint: "Quy trình rõ: hai lượt sửa, bàn giao đủ file in và file đăng mạng." }
+    ],
+    log: {
+      started: "Bắt đầu làm bộ nhận diện cho {brand}: {method}, còn khoảng {weeks} tuần làm việc là xong.",
+      done: "Bộ nhận diện của {brand} đã xong, mức {level}.",
+      late: "{who} xin lùi {weeks} tuần, bộ nhận diện chưa xong.",
+      redo: "{who} gửi bản lỗi, phải làm lại: thêm {weeks} tuần và {cost}."
+    },
+    // Khách nhắc tới nhận diện trong buổi gặp đầu, theo mức. {brand} là tên thương hiệu.
+    clientLines: {
+      basic: ["Tụi em tìm mãi mới ra trang của {brand}, ít ảnh quá nên hơi lo.", "Bạn em giới thiệu {brand}, chứ lên mạng tìm thì tụi em chưa thấy {brand} đâu."],
+      ok: ["Tụi em xem trang của {brand}, thấy gọn gàng nên nhắn liền.", "Hồ sơ {brand} gửi qua đọc dễ hiểu, ba mẹ em cũng xem được."],
+      polished: ["Logo {brand} đẹp quá, mẹ em thấy logo trên backdrop đám nhà bạn là hỏi ngay.", "Bộ hồ sơ của {brand} in chỉn chu, ba mẹ em xem xong là tin."]
+    },
+    // Biển văn phòng theo mức
+    sign: { basic: "Giấy viết tay", ok: "Bảng in", polished: "Logo có đèn" }
+  };
+
+  root.WP_CAREER = { IDENTITY_TEXT, COORD_WISHES, WITNESS, AFTER_TEXT, CRISIS_MOOD, CRISIS_REASONS, OVERSEAS_VENDORS: GPT.overseasVendors, BRANCH_CARDS, BRANCH_TEXT, SIDE_JOBS, MONTH_CARDS, STAGES, ROLES, STAFF_TRAITS, TRAIT_FX, CANDIDATES, MORALE, HIRING, STAFF_NAMES, BRANDS, COUPLES: ALL_COUPLES, TRAITS: ALL_TRAITS, TYPES, CONTRACTS, BRIEFS: ALL_BRIEFS, CLIENTS, EXTRA_CRISES: X.crises || [], EXTRA_REACTIONS: X.reactions || {}, DESTS, CITIES, transitionMonths, OVERSEAS, DEST_FEES, SEASONS, SKILLS, DILEMMAS, monthInfo };
 })(typeof window !== "undefined" ? window : globalThis);
 
 </script>
@@ -9749,7 +9891,8 @@ window.WP_COPY = {
   const packName = (o = state.project) => (isDayof(o) ? "Gói điều phối" : "Gói planning");
   const subjectWord = (c = state.career) => (!(c.staff || []).length ? "bạn" : (c.stage || 0) >= 4 ? "agency" : "team");
   function voice(t, c) {
-    if (t == null) return t; const s = subjectWord(c); if (s === "agency") return String(t);
+    if (t == null) return t; const s = subjectWord(c);
+    if (s === "agency") { const bn = ((c || (state && state.career)) || {}).brandName; return bn ? String(t).replace(/\bAgency\b|\bagency\b/g, bn) : String(t); } // Đợt 5: có tên thương hiệu thì gọi bằng tên
     const S = s[0].toUpperCase() + s.slice(1);
     return String(t).replace(/\bAgency\b/g, S).replace(/\bagency\b/g, s);
   }
@@ -9765,6 +9908,52 @@ window.WP_COPY = {
   const monthlyCost = () => CORE.monthlyOperatingCost(state.career, CAL);
   // số tiền nhỏ: 500k, 1,5tr; số lớn làm tròn như mọi chỗ khác
   const cashStr = n => { const a = Math.abs(n); return a < 1 ? `${Math.round(a * 1000)}k` : a % 1 ? `${a.toFixed(1).replace(".", ",")}tr` : money(a); };
+  // ---- Tên thương hiệu và bộ nhận diện (Đợt 5). Luật ở CORE.IDENTITY, câu chữ ở C.IDENTITY_TEXT. ----
+  const IT = C.IDENTITY_TEXT, IDN = CORE.IDENTITY;
+  const brandName = (c = state.career) => (c && c.brandName) || "";
+  const brandOr = (c = state.career) => brandName(c) || (state.me ? state.me.name : "bạn"); // trước khi đặt tên: tên planner
+  const levelName = l => IDN.levels[l] || IDN.levels.basic;
+  function nameSuggestions(c = state.career) {
+    const full = String(state.me ? state.me.name : "Bạn").trim() || "Bạn"; const w = full.split(/\s+/);
+    const ns = [full, w[w.length - 1], w[0]].filter((x, i, a) => x && a.indexOf(x) === i);
+    const out = [];
+    (IT.suggest[c.brand] || IT.suggest.atelier).forEach(t => { const T = [].concat(t); let hit = null; for (const tt of T) { for (const n of ns) { const v = CORE.cleanBrandName(tt.replace("{n}", n)); if (v.ok && !out.includes(v.name)) { hit = v.name; break; } } if (hit) break; } if (hit) out.push(hit); });
+    return out.length ? out : ["Nhà Cưới Mèo"];
+  }
+  const designerOf = (c = state.career) => c.staff.find(x => x.role === "designer");
+  const designerLevel = x => (CORE.staffFx(x, "decorQ") > 0 ? "polished" : "ok"); // Thanh 12/11/2026: ra mức ổn; chỉ designer có đặc điểm decor lên bậc mới chỉn chu
+  const freelancerNow = (c = state.career) => { const L = IT.freelancers; return L[Math.floor(CAL.rnd(`freelancer:${c.monthNo}:${c.identity.renames}`) * L.length) % L.length]; };
+  // Các cách làm đang mở cho người chơi, kèm mức sẽ ra (tự làm và designer biết trước; freelance và công ty theo bảng).
+  function identityMethods(c = state.career) {
+    const out = [["self", hasSkill("tham_my") ? "ok" : "basic"], ["freelance", IDN.methods.freelance.level], ["studio", IDN.methods.studio.level]];
+    const d = designerOf(c); if (d) out.push(["designer", designerLevel(d)]);
+    return out.map(([id, level]) => { const M = id === "self" && level === "basic" ? { ...IDN.methods.self, ...IDN.methods.self.plain } : IDN.methods[id]; return { id, level, cost: M.cost, weeks: M.weeks, apDebt: M.apDebt || 0 }; });
+  }
+  function setBrandName(raw, mode = "first") {
+    const c = state.career; if (!c.brand) return false;
+    const v = CORE.cleanBrandName(raw); if (!v.ok) { state.nameErr = v.why; return false; }
+    state.nameErr = null;
+    if (mode === "rename") { if (v.name === c.brandName || c.identity.renames >= IDN.renames) return false; state.sheet = { type: "identity", rename: v.name }; return true; }
+    c.brandName = v.name; c.identity.askMethod = true; log(`Đặt tên thương hiệu: ${v.name}.`, "good");
+    state.sheet = { type: "identity" }; return true;
+  }
+  // Chọn cách làm bộ nhận diện. Đổi tên (rename) phải xác nhận trong trang (confirm = true) mới trừ tiền và đổi tên.
+  function chooseIdentity(method, confirm) {
+    const c = state.career, sh = state.sheet || {}, rename = sh.type === "identity" ? sh.rename : null;
+    const m = identityMethods(c).find(x => x.id === method); if (!m) return false;
+    if (rename && !confirm) { state.sheet = { type: "identity", rename, pick: method }; return false; }
+    if (c.cash < m.cost) { toast(`Thiếu ${cashStr(m.cost - c.cash)}`, "warn"); return false; }
+    if (rename) { c.brandName = rename; c.identity.renames += 1; c.identity.level = "basic"; c.identity.job = null; log(`Đổi tên thương hiệu thành ${rename}, làm lại bộ nhận diện.`, "good"); }
+    const fl = method === "freelance" ? freelancerNow(c) : null;
+    const ev = CORE.startIdentity(c, method, { level: m.level, freelancer: fl, rnd: CAL.rnd });
+    if (!ev || ev.type === "identityRefused") return false;
+    const name = method === "designer" ? `${IT.methods.designer.name} (${designerOf(c).name})` : method === "freelance" ? `${IT.methods.freelance.name} (${fl.name})` : IT.methods[method].name;
+    if (ev.type === "identityDone") log(fillId(IT.log.done, { level: levelName(ev.level) }), "good");
+    else log(fillId(IT.log.started, { method: lower(name), weeks: ev.due - c.elapsedWeeks }), "info");
+    state.sheet = c.skillPoints && !rename ? { type: "skill" } : null; c.offers = genOffers();
+    return true;
+  }
+  const fillId = (t, v = {}) => String(t).replace(/\{(\w+)\}/g, (m, k) => (k === "brand" ? brandOr() : v[k] != null ? v[k] : m));
   function avgStars() {
     const st = state.career.stars.slice(-6); if (!st.length) return 0;
     const a = st.reduce((s, x) => s + x, 0) / st.length + (state.career.repAdj || 0); // chi nhánh kéo danh tiếng chung lên/xuống
@@ -9866,6 +10055,9 @@ window.WP_COPY = {
       if (e.type === "sideCollected") log(fillSide(e.full ? SJ.settle.full : SJ.settle.half, { employer: e.employer, amount: e.amount }), e.full ? "good" : "bad");
       if (e.type === "contactChoice") log("Tháng này có một mối quen: vào tờ Sự nghiệp để chọn vendor hay khách.", "good");
       if (e.type === "contact") log(e.kind === "vendor" ? "Có một mối quen vendor: chọn vendor trong tờ Sự nghiệp để được giảm 5% hoá đơn ở đám tới." : "Có một mối quen khách: lần tới sẽ có thêm một lời hỏi.", "good");
+      if (e.type === "identityDone") log(fillId(IT.log.done, { level: levelName(e.level) }), "good");
+      if (e.type === "identityLate") log(fillId(IT.log.late, { who: e.freelancer ? e.freelancer.name : "Freelancer", weeks: e.weeks }), "bad");
+      if (e.type === "identityRedo") log(fillId(IT.log.redo, { who: e.freelancer ? e.freelancer.name : "Freelancer", weeks: e.weeks, cost: cashStr(e.cost) }), "bad");
       if (e.type === "loanOverdue") log(`Tới hạn trả ${money(e.amount)} mà quỹ không đủ.`, "bad");
     }
     if (c.bankrupt) { state.phase = "over"; state.sheet = null; return false; }
@@ -10003,6 +10195,8 @@ window.WP_COPY = {
     const [b, g] = pick(r, C.COUPLES);
     let guests = Math.round((T.guests[0] + r() * (T.guests[1] - T.guests[0])) / 10) * 10;
     let scale = T.scale[0] + r() * (T.scale[1] - T.scale[0]);
+    const idFx = CORE.identityFx(state.career); // nhận diện: khách ngân sách cao tìm tới (rng riêng để mức "cơ bản" không đổi chuỗi ngẫu nhiên cũ)
+    if (idFx.high && CORE.IDENTITY.highTypes.includes(type) && E.rng(hash(`${state.seed}:hi:${state.career.done}:${state.career.monthNo}:${idx}`))() < idFx.high) scale = T.scale[1];
     if (type !== "dayof" && type !== "comeback" && type !== "boss") scale *= 0.85 + Math.max(rep, 3) * 0.05;
     let trait = type === "comeback" ? C.TRAITS.find(t => t.id === "easy") : r() < 0.55 ? pick(r, C.TRAITS) : null;
     if (forceTrait) trait = C.TRAITS.find(t => t.id === forceTrait); // nhân viên kéo về khách khó tính
@@ -10024,7 +10218,7 @@ window.WP_COPY = {
     else if (type === "luxury" || type === "boss") fee = Math.round(budget * 0.12);
     else if (type === "overseas") fee = Math.max(90, budget * 0.18);
     else fee = (30 + steps * 6 + 10) * (type === "destination" ? 1.4 : 1);
-    fee = Math.round(fee * (trait?.feeMult || 1) * (mi.peak ? 1.1 : 1) * (hasSkill("chot_sale") ? 1 + skillValue("chot_sale") : 1) * (CORE.studioActive(state.career) ? 1 + CORE.STUDIO.feeBonus : 1) * (CORE.demandLevel(state.career) === "shunned" ? CORE.DEMAND.shunnedFee : 1) * (1 + fxNow("feeMult"))); // nhân viên ăn nói khéo: phí cao hơn; studio: +10%, áp một lần ở đây; tiếng xấu: khách ép phí
+    fee = Math.round(fee * (trait?.feeMult || 1) * (mi.peak ? 1.1 : 1) * (hasSkill("chot_sale") ? 1 + skillValue("chot_sale") : 1) * (CORE.studioActive(state.career) ? 1 + CORE.STUDIO.feeBonus : 1) * (CORE.demandLevel(state.career) === "shunned" ? CORE.DEMAND.shunnedFee : 1) * (1 + fxNow("feeMult")) * (1 + (CORE.IDENTITY.fixedFeeTypes.includes(type) ? 0 : idFx.fee))); // nhận diện: phí khách chấp nhận cao hơn · nhân viên ăn nói khéo: phí cao hơn; studio: +10%, áp một lần ở đây; tiếng xấu: khách ép phí
     const preset = {};
     if (type === "dayof" || type === "comeback") BASE.categories.forEach(c => { const list = BASE.vendors.filter(v => v.category === c.id); preset[c.id] = type === "comeback" ? list.sort((a, b2) => b2.reliability - a.reliability)[0].id : pick(r, list).id; });
     const m = ((state.career.month + T.months - 1) % 12) + 1;
@@ -10185,7 +10379,7 @@ window.WP_COPY = {
     const remove = ["photo_brief", "rental_audit", "food_plan", "ceremony_plan", "guest_plan"].filter(id => base.includes(id)).slice(0, 2);
     const add = ["check_contract", "backup_crew", "venue_prep", "decor_prep", "transport_plan"].filter(id => avail.has(id) && !base.includes(id)).slice(0, 2);
     const lo = Math.round(o.fee * 0.85), hi = Math.round(o.fee * 1.05), mid = Math.round((lo + hi) / 2);
-    const accept = Math.min(95, 50 + Math.round(avgStars() * 10) + Math.round(fxNow("accept"))); // sales chốt nhanh: khách dễ nhận gói Toàn diện
+    const accept = Math.min(95, 50 + Math.round(avgStars() * 10) + Math.round(fxNow("accept")) + CORE.identityFx(state.career).accept); // nhận diện; sales chốt nhanh: khách dễ nhận gói Toàn diện
     return [
       { level: "low", name: "Gói Cơ bản", fee: lo, contracted: base.filter(id => !remove.includes(id)), removed: remove, added: [], expect: 4, discountMult: 0.8,
         notes: ["Khách dễ tính hơn", "Có sự cố ít đòi giảm phí"] },
@@ -10461,7 +10655,7 @@ window.WP_COPY = {
   }
   function chooseBrand(id) {
     const c = state.career; if (c.brand) return;
-    c.brand = id; c.pendingBrand = false; state.sheet = c.skillPoints ? { type: "skill" } : null; c.offers = genOffers();
+    c.brand = id; c.pendingBrand = false; state.sheet = { type: "brandName" }; state.nameDraft = null; state.nameErr = null; c.offers = genOffers();
     log(`Chọn hướng thương hiệu: ${C.BRANDS.find(b => b.id === id).name}.`, "good");
   }
 
@@ -10532,10 +10726,11 @@ window.WP_COPY = {
     const hint = CORE.officeHint(c, wantTypes);
     return `<section class="stack">
       ${cardPending() ? monthCardHtml() : ""}
-      ${c.stage >= 4 && c.bossDone && !c.endSeen ? `<div class="card moment"><span class="eyebrow">Hết chặng đầu</span><h2 class="h big">Agency của bạn đã có tên</h2><p>${c.done} đám cưới, danh tiếng ${avgStars().toFixed(1)}★, quỹ ${money(c.cash)}. Bạn vẫn có thể tiếp tục nhận khách.</p><button class="btn" data-act="endSeen">Tiếp tục làm nghề</button></div>` : ""}
+      ${c.stage >= 4 && c.bossDone && !c.endSeen ? `<div class="card moment"><span class="eyebrow">Hết chặng đầu</span><h2 class="h big">${brandName() ? `${esc(brandName())} đã có tên` : "Agency của bạn đã có tên"}</h2><p>${c.done} đám cưới, danh tiếng ${avgStars().toFixed(1)}★, quỹ ${money(c.cash)}. Bạn vẫn có thể tiếp tục nhận khách.</p><button class="btn" data-act="endSeen">Tiếp tục làm nghề</button></div>` : ""}
       <button class="hubline" data-act="sheet" data-id="career"><span>Quỹ <b class="${c.cash < 0 ? "neg" : ""}">${money(c.cash)}</b></span><span>Cấp <b>${c.stage + 1}/5</b></span><span>${next ? (goalMet(next.goal) ? `<b>Đủ điều kiện lên cấp</b>` : `Lên cấp: thiếu <b>${goalLines(next.goal).filter(x => !x.ok).length}</b>`) : `<b>${c.done}</b> đám`}</span>${canHire ? `<em>Tuyển được người</em>` : ""}<i class="chev">›</i></button>
         ${c.canUpgrade && next ? `<button class="btn primary" data-act="upgrade">Lên ${esc(next.name)}</button>` : ""}
         ${c.pendingBrand ? `<button class="btn primary" data-act="sheet" data-id="brand">Chọn hướng thương hiệu</button>` : ""}
+        ${c.brand && !c.brandName ? `<button class="btn primary" data-act="sheet" data-id="brandName">Đặt tên thương hiệu</button>` : c.brand && c.identity.askMethod && !c.identity.job ? `<button class="btn" data-act="sheet" data-id="identity">Làm bộ nhận diện cho ${esc(c.brandName)}</button>` : ""}
         ${c.skillPoints ? `<button class="btn primary" data-act="sheet" data-id="skill">Học kỹ năng mới (${c.skillPoints})</button>` : ""}
       ${c.done === 0 ? `<p class="muted">Ngày đầu làm planner tự do ở ${esc(C.CITIES[c.city].name)}. Nhận vài job điều phối nhỏ để có tiếng trước đã.</p>` : ""}
       <h2 class="sec">Khách đang hỏi</h2>
@@ -10592,6 +10787,7 @@ window.WP_COPY = {
       <div class="card"><div class="row-between"><span class="eyebrow">Cấp ${c.stage + 1}/5</span><span class="small muted">${esc(C.CITIES[c.city].short)} · ${esc(mi.label)}</span></div><h2 class="h">${esc(st.name)}</h2><p class="muted">${esc(st.desc)}${brand ? ` Hướng: <b>${esc(brand.name)}</b>.` : ""}</p>
         ${next ? `<div class="goal"><small class="muted">Để lên ${esc(next.name)}:</small>${goalLines(next.goal).map(x => `<div class="${x.ok ? "ok" : ""}"><span>${x.ok ? "✓" : "○"} ${esc(x.text)}</span></div>`).join("")}</div>` : `<p class="pos">Cấp cao nhất.</p>`}
       </div>
+      ${brandSection()}
       ${choiceList("Văn phòng", CORE.OFFICES, c.office, c.officeNext, "office", o => officeUnlocks(o).map(u => `<span class="unlock ${u.ok ? "ok" : ""}">${esc(u.text)} <em>${esc(u.miss)}</em></span>`).join(""))}
       ${choiceList("Mức sống", CORE.LIVING, c.living, c.livingNext, "living")}
       <h3 class="sub">Vay tiền</h3>
@@ -10622,7 +10818,7 @@ window.WP_COPY = {
     if (!bs.length && (c.stage || 0) < CORE.BRANCH.minStage) return "";
     const last = b => b.results.length ? b.results[b.results.length - 1] : null;
     const pl = n => bt(n >= 0 ? BU.profit : BU.loss, { amount: cashStr(Math.abs(n)) });
-    return `<h3 class="sub">${esc(BU.section)}</h3><div class="card">${bs.map(b => { const L = last(b); return `<div class="staff">${b.manager ? img(staffLook(b.manager.role, b.manager.look || b.manager.id), "face") : ""}<div><b>${esc(b.name)}</b><small>${esc((b.manager ? bt(BU.rowManager, { manager: b.manager.name }) + (b.mood ? bt(BU.rowMood, { mood: (b.mood > 0 ? "+" : "") + b.mood }) : "") : BU.rowNoManager) + bt(BU.rowMonths, { months: b.months }) + (L != null ? bt(BU.rowLast, { result: pl(L) }) : "") + bt(BU.rowTotal, { total: bt(b.total >= 0 ? BU.profit : BU.loss, { amount: money(Math.abs(b.total)) }) }))}</small></div>${b.manager ? "" : `<button class="link" data-act="sheet" data-id="branchMgr:${b.id}">${esc(BU.assignBtn)}</button>`}<button class="link" data-act="sheet" data-id="branchClose:${b.id}">${esc(BU.closeBtn)}</button></div>`; }).join("")}
+    return `<h3 class="sub">${esc(BU.section)}</h3><div class="card">${bs.map(b => { const L = last(b); return `<div class="staff">${b.manager ? img(staffLook(b.manager.role, b.manager.look || b.manager.id), "face") : ""}<div><b>${esc(brandName() ? `${brandName()} ${b.name}` : b.name)}</b><small>${esc((b.manager ? bt(BU.rowManager, { manager: b.manager.name }) + (b.mood ? bt(BU.rowMood, { mood: (b.mood > 0 ? "+" : "") + b.mood }) : "") : BU.rowNoManager) + bt(BU.rowMonths, { months: b.months }) + (L != null ? bt(BU.rowLast, { result: pl(L) }) : "") + bt(BU.rowTotal, { total: bt(b.total >= 0 ? BU.profit : BU.loss, { amount: money(Math.abs(b.total)) }) }))}</small></div>${b.manager ? "" : `<button class="link" data-act="sheet" data-id="branchMgr:${b.id}">${esc(BU.assignBtn)}</button>`}<button class="link" data-act="sheet" data-id="branchClose:${b.id}">${esc(BU.closeBtn)}</button></div>`; }).join("")}
       ${why ? `<small class="muted">${esc(why)}</small>` : `<button class="btn" data-act="sheet" data-id="branchOpen">${esc(BU.openBtn)}</button>`}
       <small class="muted">${esc(BU.note)}</small></div>`;
   }
@@ -10641,6 +10837,47 @@ window.WP_COPY = {
   function sheetBrand() {
     return `<h2 class="h">Chọn hướng thương hiệu</h2><p class="muted">Chọn một lần, không đổi lại được. Hướng này quyết định loại khách sẽ tìm tới bạn.</p>
       <div class="list">${C.BRANDS.map(b => `<button class="opt" data-act="brand" data-id="${b.id}"><b>${esc(b.name)}</b><span class="tag">${esc(b.tag)}</span><small>${esc(b.pitch)}</small></button>`).join("")}</div>`;
+  }
+  // Đặt tên thương hiệu (Đợt 5): lần đầu ngay sau khi chọn hướng; save cũ đã qua mốc thì hỏi một lần; đổi tên ở tờ Sự nghiệp (một lần).
+  function sheetBrandName() {
+    const c = state.career, mode = state.sheet.mode || "first", sug = nameSuggestions(c), B = C.BRANDS.find(b => b.id === c.brand) || {};
+    const draft = state.nameDraft != null ? state.nameDraft : mode === "rename" ? "" : sug[0];
+    const intro = mode === "rename" ? `Đổi tên là làm lại bộ nhận diện: chọn lại cách làm và trả lại chi phí. Chỉ đổi được ${IDN.renames} lần. Tên hiện tại: ${c.brandName}.`
+      : `${mode === "old" ? "Bản mới có tên thương hiệu. " : ""}Tên của ${B.name ? `hướng ${B.name}` : "bạn"} hiện ở đầu màn, trên biển văn phòng và trong lời khách. Từ ${IDN.nameMin} tới ${IDN.nameMax} ký tự, có dấu được.`;
+    return `<h2 class="h">${mode === "rename" ? "Đổi tên thương hiệu" : "Đặt tên thương hiệu"}</h2><p class="muted">${esc(intro)}</p>
+      <label class="field"><span>Tên thương hiệu</span><input id="brand-name" type="text" maxlength="30" autocomplete="off" placeholder="${esc(sug[0])}" value="${esc(draft)}"></label>
+      <p id="brand-err" class="small neg" ${state.nameErr ? "" : "hidden"}>${esc(state.nameErr || "")}</p>
+      <p class="small muted">Gợi ý:</p><div class="chips name-sug">${sug.map(n => `<button class="chip-btn" data-act="brandSug" data-id="${esc(n)}">${esc(n)}</button>`).join("")}</div>
+      <div class="sheet-actions"><button class="btn primary" data-act="brandNameOk">${mode === "rename" ? "Tiếp: chọn cách làm nhận diện" : "Dùng tên này"}</button>
+        ${mode === "rename" ? `<button class="btn" data-act="close">Thôi</button>` : `<button class="btn" data-act="brandNameSkip">Bỏ qua, dùng “${esc(sug[0])}”</button>`}</div>`;
+  }
+  const idNums = m => { const fx = IDN.fx[m.level]; return `<div class="chips">${m.cost ? `<span class="neg">−${cashStr(m.cost)}</span>` : `<span>Không tốn tiền</span>`}<span>${m.weeks ? `${m.weeks} tuần làm việc` : "Xong ngay"}${m.apDebt ? ` · −${m.apDebt} lượt` : ""}</span>${m.level === "basic" ? `<span>Mức cơ bản: không cộng gì</span>` : `<span>Phí +${Math.round(fx.fee * 100)}%</span><span>Toàn diện +${fx.accept}% đồng ý</span><span>${Math.round(fx.high * 100)}% khách ngân sách cao</span>`}${m.id === "freelance" ? `<span class="gold">Trễ: +${IDN.methods.freelance.lateWeeks} tuần</span><span class="gold">Làm lại: +${IDN.methods.freelance.redoWeeks} tuần, −${cashStr(IDN.methods.freelance.redoCost)}</span>` : ""}</div>`; };
+  function sheetIdentity() {
+    const c = state.career, sh = state.sheet, rename = sh.rename, name = rename || brandOr();
+    const fl = freelancerNow(c), d = designerOf(c), T = IT.methods;
+    const rows = identityMethods(c).map(m => {
+      const t = T[m.id], title = m.id === "freelance" ? `${t.name}: ${fl.name}` : m.id === "designer" ? `${t.name}: ${d.name}` : t.name;
+      const plain = m.id === "self" && m.level === "basic", gain = plain ? t.plainGain : t.gain, lose = plain ? t.plainLose : t.lose;
+      const extra = m.id === "freelance" ? `“${fl.hint}”` : "";
+      const short = c.cash < m.cost;
+      return `<button class="opt ${sh.pick === m.id ? "on" : ""}" data-act="identity" data-id="${m.id}" ${short ? "disabled" : ""}><b>${esc(title)}</b><small>Được: ${esc(gain)}</small><small>Mất: ${esc(lose.replace(/\{name\}/g, d ? d.name : ""))}</small>${extra ? `<small><i>${esc(extra)}</i></small>` : ""}<small>Ra mức <b>${esc(levelName(m.level))}</b>.</small>${state.showNums ? idNums(m) : ""}${short ? `<em>Thiếu ${cashStr(m.cost - c.cash)}</em>` : ""}</button>`;
+    }).join("");
+    const pick = rename && sh.pick ? identityMethods(c).find(m => m.id === sh.pick) : null;
+    return `<h2 class="h">${rename ? `Làm lại nhận diện cho ${esc(name)}` : `Bộ nhận diện cho ${esc(name)}`}</h2>
+      <p class="muted">Logo, hồ sơ giới thiệu, biển văn phòng. ${rename ? "Tên mới dùng ngay khi bạn xác nhận." : "Tên đã dùng được ngay."} Bộ nhận diện có tác dụng khi làm xong; trước đó là mức cơ bản.</p>
+      <ul class="bul small">${["ok", "polished"].map(l => `<li><b>Mức ${esc(levelName(l))}:</b> ${esc(IT.levelNote[l].replace(/^Khách thấy bạn [^:]+: /, ""))}</li>`).join("")}</ul>
+      <div class="list">${rows}</div>${numsLink()}
+      ${pick ? `<div class="card confirm-box" id="rename-confirm"><p><b>Đổi tên thành “${esc(rename)}”?</b> Làm lại nhận diện bằng cách “${esc(lower(T[pick.id].name))}”, trả ${cashStr(pick.cost)}. Mức nhận diện về cơ bản cho tới khi làm xong. Chỉ đổi được ${IDN.renames} lần, không đổi lại được.</p><div class="row-btns"><button class="btn" data-act="identityUnpick">Thôi</button><button class="btn primary" data-act="identityConfirm">Đổi tên</button></div></div>` : ""}
+      ${rename ? "" : `<div class="sheet-actions"><button class="btn" data-act="close">Để sau (giữ mức cơ bản)</button></div>`}`;
+  }
+  function brandSection() {
+    const c = state.career; if (!c.brand) return "";
+    if (!brandName()) return `<h3 class="sub">Thương hiệu</h3><div class="card"><button class="btn primary" data-act="sheet" data-id="brandName">Đặt tên thương hiệu</button></div>`;
+    const id = c.identity, j = id.job, T = IT.methods;
+    const jobLine = j ? `Đang làm nhận diện (${lower(T[j.method].name)}${j.freelancer ? `: ${j.freelancer.name}` : ""}), còn khoảng ${Math.max(1, j.due - c.elapsedWeeks)} tuần làm việc nữa. Đứng ở văn phòng thì thời gian không trôi.` : "";
+    return `<h3 class="sub">Thương hiệu</h3><div class="card"><b>${esc(c.brandName)}</b><small class="muted">Nhận diện: <b>${esc(levelName(id.level))}</b>. ${esc(IT.levelNote[id.level])}</small>${jobLine ? `<small>${esc(jobLine)}</small>` : ""}
+      ${id.askMethod && !j ? `<button class="btn" data-act="sheet" data-id="identity">Làm bộ nhận diện</button>` : ""}
+      ${id.renames < IDN.renames ? `<button class="link" data-act="renameBrand">Đổi tên (làm lại nhận diện) · còn ${IDN.renames - id.renames} lần</button>` : `<small class="muted">Đã dùng lượt đổi tên.</small>`}</div>`;
   }
   function staffLook(role, id = "") {
     const base = role === "designer" ? SP.VENDOR_LOOKS.decor_flora : role === "planner" ? SP.VENDOR_LOOKS.venue_hotel : SP.PEOPLE.staff2;
@@ -10708,7 +10945,8 @@ window.WP_COPY = {
   const MIGRATE_FROM = ["3.5.1", "3.6.0"];
   // Bản cùng cấu trúc lưu: đọc thẳng, không chuyển đổi. 3.7.1–3.7.3 chỉ sửa giao diện; trường mới (warned, markSrc, sideWeek) đều có giá trị mặc định.
   // 3.7.4–3.7.5 không thêm trường lưu nào; nhãn "planner điều phối được" của mong muốn dựng lại từ dữ liệu khi nạp.
-  const SAME_SHAPE = ["3.7.0", "3.7.3"];
+  // 3.8.0 thêm tên thương hiệu và nhận diện: save cũ có tên trống, nhận diện "cơ bản" (CORE.initIdentity); đã qua mốc chọn hướng thì lần mở tới hỏi đặt tên một lần.
+  const SAME_SHAPE = ["3.7.0", "3.7.3", "3.7.5"];
   const OFFICE_BY_OLD_STAGE = ["home", "cowork", "small", "studio", "studio"];
   function migrate(old, from) {
     const s = { ...fresh(), ...old, sheet: null };
@@ -10731,6 +10969,7 @@ window.WP_COPY = {
     else if (MIGRATE_FROM.includes(p.v)) s = migrate(p.s, p.v);
     if (!s) return null;
     if (s.project) { D = buildProject(s.project, s.career.staff, s.me ? s.me.skills : []); TIME = D.config.time; } else { D = BASE; TIME = CFG.time; }
+    if (s.career && s.career.brand && !s.career.brandName && s.phase === "hub") s.sheet = { type: "brandName", mode: "old" }; // hỏi một lần; đóng là dùng gợi ý đầu
     return s;
   }
   let state = load();
@@ -11149,9 +11388,9 @@ window.WP_COPY = {
     if (p === "title") return { key: "title", kind: "office" };
     if (p === "over") return { key: "over", kind: "office", opts: { level: 0 } };
     if (p === "setup") return { key: `setup-${state.setup.look}`, kind: "office" };
-    const lv = state.career ? state.career.stage : 0, office = { level: lv };
-    if (p === "hub") return { key: `hub-${lv}-${state.career.staff.map(s => s.id).join("")}`, kind: "office", opts: office };
-    if (p === "brief" || p === "quote") return { key: `brief-${lv}`, kind: "office", opts: office };
+    const lv = state.career ? state.career.stage : 0, sign = state.career && brandName() && state.career.identity.signed ? CORE.identityLevel(state.career) : null, office = { level: lv, sign }, sk = sign ? `-${sign}` : "";
+    if (p === "hub") return { key: `hub-${lv}${sk}-${state.career.staff.map(s => s.id).join("")}`, kind: "office", opts: office };
+    if (p === "brief" || p === "quote") return { key: `brief-${lv}${sk}`, kind: "office", opts: office };
     if (p === "prep") {
       // Gặp ai thì cảnh chuyển tới chỗ đó: vendor ở quán cà phê, bố mẹ cô dâu ở nhà gái, mẹ chú rể ở nhà trai.
       // Cô dâu chú rể tới văn phòng nên không đổi cảnh. Chọn xong thì về văn phòng.
@@ -11162,9 +11401,9 @@ window.WP_COPY = {
         if (who === "mom_bride" || who === "dad_bride") return { key: `meet-bride-${d.id}`, kind: "living", opts: { side: "bride" }, place: `Nhà gái · gặp ${low}` };
         if (who === "mom_groom") return { key: `meet-groom-${d.id}`, kind: "living", opts: { side: "groom" }, place: `Nhà trai · gặp ${low}` };
       }
-      return { key: `prep-${lv}`, kind: "office", opts: office };
+      return { key: `prep-${lv}${sk}`, kind: "office", opts: office };
     }
-    if (p === "settlement") return { key: `settle-${lv}`, kind: "office", opts: office };
+    if (p === "settlement") return { key: `settle-${lv}${sk}`, kind: "office", opts: office };
     if (p === "event") {
       // The scene fills up as the day goes on: setup crew first, then guests, then the full party.
       const done = state.queue.filter(x => x.k === "crisis" && x.out).length + (state.queue.some(x => x.k === "end") ? 1 : 0);
@@ -11282,6 +11521,26 @@ window.WP_COPY = {
     const top = Math.max(0, Math.min(H - hc, bottom - hc));
     cv.style.objectPosition = `50% ${-Math.round(top * k)}px`;
   }
+  // Biển tên thương hiệu: chữ HTML đặt đè đúng vùng biển vẽ trong cảnh văn phòng (font pixel không vẽ được dấu).
+  // Tính theo cách trình duyệt co cảnh (object-fit, object-position); biển không lọt trọn khung thì ẩn chữ.
+  function placeSign() {
+    const el = $("#sign"), st = $("#stage"), cv = st && st.querySelector("canvas"); if (!el) return;
+    const lvl = scene && scene.kind === "office" && scene.opts ? scene.opts.sign : null, name = brandName();
+    if (scene) scene.avoid = null;
+    if (!lvl || !name || !cv || st.classList.contains("folded")) { el.hidden = true; return; }
+    const W = 192, H = scene.h || 120, cw = cv.clientWidth, ch = cv.clientHeight; if (!cw || !ch) { el.hidden = true; return; }
+    const cs = getComputedStyle(cv), fit = cs.objectFit;
+    const kx = fit === "cover" ? Math.max(cw / W, ch / H) : fit === "contain" ? Math.min(cw / W, ch / H) : cw / W;
+    const ky = fit === "cover" || fit === "contain" ? kx : ch / H;
+    const pos = (cs.objectPosition || "50% 50%").split(" "), off = (v, room) => (/%$/.test(v) ? room * parseFloat(v) / 100 : parseFloat(v) || 0);
+    const ox = off(pos[0], cw - W * kx), oy = off(pos[1] || "50%", ch - H * ky);
+    const [x, y, w, h] = SC.SIGN.text[lvl]; const top = oy + y * ky, left = ox + x * kx;
+    if (top < -1 || top + h * ky > ch + 1) { el.hidden = true; return; }
+    el.hidden = false; el.className = `sign ${lvl}`; el.textContent = name; scene.avoid = [x - 1, y - 1, w + 2, h + 2]; // bong bóng tránh chữ biển
+    Object.assign(el.style, { left: `${cv.offsetLeft + left}px`, top: `${cv.offsetTop + top}px`, width: `${w * kx}px`, height: `${h * ky}px` });
+    let f = Math.min(15, h * ky * 0.62); el.style.fontSize = `${f}px`;
+    while (f > 7 && (el.scrollWidth > el.clientWidth + 0.5 || el.scrollHeight > el.clientHeight + 0.5)) { f -= 0.5; el.style.fontSize = `${f}px`; }
+  }
   function syncScene() {
     const host = $("#stage canvas"); if (!host) return;
     if (!scene || scene.canvas !== host) { scene = new SC.Scene(host); sceneKey = ""; }
@@ -11348,7 +11607,7 @@ window.WP_COPY = {
     const total = p === "prep" ? weekAP() : 0, used = Math.max(0, total - state.ap);
     const need = p === "prep" ? needLine() : null;
     return `<header class="hud"><div class="hud-in">
-      <div class="hud-who">${img(planner().look, "hud-face")}<div><b>${esc(label)}</b><small>${esc(p === "hub" ? `${planner().name} · ${stageOf().name}` : state.project ? state.project.couple : "")}</small></div></div>
+      <div class="hud-who">${img(planner().look, "hud-face")}<div><b>${esc(label)}</b><small class="hud-sub">${esc(p === "hub" ? (brandName() ? brandName() : `${planner().name} · ${stageOf().name}`) : state.project ? state.project.couple : "")}</small></div></div>
       ${p === "prep" ? `<button class="pips" data-act="sheet" data-id="time" aria-label="Còn ${state.ap} trên ${total} lượt">${"○".repeat(Math.min(used, total))}${"●".repeat(Math.max(0, state.ap))}<small>${state.ap} lượt</small></button>` : ""}
       ${m && p !== "prep" ? (() => { const pf = p === "review" && state.result ? state.result.profit : m.profit; return `<button class="coin ${pf < 0 ? "neg" : ""}" data-act="sheet" data-id="money">${pf < 0 ? "Lỗ" : "Lời"} ${money(Math.abs(pf))}</button>`; })() : ""}
       <button class="icon-btn" data-act="menu" aria-label="Menu">≡</button>
@@ -11438,6 +11697,7 @@ window.WP_COPY = {
     return [
       { who: "bride", text: `Chào anh chị! Tụi em là ${P.couple}, cưới vào ${P.date}${where}.` },
       { who: "groom", text: P.engagementGuests ? `Lễ ăn hỏi khoảng ${P.engagementGuests} khách, tiệc cưới khoảng ${P.weddingGuests} khách.` : `Tiệc cưới khoảng ${P.weddingGuests} khách.` },
+      ...(brandName() ? [{ who: "groom", text: fillId(IT.clientLines[CORE.identityLevel(state.career)][hash(String(o.id)) % 2]) }] : []), // khách nhắc tới nhận diện theo mức
       ...P.visibleBrief.map((t, i) => ({ who: i % 2 ? "groom" : "bride", text: t })),
       { who: "groom", text: o.type === "dayof" ? `Phí điều phối ${money(o.fee)} như anh chị báo là ok. Còn ${o.weeks} tuần nữa là cưới.` : `Gia đình tính dự toán vendor khoảng ${money(Object.values(D.budgetMin).reduce((s, x) => s + x, 0))}–${money(cb)}. Phí planning ${money(o.fee)}. Mình có ${o.weeks} tuần chuẩn bị.` }
     ];
@@ -12119,7 +12379,8 @@ window.WP_COPY = {
   }
   function screenReview() {
     const r = state.result;
-    const quote = r.stars >= 5 ? "Hoàn hảo! Tụi em sẽ giới thiệu anh chị cho cả nhóm bạn." : r.stars === 4 ? "Đám cưới rất đẹp, có chút trục trặc nhưng xử lý ổn." : r.stars === 3 ? "Cũng được, nhưng tụi em kỳ vọng nhiều hơn." : r.stars === 2 ? "Nhiều chuyện không như đã hứa. Tụi em khá thất vọng." : "Tệ thật sự. Tụi em sẽ review cho mọi người biết.";
+    const bo = brandOr();
+    const quote = r.stars >= 5 ? `Hoàn hảo! Tụi em sẽ giới thiệu ${bo} cho cả nhóm bạn.` : r.stars === 4 ? `Đám cưới rất đẹp, có chút trục trặc nhưng ${bo} xử lý ổn.` : r.stars === 3 ? `Cũng được, nhưng tụi em kỳ vọng ở ${bo} nhiều hơn.` : r.stars === 2 ? `Nhiều chuyện ${bo} hứa mà không làm. Tụi em khá thất vọng.` : `Tệ thật sự. Tụi em sẽ review ${bo} cho mọi người biết.`;
     const rows = [
       isDayof(state.project) ? null : ["Chênh lệch dự toán − vendor", r.margin], [FeeName(), r.fee], r.feeDiscount ? [`Khách đòi giảm ${feeName()}`, -r.feeDiscount] : null,
       r.staffCost + r.travel ? [r.staffCost ? "Lương team" + (r.travel ? " + công tác" : "") : (state.career.staff.length ? "Đi lại, lưu trú cho team" : "Đi lại, lưu trú"), -(r.staffCost + r.travel)] : null, ...(state.extras?.length ? extraRows() : r.extraCost ? [["Freelancer + mong muốn khách", -r.extraCost]] : []),
@@ -12135,7 +12396,7 @@ window.WP_COPY = {
         <ul class="reasons">${satReasons().map(x => `<li class="${x.v >= 0 ? "pos" : "neg"}"><b>${x.v >= 0 ? "+" : "−"}${fmtPts(Math.abs(x.v))}</b><span>${esc(x.t)}</span></li>`).join("")}</ul></div>
       <div class="card"><div class="row-between"><span>Cặp đôi</span><b>${r.couple}/100</b></div><div class="bar"><i style="width:${r.couple}%"></i></div>
         <div class="row-between"><span>Hai họ</span><b>${r.family}/100</b></div><div class="bar"><i style="width:${r.family}%"></i></div></div>
-      <div class="card"><h2 class="h">Sau đám cưới</h2><div class="people">${afterLines(r).map(x => `<div class="person">${img(speakerLook(x.who), "face", bandMood(x.who.startsWith("mom") ? r.family : r.couple))}<p>${esc(x.text)}</p></div>`).join("")}</div></div>
+      <div class="card"><h2 class="h">Sau đám cưới</h2><p class="muted small">Mấy hôm sau, cô dâu chú rể và hai họ kể về ${esc(bo)}:</p><div class="people">${afterLines(r).map(x => `<div class="person">${img(speakerLook(x.who), "face", bandMood(x.who.startsWith("mom") ? r.family : r.couple))}<p>${esc(x.text)}</p></div>`).join("")}</div></div>
       ${good.length ? `<div class="card"><h2 class="h">Khoảnh khắc đáng nhớ</h2><ul class="bul">${good.map(m => `<li>${esc(getWish(m.id).title)}</li>`).join("")}</ul></div>` : ""}
       <details class="card" open><summary class="h">Quyết toán</summary><p class="muted small">Chi phí của dự án</p><dl class="rows">${rows.map(([k, v]) => `<div><dt>${esc(voice(k))}</dt><dd class="${v < 0 ? "neg" : ""}">${signed(v)}</dd></div>`).join("")}<div class="sum"><dt>Lãi dự án</dt><dd>${money(r.profit)}</dd></div></dl>${opsRows().length ? `<p class="muted small">Chi phí vận hành trong thời gian làm đám (trừ thẳng vào quỹ đầu mỗi tháng, không tính vào lãi dự án)</p><dl class="rows">${opsRows().map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${money(v)}</dd></div>`).join("")}</dl>` : ""}</details>
       <div class="card"><h2 class="h">Nhìn lại</h2><ul class="bul">${lessons(r).map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>
@@ -12212,6 +12473,8 @@ window.WP_COPY = {
     if (s.type === "contract") return sheetContract();
     if (s.type === "menu") return sheetMenu();
     if (s.type === "brand") return sheetBrand();
+    if (s.type === "brandName") return sheetBrandName();
+    if (s.type === "identity") return sheetIdentity();
     if (s.type === "skill") return sheetSkill();
     if (s.type === "quote") return sheetQuote();
     if (s.type === "offer") return sheetOffer();
@@ -12254,7 +12517,7 @@ window.WP_COPY = {
     save();
     const app = $("#app");
     if (!$("#stage")) {
-      app.innerHTML = `<div id="top" class="top"><div id="hud"></div><div id="stage" class="stage"><canvas aria-label="Cảnh trong game"></canvas><span id="place" class="place" hidden></span></div></div><main id="main" class="main"></main><div id="nav"></div><div id="sheet"></div><div id="toast" class="toast" role="status" hidden></div>`;
+      app.innerHTML = `<div id="top" class="top"><div id="hud"></div><div id="stage" class="stage"><canvas aria-label="Cảnh trong game"></canvas><span id="sign" class="sign" aria-hidden="true" hidden></span><span id="place" class="place" hidden></span></div></div><main id="main" class="main"></main><div id="nav"></div><div id="sheet"></div><div id="toast" class="toast" role="status" hidden></div>`;
     }
     $("#hud").innerHTML = hud();
     const p = state.phase;
@@ -12309,7 +12572,8 @@ window.WP_COPY = {
     arrive();
   }
   // Chiều cao khối dính trên đầu (HUD + cảnh), để các chỗ tự cuộn tới không bị khối đó che.
-  function topHeight() { const t = $("#top"); if (t) document.documentElement.style.setProperty("--top-h", t.offsetHeight + "px"); fitStage(); }
+  function topHeight() { const t = $("#top"); if (t) document.documentElement.style.setProperty("--top-h", t.offsetHeight + "px"); fitStage(); placeSign(); }
+  if (!HEADLESS) { window.addEventListener("resize", () => { fitStage(); placeSign(); }); document.addEventListener("transitionend", e => { if (e.target && e.target.tagName === "CANVAS") placeSign(); }); }
   if (!HEADLESS && typeof ResizeObserver !== "undefined") new ResizeObserver(topHeight).observe(document.getElementById("app"));
   // Màn chuẩn bị: cuộn xuống thì thu cảnh lại, chỉ còn dòng Tuần và số lượt; cuộn về đầu thì mở lại. Có khoảng đệm để không bật tắt liên tục.
   if (!HEADLESS) window.addEventListener("scroll", () => {
@@ -12356,6 +12620,13 @@ window.WP_COPY = {
       case "askFire": state.sheet = { type: "fire", id }; break;
       case "fire": fire(id); state.sheet = null; break;
       case "brand": chooseBrand(id); top = true; break;
+      case "brandSug": state.nameDraft = id; state.nameErr = null; break;
+      case "brandNameOk": { const v = $("#brand-name") ? $("#brand-name").value : state.nameDraft; state.nameDraft = v; if (setBrandName(v, (state.sheet || {}).mode === "rename" ? "rename" : "first")) state.nameDraft = null; } break;
+      case "brandNameSkip": setBrandName(nameSuggestions()[0]); state.nameDraft = null; break;
+      case "identity": chooseIdentity(id); break;
+      case "identityUnpick": if (state.sheet) delete state.sheet.pick; break;
+      case "identityConfirm": if (state.sheet && state.sheet.pick) chooseIdentity(state.sheet.pick, true); break;
+      case "renameBrand": state.nameDraft = ""; state.nameErr = null; state.sheet = { type: "brandName", mode: "rename" }; break;
       case "endSeen": state.career.endSeen = true; break;
       case "tier": chooseTier(id); top = true; break;
       case "tab": state.tab = id; state.sheet = null; top = true; break;
@@ -12400,7 +12671,9 @@ window.WP_COPY = {
       case "showLog": state.sheet = { type: "log" }; break;
       case "askRestart": state.sheet = { type: "restart" }; break;
       case "restartNow": state = fresh(); sceneKey = ""; top = true; break;
-      case "close": if (state.sheet?.type === "meeting") state.meeting = null; state.sheet = null; break;
+      case "close": if (state.sheet?.type === "meeting") state.meeting = null;
+        if (state.sheet?.type === "brandName" && state.sheet.mode !== "rename" && !brandName()) { setBrandName(nameSuggestions()[0]); state.nameDraft = null; } // đóng tờ đặt tên = dùng gợi ý đầu
+        state.sheet = null; break;
       default: return;
     }
     if (top) { clearTimeout(toastTimer); const t = $("#toast"); if (t) { t.hidden = true; t.className = "toast"; } }
@@ -12411,12 +12684,14 @@ window.WP_COPY = {
     if (state.nudge) { const [k, v] = state.nudge.split(":"); state.nudge = null; const el = document.querySelector(`[data-act="${k}"][data-id^="${v}"]`); if (el) { const card = el.closest(".wish") || el; card.classList.add("nudge"); setTimeout(() => card.classList.remove("nudge"), 600); } }
   });
   if (!HEADLESS) document.addEventListener("input", e => {
+    if (e.target.id === "brand-name") { state.nameDraft = e.target.value; const v = CORE.cleanBrandName(e.target.value), er = $("#brand-err"); if (er) { er.hidden = v.ok || !e.target.value.trim(); er.textContent = v.ok ? "" : v.why; } return; }
     if (e.target.id !== "me-name") return;
     state.setup.name = e.target.value; save();
     const b = $("#setup-next"); if (b) b.disabled = !setupReady();
   });
   if (!HEADLESS) document.addEventListener("keydown", e => {
-    if (e.key === "Enter" && e.target.id === "me-name" && setupReady()) { e.preventDefault(); state.setup.step = 1; render(); scrollTop(); return; } if (e.key === "Escape" && state.sheet && state.sheet.type !== "meeting") { state.sheet = null; render(); } });
+    if (e.key === "Enter" && e.target.id === "brand-name") { e.preventDefault(); const b = document.querySelector('[data-act="brandNameOk"]'); if (b) b.click(); return; }
+    if (e.key === "Enter" && e.target.id === "me-name" && setupReady()) { e.preventDefault(); state.setup.step = 1; render(); scrollTop(); return; } if (e.key === "Escape" && state.sheet && state.sheet.type !== "meeting") { if (state.sheet.type === "brandName" && state.sheet.mode !== "rename" && !brandName()) setBrandName(nameSuggestions()[0]); state.sheet = null; render(); } });
 
   // Các bước chuyển trạng thái của game, gọi thẳng không qua nút bấm. Test và máy mô phỏng dùng đúng các hàm này.
   const api = {
@@ -12426,7 +12701,7 @@ window.WP_COPY = {
     serialize: () => JSON.stringify({ v: BASE.version, s: state }), loadFrom(json) { const s = restore(JSON.parse(json)); if (s) state = s; return s; }, version: BASE.version,
     startCareer, genOffers, quoteOptions, takeOffer, startPrep, weekDilemma, chooseDilemma, canBook, book, research, negotiate, setSpec,
     actionBlock, doAction, ask, wishBlock, fulfil, confirmConcept, promisedDue, nextWeek, startEvent, optionBlock, successChance, resolveCrisis,
-    nextItem, stageNext, settlementOptions, resolveSettlement, nextSettlement, endProject, openSide, workSide, sideOffers: () => state.sideOffers || (state.sideOffers = CORE.sideOffers(state.career, SJ, CAL.rnd)), takeLoan, hire, fire, opsRows: () => opsRows(), lower, shortAfter: id => shortAfter(id), shortCardHtml: () => shortCard(), shortfallNow: () => shortfall(), crisisOptionsHtml: id => crisisOptions(getCrisis(id)), needLine: () => needLine(), hudHtml: () => hud(), monthCardHtml: () => monthCardHtml(), sideSheetHtml: () => sheetSide(), taskState: a => taskState(a), vendorDetailHtml: (v, c) => vendorDetail(v, c, true), offerProfile: o => offerProfile(o), promisedDue: () => promisedDue(), isContracted: id => isContracted(id), afterLines: r => afterLines(r || state.result), lessons: r => lessons(r), markLinks: () => markLinks(), wishPossible: w => wishPossible(w), famLook: id => famLook(id), coupleLook: k => CL(k), cardLook: k => cardLook(k), GROOM_TOPS: () => GROOM_TOPS, goalLines: g => goalLines(g), officeUnlocks: o => officeUnlocks(o), sheetCareerHtml: () => sheetCareer(), confirmWeekHtml: () => sheetConfirmWeek(), nextWeekNeed: () => nextWeekNeed(), taskCardHtml: a => taskCard(a), monthSpendParts: () => monthSpendParts(), html: name => ({ meeting: () => sheetBody(), offer: sheetOffer, quote: sheetQuote, review: screenReview, settlement: screenSettlement, money: sheetMoney, brief: () => screenBrief ? screenBrief() : "" }[name] || (() => ""))(), voice, subjectWord, satReasons: () => satReasons(), weekStartAP, vendorTopRisk: v => vendorRisk(v), CAL_FOR_TEST: () => CAL, branchCities, openBranch, closeBranchNow, assignManager, branchLine, candidates, rolesOpen, salaryOf, fireCost, teamFx, chooseBrand, learnSkill, upgrade,
+    nextItem, stageNext, settlementOptions, resolveSettlement, nextSettlement, endProject, openSide, workSide, sideOffers: () => state.sideOffers || (state.sideOffers = CORE.sideOffers(state.career, SJ, CAL.rnd)), takeLoan, hire, fire, opsRows: () => opsRows(), lower, shortAfter: id => shortAfter(id), shortCardHtml: () => shortCard(), shortfallNow: () => shortfall(), crisisOptionsHtml: id => crisisOptions(getCrisis(id)), needLine: () => needLine(), hudHtml: () => hud(), monthCardHtml: () => monthCardHtml(), sideSheetHtml: () => sheetSide(), taskState: a => taskState(a), vendorDetailHtml: (v, c) => vendorDetail(v, c, true), offerProfile: o => offerProfile(o), promisedDue: () => promisedDue(), isContracted: id => isContracted(id), afterLines: r => afterLines(r || state.result), lessons: r => lessons(r), markLinks: () => markLinks(), wishPossible: w => wishPossible(w), famLook: id => famLook(id), coupleLook: k => CL(k), cardLook: k => cardLook(k), GROOM_TOPS: () => GROOM_TOPS, goalLines: g => goalLines(g), officeUnlocks: o => officeUnlocks(o), sheetCareerHtml: () => sheetCareer(), confirmWeekHtml: () => sheetConfirmWeek(), nextWeekNeed: () => nextWeekNeed(), taskCardHtml: a => taskCard(a), monthSpendParts: () => monthSpendParts(), html: name => ({ meeting: () => sheetBody(), offer: sheetOffer, quote: sheetQuote, review: screenReview, settlement: screenSettlement, money: sheetMoney, brief: () => screenBrief ? screenBrief() : "" }[name] || (() => ""))(), voice, subjectWord, satReasons: () => satReasons(), weekStartAP, vendorTopRisk: v => vendorRisk(v), CAL_FOR_TEST: () => CAL, branchCities, openBranch, closeBranchNow, assignManager, branchLine, candidates, rolesOpen, salaryOf, fireCost, teamFx, chooseBrand, learnSkill, upgrade, sceneForTest: () => scene, setBrandName, chooseIdentity, identityMethods, renameBrand(name, method) { if (!state.career.brandName || state.career.identity.renames >= IDN.renames) return false; state.sheet = { type: "brandName", mode: "rename" }; if (!setBrandName(name, "rename")) return false; state.sheet.pick = method; return chooseIdentity(method, true); }, sheetHtml: () => sheetBody(), nameSuggestions, brandOr, freelancerNow, designerLevel,
     checkStage, monthlyCost, monthlyParts, tierObj, moneyNow, riskStatus, hasSkill, avgStars, shortfall, shortActive, resolveShort, shortDrops, priceFor, catVendors, hireFreelancer, overtime, monthCard, cardOptions: () => (monthCard() ? CORE.cardOptions(state.career, monthCard()) : []), cardPending, resolveCard, setOffice, setLiving, tickWeek, actionMoney, discoveryPending, resolveDiscovery, chooseContact, assignContact, rollDiscovery, slotHtml: () => dilemmaCard(), decisionPending
   };
   window.WP_GAME = { get state() { return state; }, get D() { return D; }, render, _build: buildProject, api, HEADLESS };
