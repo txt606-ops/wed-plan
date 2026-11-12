@@ -2991,7 +2991,7 @@ window.GAME_DATA = {
     const loan = processLoan(c); if (loan) ev.push(loan);
     (c.receivables || []).forEach(x => { x.overdue += 1; });
     const contact = grantMonthlyContact(c); if (contact) ev.push(contact);
-    if (cfg.cards && !c.bankrupt) { const card = pickMonthCard(c, cfg.cards, cfg.rnd); if (card) { c.card = { id: card.id, month: c.monthNo, pick: null }; ev.push({ type: "monthCard", id: card.id }); } }
+    if (cfg.cards && !c.bankrupt) { const card = pickMonthCard(c, cfg.cards, cfg.rnd); if (card) { c.card = { id: card.id, month: c.monthNo, pick: null, scale: cardScale(c) }; ev.push({ type: "monthCard", id: card.id }); } }
     return ev;
   }
   // Chốt tháng sau khi làm xong tuần toàn cục 4, 8, 12…; chỉ chốt mỗi tháng một lần.
@@ -3015,6 +3015,18 @@ window.GAME_DATA = {
 
   // ---- Vay: một khoản tại một thời điểm, hạn tính theo tháng game (mục 8) ----
   // ---- Thẻ tài chính hàng tháng (mục 6): mỗi tháng đúng một thẻ, không lặp hai tháng liền ----
+  // Thẻ nặng dần theo cấp sự nghiệp (Thanh, 12/11/2026): làm ăn càng lớn thì chuyện phát sinh càng tốn. Hệ số nhân mọi khoản tiền trên thẻ.
+  const CARD_SCALE = [1, 1.5, 2, 2.5, 3];
+  const cardScale = c => CARD_SCALE[Math.min(CARD_SCALE.length - 1, c.stage || 0)];
+  // Một lựa chọn của thẻ với số tiền đã nhân theo hệ số ghi trên thẻ lúc phát (không đổi khi lên cấp giữa chừng).
+  function scaledOption(o, k) {
+    const m = x => r1(x * k); const out = Object.assign({}, o);
+    if (o.cash) out.cash = m(o.cash); if (o.needCash) out.needCash = m(o.needCash);
+    if (o.later) out.later = Object.assign({}, o.later, { cash: m(o.later.cash) });
+    if (o.risk && o.risk.cash) out.risk = Object.assign({}, o.risk, { cash: m(o.risk.cash) });
+    return out;
+  }
+  const cardOptions = (c, card) => card.options.map(o => scaledOption(o, (c.card && c.card.id === card.id && c.card.scale) || 1));
   function cardOk(c, card) {
     if ((c.cardBlock[card.id] || 0) >= c.monthNo) return false;
     if (card.when === "receivable") return (c.receivables || []).length > 0;
@@ -3032,10 +3044,10 @@ window.GAME_DATA = {
   // Trả về { apNow } để nơi gọi trừ lượt của tuần đang chơi (hoặc dồn sang tuần làm việc kế tiếp nếu đang ở văn phòng).
   function applyCardOption(c, card, optId, rnd) {
     if (!c.card || c.card.id !== card.id || c.card.pick) return null;
-    const o = card.options.find(x => x.id === optId); if (!o) return null;
+    const o = cardOptions(c, card).find(x => x.id === optId); if (!o) return null;
     const ev = { type: "cardPicked", card: card.id, option: o.id, apNow: o.apNow || 0, notes: [] };
     if (o.needCash && c.cash < o.needCash) return { type: "cardRefused", short: r1(o.needCash - c.cash) };
-    if (o.cash) cash(c, o.cash, "card", `${card.title}: ${o.label.toLowerCase()}`);
+    if (o.cash) cash(c, o.cash, "card", card.title);
     if (o.apNext) c.apMinus[c.monthNo + 1] = (c.apMinus[c.monthNo + 1] || 0) + o.apNext;
     if (o.later) c.scheduled.push({ month: c.monthNo + 1, cash: o.later.cash, label: o.later.label });
     if (o.risk) c.scheduled.push({ month: c.monthNo + 1, p: o.risk.p, cash: o.risk.cash || 0, apNext: o.risk.apNext || 0, label: o.risk.label, key: `${card.id}:${c.monthNo}` });
@@ -3141,6 +3153,9 @@ window.GAME_DATA = {
     boss: { stage: 4, office: 3 }
   };
   const BIG_WEDDING = { guests: 300, stage: 3, office: 2 };  // đám trên 300 khách
+  // Mùa thấp điểm không có đám nhỏ nào tìm planner đã có tiếng: ai chỉ sống bằng day-of thì mùa đó phải đi làm CTV.
+  const DAYOF_SEASON = { fromStage: 1 };
+  const dayofAvailable = (c, peak) => peak || c.stage < DAYOF_SEASON.fromStage;
   const HIRE_GATE = { stage: 1, office: 2 };                 // tuyển người: từ Planner có tiếng VÀ văn phòng nhỏ
   const STUDIO = { feeBonus: 0.1, walkIn: 0.5 };             // chỉ khi đang thuê Studio
   function offerAllowed(type, c) {
@@ -3163,6 +3178,18 @@ window.GAME_DATA = {
 
   // ---- Tiếng xấu làm khách lớn không tìm tới: danh tiếng 6 đám gần nhất quyết định loại khách còn hỏi ----
   const DEMAND = { minProjects: 3, wary: 3.0, shunned: 2.3, shunnedFee: 0.85 };
+  // Khách bực giữ lại bao nhiêu phần hợp đồng (ghi thành khoản phải thu), và một đám tệ làm mất một lời giới thiệu ở lần làm mới kế tiếp.
+  // Khách luxury và "đám cưới của năm" khó hơn: đám tệ thì họ giữ lại nhiều hơn khách thường.
+  const SLOPPY = { withhold: { 1: 0.2, 2: 0.1 }, withholdDemanding: { 1: 0.25, 2: 0.15, 3: 0.05 }, lostReferralStars: 2 };
+  const withholdShare = (stars, demanding) => (demanding ? SLOPPY.withholdDemanding : SLOPPY.withhold)[stars] || 0;
+  // Đi lại, lưu trú tính theo đầu người: team càng đông, đám xa càng tốn.
+  const TRAVEL = { perStaff: 0.08 };
+  // Lương tăng theo cấp agency: làm ăn càng lớn, người giỏi càng đòi lương cao.
+  const STAFF = { raisePerStage: 0.15 };
+  const salaryAt = (base, stage) => Math.round(base * (1 + STAFF.raisePerStage * (stage || 0)) * 10) / 10;
+  const travelCost = (base, staffCount) => Math.round(base * (1 + staffCount * TRAVEL.perStaff));
+  function noteProjectResult(c, stars) { if (stars <= SLOPPY.lostReferralStars) c.lostReferral = (c.lostReferral || 0) + 1; }
+  function takeLostReferral(c) { const n = c.lostReferral || 0; c.lostReferral = 0; return n; }
   function recentReputation(c) { const st = (c.stars || []).slice(-6); return st.length ? st.reduce((s, x) => s + x, 0) / st.length : null; }
   function demandLevel(c) {
     const r = recentReputation(c); if (r == null || (c.stars || []).length < DEMAND.minProjects) return "normal";
@@ -3181,7 +3208,9 @@ window.GAME_DATA = {
   const TERMS = {
     // Đặc tả ghi 30/40/30. Chốt kiểm tra 3.2b không đạt với lịch đó (quỹ đáy trung vị −75tr, 87% đám một khoản vay không đủ),
     // nên đổi sang 30/50/20 theo đúng chỉ dẫn "sửa lịch thanh toán, không bỏ chi phí": đáy trung vị −22tr. CHỜ THANH XÁC NHẬN.
-    client: { sign: 0.3, mid: 0.5 },        // đợt cuối = phần còn lại (20%)
+    client: { sign: 0.3, mid: 0.5 },        // đợt cuối = phần còn lại (20%). Thanh duyệt 12/11/2026.
+    // Đám lớn phải ứng nhiều hơn (Thanh, 12/11/2026): hợp đồng từ mức này trở lên, khách giữ lại phần cuối lớn hơn, nên đợt 2 nhỏ lại.
+    bigContract: { from: 600, mid: 0.4 },
     clientDayof: { sign: 0.3, mid: 0 },     // day-of: 30% khi ký, 70% sau đám, chỉ tính trên phí planning
     vendorDeposit: 0.3,                     // cọc khi chốt; 70% còn lại trả trước sự kiện
     cancelPenalty: 0.1,                     // đổi vendor: phạt 10% giá trị hợp đồng vendor cũ, phần cọc còn lại được hoàn đủ
@@ -3197,9 +3226,15 @@ window.GAME_DATA = {
     if (fin.low == null || c.cash < fin.low) fin.low = c.cash;
     return a;
   }
+  // Tỷ lệ ba đợt khách trả cho một hợp đồng: day-of 30/0/70; thường 30/50/20; hợp đồng lớn 30/40/30.
+  function clientShares(contract, dayof) {
+    if (dayof) return { sign: TERMS.clientDayof.sign, mid: 0, final: 1 - TERMS.clientDayof.sign };
+    const mid = contract >= TERMS.bigContract.from ? TERMS.bigContract.mid : TERMS.client.mid;
+    return { sign: TERMS.client.sign, mid, final: r1(1 - TERMS.client.sign - mid) };
+  }
   function signClientContract(c, fin, t) {
-    const sh = fin.dayof ? TERMS.clientDayof : TERMS.client;
     fin.contract = r1(fin.dayof ? t.fee : t.vendorBudget + t.fee);
+    const sh = clientShares(fin.contract, fin.dayof);
     fin.plan.sign = r1(fin.contract * sh.sign); fin.plan.mid = r1(fin.contract * sh.mid); fin.plan.final = r1(fin.contract - fin.plan.sign - fin.plan.mid);
     return collectClientTranche(c, fin, "sign");
   }
@@ -3252,7 +3287,11 @@ window.GAME_DATA = {
     v.settled = true; v.unserved = true; v.unpaid = r1(costNow - v.paid); fin.unserved[cat] = true;
     return v.unpaid;
   }
+  // Khách chỉ ứng trước phần họ còn phải trả (khoản ứng trừ vào đợt cuối), không hơn. Không có giới hạn này thì agency âm quỹ
+  // sống mãi được bằng tiền cọc của khách sau trả cho khách trước.
+  const advanceRoom = fin => (fin.advanceUsed ? 0 : Math.max(0, Math.floor(fin.contract - fin.received)));
   function requestClientAdvance(c, fin, amount) {       // một lần mỗi dự án; trừ vào đợt cuối
+    amount = Math.min(amount, advanceRoom(fin));
     if (fin.advanceUsed || amount <= 0) return null;
     fin.advanceUsed = true; fin.advance = r1(amount); fin.received = r1(fin.received + fin.advance);
     projectCash(c, fin, fin.advance, "client", "Khách ứng thêm trước lễ");
@@ -3289,7 +3328,7 @@ window.GAME_DATA = {
   }
   const receivableTotal = c => r1((c.receivables || []).reduce((s, x) => s + x.amount, 0));
 
-  root.WP_CORE = { DEMAND, recentReputation, demandLevel, OFFER_GATES, BIG_WEDDING, HIRE_GATE, STUDIO, offerAllowed, fallbackType, bigWeddingAllowed, canHire, studioActive, officeHint, ACTION_COSTS, actionMoneyCost, applyActionCost, DISCOVERY, marginDiscovery, grantMonthlyContact, chooseContact, assignVendorContact, vendorContactFor, useVendorContact, knowVendor, refreshOfferBonus,
+  root.WP_CORE = { advanceRoom, STAFF, salaryAt, TRAVEL, travelCost, clientShares, DAYOF_SEASON, dayofAvailable, CARD_SCALE, cardScale, scaledOption, cardOptions, SLOPPY, withholdShare, noteProjectResult, takeLostReferral, DEMAND, recentReputation, demandLevel, OFFER_GATES, BIG_WEDDING, HIRE_GATE, STUDIO, offerAllowed, fallbackType, bigWeddingAllowed, canHire, studioActive, officeHint, ACTION_COSTS, actionMoneyCost, applyActionCost, DISCOVERY, marginDiscovery, grantMonthlyContact, chooseContact, assignVendorContact, vendorContactFor, useVendorContact, knowVendor, refreshOfferBonus,
     TERMS, OFFICES, LIVING, LOAN, officeOf, livingOf, monthlyParts, monthlyOperatingCost, setOffice, setLiving, pickMonthCard, applyCardOption, cardPending, runScheduled, topCauses, checkBankruptcy, CAUSE_LABEL, newProjectFinance, projectCash, signClientContract, collectClientTranche, midDueWeek, vendorDepositFor, previewBook, bookVendor, bookEmergency,
     vendorBalance, payVendorBalance, dropVendor, requestClientAdvance, collectFinalPayment, recordReceivable, collectReceivable, writeOffReceivable, receivableTotal, WEEKS_PER_MONTH, initCareer, monthWeek, cash, chargeMonthlyOperatingCost, processLoan, beginMonth, closeMonth, advanceCalendarWeek, takeLoan };
 })(typeof window !== "undefined" ? window : globalThis);
@@ -6449,19 +6488,21 @@ window.WP_COPY = {
   //   later: { cash, label } khoản hẹn đầu tháng sau · risk: { p, cash, apNext, label } rủi ro tung xúc xắc đầu tháng sau
   //   grant: "vendor" | "client" mối quen cho tháng sau · cool: tháng sau không có mối quen · block: số tháng thẻ này không quay lại
   //   collect: thu khoản khách còn nợ · when: điều kiện xuất hiện
+  // Số tiền trong câu chữ viết bằng chỗ trống {cash} {later} {risk} {need}: game điền số thật (đã nhân theo cấp sự nghiệp, xem CARD_SCALE trong core.js),
+  // nên chữ trên thẻ luôn khớp số tiền bị trừ. Các con số dưới đây là mức ở cấp đầu (Planner tự do).
   const MONTH_CARDS = [
     { id: "vendor_wedding", who: "vendor", speaker: "Vendor quen", title: "Vendor quen mời cưới",
       text: "Anh thợ ảnh hay làm chung gửi thiệp mời đám cưới em gái. Đi thì phải có phong bì.",
       options: [
-        { id: "go1", label: "Đi, mừng 1tr", note: "Chỗ làm ăn lâu dài, mừng cho đàng hoàng. Tháng sau có một mối quen vendor.", cash: -1, grant: "vendor" },
-        { id: "go05", label: "Đi, mừng 500k", note: "Có mặt là quý. Giữ được quan hệ như cũ.", cash: -0.5 },
+        { id: "go1", label: "Đi, mừng {cash}", note: "Chỗ làm ăn lâu dài, mừng cho đàng hoàng. Tháng sau có một mối quen vendor.", cash: -1, grant: "vendor" },
+        { id: "go05", label: "Đi, mừng {cash}", note: "Có mặt là quý. Giữ được quan hệ như cũ.", cash: -0.5 },
         { id: "skip", label: "Không đi", note: "Không tốn tiền, nhưng mối quen nguội đi: tháng sau không có mối quen nào.", cool: true }
       ] },
     { id: "laptop", who: "me", title: "Laptop hỏng",
       text: "Máy sập nguồn giữa lúc đang làm timeline. Tiệm báo thay main hoặc mua máy khác.",
       options: [
-        { id: "repair", label: "Sửa 3tr", note: "Dùng tiếp được, nhưng máy cũ có thể hỏng lại.", cash: -3, risk: { p: 0.3, cash: -3, label: "Laptop hỏng lại, sửa lần nữa" } },
-        { id: "new", label: "Mua máy mới 15tr", note: "Tốn ngay một khoản lớn, yên tâm cả năm.", cash: -15, block: 12 },
+        { id: "repair", label: "Sửa {cash}", note: "Dùng tiếp được, nhưng máy cũ có thể hỏng lại.", cash: -3, risk: { p: 0.3, cash: -3, label: "Laptop hỏng lại, sửa lần nữa" } },
+        { id: "new", label: "Mua máy mới {cash}", note: "Tốn ngay một khoản lớn, yên tâm cả năm.", cash: -15, block: 12 },
         { id: "borrow", label: "Mượn tạm máy bạn", note: "Không tốn tiền, nhưng làm chậm hẳn.", apNext: 1 }
       ] },
     { id: "receivable", who: "client", speaker: "Khách cũ", title: "Khách đám trước chưa trả đợt cuối", when: "receivable", weight: 3,
@@ -6469,68 +6510,68 @@ window.WP_COPY = {
       options: [
         { id: "press", label: "Đòi ngay", note: "Gọi thẳng và gửi biên bản quyết toán. Thường thì khách trả đủ; nếu khách cãi lại thì chỉ thu được một nửa, nửa kia mất hẳn.", collect: { p: 0.6, win: 1, lose: 0.5, writeOff: true } },
         { id: "wait", label: "Chờ thêm", note: "Không làm gì tháng này. Khoản nợ vẫn nằm đó, tháng sau tính tiếp." },
-        { id: "friend", label: "Nhờ người quen nói giúp", note: "Mua quà cảm ơn người đứng ra nói. Thu được phần lớn, phần còn lại coi như bỏ.", cash: -2, collect: { win: 0.85, writeOff: true } }
+        { id: "friend", label: "Nhờ người quen nói giúp", note: "Mua quà {cash} cảm ơn người đứng ra nói. Thu được phần lớn, phần còn lại coi như bỏ.", cash: -2, collect: { win: 0.85, writeOff: true } }
       ] },
     { id: "bike", who: "me", title: "Xe hỏng",
       text: "Xe chết máy giữa đường đi khảo sát. Tiệm nói phải làm lại cả bộ nồi.",
       options: [
-        { id: "full", label: "Sửa hẳn 4tr", note: "Xong một lần.", cash: -4 },
-        { id: "patch", label: "Sửa tạm 1tr", note: "Chạy được, nhưng dễ hỏng lại và lần sau tốn hơn.", cash: -1, risk: { p: 0.4, cash: -5, label: "Xe hỏng lại, phải sửa hẳn" } },
+        { id: "full", label: "Sửa hẳn {cash}", note: "Xong một lần.", cash: -4 },
+        { id: "patch", label: "Sửa tạm {cash}", note: "Chạy được, nhưng dễ hỏng lại và lần sau tốn {risk}.", cash: -1, risk: { p: 0.4, cash: -5, label: "Xe hỏng lại, phải sửa hẳn" } },
         { id: "bus", label: "Gửi xe đó, đi nhờ và xe buýt", note: "Không tốn tiền, mất thời gian đi lại.", apNow: 1 }
       ] },
     { id: "sick", who: "me", title: "Planner bị ốm",
       text: "Sốt từ tối qua, sáng dậy đầu nặng như đeo đá. Tuần này vẫn còn việc.",
       options: [
-        { id: "doctor", label: "Đi khám, mua thuốc 2tr", note: "Uống thuốc là làm được ngay.", cash: -2 },
+        { id: "doctor", label: "Đi khám, mua thuốc {cash}", note: "Uống thuốc là làm được ngay.", cash: -2 },
         { id: "rest", label: "Nghỉ hẳn hai ngày", note: "Không tốn tiền, mất việc của hai ngày.", apNow: 2 },
-        { id: "push", label: "Cố làm", note: "Không tốn gì ngay. Nếu bệnh nặng hơn thì tháng sau vừa tốn tiền thuốc vừa đuối.", risk: { p: 0.5, cash: -3, apNext: 1, label: "Ốm nặng hơn vì cố làm" } }
+        { id: "push", label: "Cố làm", note: "Không tốn gì ngay. Nếu bệnh nặng hơn thì tháng sau vừa tốn {risk} tiền thuốc vừa đuối.", risk: { p: 0.5, cash: -3, apNext: 1, label: "Ốm nặng hơn vì cố làm" } }
       ] },
     { id: "gio_que", who: "family", speaker: "Mẹ", title: "Giỗ ở quê",
       text: "Mẹ gọi: cuối tuần này giỗ ông, cả nhà mong con về.",
       options: [
-        { id: "home", label: "Về quê", note: "Tiền xe và quà 3tr, mất một ngày làm việc. Mẹ gói đồ quê mang lên, tháng sau đỡ được 2tr tiền chợ.", cash: -3, apNow: 1, later: { cash: 2, label: "Đồ quê mẹ gói, đỡ tiền chợ" } },
-        { id: "send", label: "Gửi tiền về 1,5tr", note: "Không về được thì góp giỗ.", cash: -1.5 },
+        { id: "home", label: "Về quê", note: "Tiền xe và quà {cash}, mất một ngày làm việc. Mẹ gói đồ quê mang lên, tháng sau đỡ được {later} tiền chợ.", cash: -3, apNow: 1, later: { cash: 2, label: "Đồ quê mẹ gói, đỡ tiền chợ" } },
+        { id: "send", label: "Gửi tiền về {cash}", note: "Không về được thì góp giỗ.", cash: -1.5 },
         { id: "skip", label: "Không về", note: "Không tốn tiền. Cả tuần áy náy, làm việc không tập trung.", apNow: 1 }
       ] },
     { id: "tax", who: "me", title: "Thuế và giấy tờ",
       text: "Tới hạn quyết toán thuế và gia hạn giấy phép hộ kinh doanh.",
       options: [
-        { id: "service", label: "Thuê dịch vụ 2,5tr", note: "Họ làm hết.", cash: -2.5 },
+        { id: "service", label: "Thuê dịch vụ {cash}", note: "Họ làm hết.", cash: -2.5 },
         { id: "self", label: "Tự làm", note: "Không tốn tiền, mất hai buổi xếp hàng và điền tờ khai.", apNow: 2 },
-        { id: "delay", label: "Để tháng sau", note: "Không tốn gì tháng này. Tháng sau nộp trễ, bị phạt 4tr.", later: { cash: -4, label: "Phạt nộp thuế trễ" } }
+        { id: "delay", label: "Để tháng sau", note: "Không tốn gì tháng này. Tháng sau nộp trễ, bị phạt {later}.", later: { cash: -4, label: "Phạt nộp thuế trễ" } }
       ] },
     { id: "phone", who: "me", title: "Điện thoại hỏng",
       text: "Màn hình sọc, khách gọi không nghe được. Cả nghề nằm trong cái máy này.",
       options: [
-        { id: "repair", label: "Sửa 2tr", note: "Dùng tạm được, có thể hỏng lại.", cash: -2, risk: { p: 0.25, cash: -2, label: "Điện thoại hỏng lại" } },
-        { id: "new", label: "Thay máy 9tr", note: "Tốn ngay, yên tâm cả năm.", cash: -9, block: 12 },
+        { id: "repair", label: "Sửa {cash}", note: "Dùng tạm được, có thể hỏng lại.", cash: -2, risk: { p: 0.25, cash: -2, label: "Điện thoại hỏng lại" } },
+        { id: "new", label: "Thay máy {cash}", note: "Tốn ngay, yên tâm cả năm.", cash: -9, block: 12 },
         { id: "borrow", label: "Mượn máy cũ của bạn", note: "Không tốn tiền, máy chậm nên trả lời khách và vendor trễ.", apNext: 1 }
       ] },
     { id: "gift", who: "me", title: "Dịp cần quà biếu",
       text: "Sắp lễ. Vendor thân và khách cũ là nguồn giới thiệu, năm nào cũng tới dịp này.",
       options: [
-        { id: "good", label: "Quà chu đáo 3tr", note: "Khách cũ nhớ tới bạn: tháng sau có một mối quen khách.", cash: -3, grant: "client" },
-        { id: "small", label: "Quà nhỏ 1tr", note: "Có lòng là được. Giữ quan hệ như cũ.", cash: -1 },
+        { id: "good", label: "Quà chu đáo {cash}", note: "Khách cũ nhớ tới bạn: tháng sau có một mối quen khách.", cash: -3, grant: "client" },
+        { id: "small", label: "Quà nhỏ {cash}", note: "Có lòng là được. Giữ quan hệ như cũ.", cash: -1 },
         { id: "none", label: "Năm nay không biếu", note: "Không tốn tiền, nhưng mối quen nguội đi: tháng sau không có mối quen nào.", cool: true }
       ] },
     { id: "software", who: "me", title: "Phần mềm đến hạn",
       text: "Gói phần mềm quản lý dự án và làm moodboard hết hạn trong tuần này.",
       options: [
-        { id: "renew", label: "Gia hạn 2tr", note: "Dùng tiếp như cũ.", cash: -2 },
+        { id: "renew", label: "Gia hạn {cash}", note: "Dùng tiếp như cũ.", cash: -2 },
         { id: "drop", label: "Ngừng dùng", note: "Không tốn tiền. Tháng sau làm tay bằng bảng tính nên chậm hơn.", apNext: 1 }
       ] },
     { id: "vendor_hold", who: "vendor", speaker: "Vendor thân", title: "Vendor thân cần ứng tiền giữ lịch",
-      text: "Chị chủ tiệm hoa nhờ ứng trước 10tr để chị cọc lô hoa nhập, tháng sau chị gửi lại.",
+      text: "Chị chủ tiệm hoa nhờ ứng trước một khoản để chị cọc lô hoa nhập, tháng sau chị gửi lại.",
       options: [
-        { id: "lend", label: "Ứng 10tr", note: "Tháng sau nhận lại đủ 10tr, và có một mối quen vendor.", cash: -10, needCash: 10, later: { cash: 10, label: "Vendor thân trả lại tiền ứng" }, grant: "vendor" },
+        { id: "lend", label: "Ứng {cash}", note: "Tháng sau nhận lại đủ {later}, và có một mối quen vendor.", cash: -10, needCash: 10, later: { cash: 10, label: "Vendor thân trả lại tiền ứng" }, grant: "vendor" },
         { id: "refuse", label: "Từ chối", note: "Không mất gì, nhưng mối quen nguội đi: tháng sau không có mối quen nào.", cool: true }
       ] },
     { id: "landlord", who: "family", speaker: "Chủ nhà", title: "Chủ nhà đòi tiền sửa chữa",
-      text: "Chủ nhà báo sửa lại hệ thống nước cả dãy, chia đều mỗi phòng 3tr. Không đóng thì tháng sau tính thêm.",
+      text: "Chủ nhà báo sửa lại hệ thống nước cả dãy, chia đều cho các phòng. Không đóng thì tháng sau tính thêm.",
       options: [
-        { id: "pay", label: "Đóng 3tr", note: "Xong chuyện.", cash: -3 },
-        { id: "move", label: "Chuyển chỗ ở", note: "Tiền cọc và chuyển đồ 4tr, mất hai ngày. Chỗ mới không còn chuyện này nữa.", cash: -4, apNow: 2, block: 24 },
-        { id: "delay", label: "Khất tháng sau", note: "Không tốn gì tháng này. Tháng sau chủ nhà thu 4,5tr.", later: { cash: -4.5, label: "Chủ nhà thu tiền sửa chữa kèm phạt" } }
+        { id: "pay", label: "Đóng {cash}", note: "Xong chuyện.", cash: -3 },
+        { id: "move", label: "Chuyển chỗ ở", note: "Tiền cọc và chuyển đồ {cash}, mất hai ngày. Chỗ mới không còn chuyện này nữa.", cash: -4, apNow: 2, block: 24 },
+        { id: "delay", label: "Khất tháng sau", note: "Không tốn gì tháng này. Tháng sau chủ nhà thu {later}.", later: { cash: -4.5, label: "Chủ nhà thu tiền sửa chữa kèm phạt" } }
       ] }
   ];
 
@@ -6636,7 +6677,7 @@ window.WP_COPY = {
   }
   // Lịch và chi phí tháng do lõi tính (core.js). Ở đây chỉ nói cho lõi biết lương nhân viên, bộ thẻ tháng và nguồn xúc xắc của sự nghiệp này.
   const CAL = {
-    staffSalary: c => c.staff.reduce((s, x) => s + C.ROLES.find(r => r.id === x.role).salary, 0),
+    staffSalary: c => c.staff.reduce((s, x) => s + CORE.salaryAt(C.ROLES.find(r => r.id === x.role).salary, c.stage), 0), // lương tăng theo cấp
     cards: C.MONTH_CARDS,
     rnd: key => E.rng(hash(`${state.career.seed}:${key}`))()
   };
@@ -6715,9 +6756,9 @@ window.WP_COPY = {
     const c = state.career, card = monthCard(); if (!card || !cardPending()) return;
     const ev = CORE.applyCardOption(c, card, optId, CAL.rnd); if (!ev) return;
     if (ev.type === "cardRefused") return toast(`Thiếu ${cashStr(ev.short)}`, "warn");
-    const o = card.options.find(x => x.id === optId);
+    const o = CORE.cardOptions(c, card).find(x => x.id === optId);
     if (ev.apNow) { if (state.phase === "prep") state.ap = Math.max(0, state.ap - ev.apNow); else c.apDebt += ev.apNow; }
-    log(`${card.title}: ${o.label}${ev.collected ? ` (thu được ${money(ev.collected)})` : ""}.`, o.cash < 0 ? "bad" : "info");
+    log(`${card.title}: ${fillCard(o.label, o)}${ev.collected ? ` (thu được ${money(ev.collected)})` : ""}.`, o.cash < 0 ? "bad" : "info");
     if (o.collect) toast(ev.collected ? `Thu được ${money(ev.collected)}` : "Chưa thu được đồng nào", ev.collected ? "good" : "warn");
     state.needDecision = false;
   }
@@ -6773,17 +6814,19 @@ window.WP_COPY = {
     if (lastTwo.length === 2 && lastTwo.every(h => h.stars <= 2)) types.unshift("comeback");
     const overseasAt = Math.max(2, 4 - (c.brand === "destination" ? 1 : 0) - (hasSkill("ngoai_ngu") ? 1 : 0));
     if (c.stage >= overseasAt) types.splice(1, 0, "overseas");
-    if (mi.peak && types.length < 3) types.push(types[0]);
+    if (mi.peak && types.length && types.length < 3) types.push(types[0]);
     if (mi.ghost) types = types.slice(0, Math.max(1, types.length - 1));
     // Cổng mở khách: đạt cả cấp sự nghiệp lẫn văn phòng. Loại chưa đủ cổng lùi về loại nhận được; "đám cưới của năm" thì bỏ hẳn.
     types = types.filter(t => t !== "boss" || CORE.offerAllowed("boss", c)).map(t => (t === "comeback" ? t : CORE.fallbackType(t, c)));
-    if (CORE.studioActive(c) && E.rng(hash(`${state.seed}:walkin:${c.done}:${c.year}:${c.month}`))() < CORE.STUDIO.walkIn && types.length < 3) types.push(types[0]); // studio có showroom: khách tự tìm đến
+    if (CORE.studioActive(c) && E.rng(hash(`${state.seed}:walkin:${c.done}:${c.year}:${c.month}`))() < CORE.STUDIO.walkIn && types.length && types.length < 3) types.push(types[0]); // studio có showroom: khách tự tìm đến
     // Tiếng xấu: khách lớn chưa dám tìm tới. Dè chừng thì chỉ còn trọn gói và day-of; bị tránh thì chỉ còn day-of, ít lời hỏi hơn.
     const demand = CORE.demandLevel(c);
     if (demand === "wary") types = types.filter(t => t !== "boss").map(t => (["luxury", "destination", "overseas", "package"].includes(t) ? CORE.fallbackType("full", c) : t));
     if (demand === "shunned") types = types.filter(t => t !== "boss").map(t => (t === "comeback" ? t : "dayof")).slice(0, 2);
+    if (!CORE.dayofAvailable(c, mi.peak)) types = types.filter(t => t !== "dayof"); // mùa thấp điểm: không có đám day-of nào tìm planner đã có tiếng
+    const lost = c.lostReferralNow || 0; if (lost && types.length) types = types.slice(0, Math.max(1, types.length - lost)); // làm ẩu: khách cũ không giới thiệu ai
     const n = 3 + (c.offerBonusActive ? 1 : 0); // mối quen khách: thêm đúng một lời hỏi ở lần làm mới này
-    if (c.offerBonusActive) types.push(types[0]);
+    if (c.offerBonusActive && types.length) types.push(types[0]);
     return types.slice(0, n).map((t, i) => makeOffer(t, r, mi, rep, i));
   }
   function buildProject(o, staff, skills = []) {
@@ -6794,6 +6837,7 @@ window.WP_COPY = {
     P.flagLabels = { teamCoord: "Coordinator kiểm tra chéo" };
     const city = C.CITIES[o.city] || C.CITIES.hcm;
     P.feeModel = { ...P.feeModel, teamBase: city.name, destinations: { ...P.feeModel.destinations, ...C.DEST_FEES } };
+    { const d = P.feeModel.destinations[o.location]; if (d && o.location !== city.name) P.feeModel.destinations[o.location] = { ...d, travel: CORE.travelCost(d.travel, staff.length) }; } // đi lại tính theo đầu người
     if (o.type === "overseas" && skills.includes("ngoai_ngu")) { const d = P.feeModel.destinations[o.location]; P.feeModel.destinations[o.location] = { ...d, travel: Math.round(d.travel * 0.7) }; }
     if (skills.includes("moi_quan_he")) P.config.time.rushFee = 0.1;
     const hasEng = T.events.includes("ENGAGEMENT");
@@ -6877,7 +6921,7 @@ window.WP_COPY = {
   function sheetQuote() {
     const i = state.sheet.id; const o = state.career.offers[i]; if (!o) return "";
     return `<h2 class="h">Gói planning cho ${esc(o.couple)}</h2><p class="muted">Gói quyết định bạn hứa làm những việc gì và thu bao nhiêu phí. Việc đã hứa mà bỏ thì lúc quyết toán khách đòi giảm phí. Chất lượng vendor là chuyện riêng, chọn sau.</p>
-      <p class="muted">${o.type === "dayof" ? "Khách trả phí 2 đợt: 30% khi ký, 70% sau đám. Vendor khách tự trả." : `Khách trả 3 đợt trên tổng hợp đồng (dự toán vendor + phí): ${Math.round(CORE.TERMS.client.sign * 100)}% khi ký, ${Math.round(CORE.TERMS.client.mid * 100)}% trước lễ 2 tuần, ${Math.round((1 - CORE.TERMS.client.sign - CORE.TERMS.client.mid) * 100)}% sau đám. Bạn cọc vendor 30% khi chốt, trả nốt trước lễ.`}</p>
+      <p class="muted">${o.type === "dayof" ? "Khách trả phí 2 đợt: 30% khi ký, 70% sau đám. Vendor khách tự trả." : (sh => `Khách trả 3 đợt trên tổng hợp đồng (dự toán vendor + phí): ${Math.round(sh.sign * 100)}% khi ký, ${Math.round(sh.mid * 100)}% trước lễ 2 tuần, ${Math.round(sh.final * 100)}% sau đám.${sh.mid < CORE.TERMS.client.mid ? " Đám lớn nên khách giữ lại phần cuối nhiều hơn: bạn phải ứng nhiều hơn trước lễ." : ""} Bạn cọc vendor 30% khi chốt, trả nốt trước lễ.`)(CORE.clientShares(o.budget + o.fee, false))}</p>
       <div class="list">${quoteOptions(o).map(q => `<button class="opt fee-opt" data-act="takeOffer" data-id="${i}:${q.level}">
         <div class="row-between"><b>${esc(q.name)}</b><span class="big-num">${money(q.fee)}</span></div>
         <small>Cam kết ${q.contracted.length} việc${q.removed.length ? ` · bỏ ${esc(q.removed.map(actionTitle).join(", ").toLowerCase())}` : ""}${q.added.length ? ` · thêm ${esc(q.added.map(actionTitle).join(", ").toLowerCase())}` : ""}</small>
@@ -6948,9 +6992,9 @@ window.WP_COPY = {
     const f = state.fin, c = state.career; if (!shortActive()) return;
     const sf = shortfall();
     if (id === "loan" && !c.loan) { CORE.takeLoan(c); if (f.low == null || c.cash < f.low) f.low = c.cash; log("Vay người quen 50tr để trả vendor, trả 60tr sau 3 tháng.", "bad"); }
-    else if (id === "advance" && !f.advanceUsed) {
-      CORE.requestClientAdvance(c, f, Math.ceil(sf.short)); state.familyScore -= 6;
-      state.ledger.push({ label: "Xin khách ứng thêm tiền trước lễ", c: 0, f: -6 }); log(`Xin khách ứng thêm ${money(Math.ceil(sf.short))}: hai họ không vui, khoản này trừ vào đợt cuối.`, "bad");
+    else if (id === "advance" && CORE.advanceRoom(f) > 0) {
+      const e = CORE.requestClientAdvance(c, f, Math.ceil(sf.short)); state.familyScore -= 6;
+      state.ledger.push({ label: "Xin khách ứng thêm tiền trước lễ", c: 0, f: -6 }); log(`Xin khách ứng thêm ${money(e.amount)}: hai họ không vui, khoản này trừ vào đợt cuối.`, "bad");
     } else if (id === "drop") {
       const drops = shortDrops();
       drops.forEach(r => { CORE.dropVendor(f, r.cat, E.vendorCost(D, state, r.cat)); log(`Không trả nổi phần còn lại: ${getVendor(state.selectedVendors[r.cat]).name} sẽ không phục vụ.`, "bad"); });
@@ -7007,12 +7051,13 @@ window.WP_COPY = {
     const trait = C.TRAITS.find(t => t.id === o.trait);
     const weight = (trait?.repWeight || 1) + (o.type === "luxury" && r.stars <= 2 ? 1 : 0);
     for (let i = 0; i < weight; i++) c.stars.push(r.stars);
+    CORE.noteProjectResult(c, r.stars); // đám tệ: mất một lời giới thiệu ở lần làm mới kế tiếp
     if (state.badReview) c.stars.push(Math.min(r.stars, 2)); // khách không tin lời giải thích về giá: thêm một review xấu
     c.history.unshift({ couple: o.couple, type: o.type, stars: r.stars, profit: Math.round(r.profit), location: o.location, low: state.fin ? state.fin.low : null });
     if (o.type === "boss") c.bossDone = true;
     log(`Xong đám ${o.couple}: ${r.stars}★, ${r.profit >= 0 ? "lời" : "lỗ"} ${money(Math.abs(r.profit))}.`, r.stars >= 4 ? "good" : r.stars <= 2 ? "bad" : "info");
     Object.assign(state, projectFields()); state.project = null; D = BASE; TIME = CFG.time;
-    checkStage(); CORE.refreshOfferBonus(c); c.offers = genOffers(); state.phase = "hub";
+    checkStage(); CORE.refreshOfferBonus(c); c.lostReferralNow = CORE.takeLostReferral(c); c.offers = genOffers(); state.phase = "hub";
     if (c.pendingBrand) state.sheet = { type: "brand" };
     else if (c.skillPoints) state.sheet = { type: "skill" };
   }
@@ -7022,7 +7067,7 @@ window.WP_COPY = {
     if (cardPending()) return toast("Xử lý chuyện của tháng này trước đã", "warn");
     const pay = 5 + Math.floor(CAL.rnd(`ctv:${c.elapsedWeeks}`) * 4);
     for (let i = 0; i < CORE.WEEKS_PER_MONTH; i++) if (!tickWeek()) return;
-    CORE.cash(c, pay, "ctv", "Làm CTV cho planner khác"); log(`Làm CTV cho planner khác: +${money(pay)}.`); checkStage(); CORE.refreshOfferBonus(c); c.offers = genOffers();
+    CORE.cash(c, pay, "ctv", "Làm CTV cho planner khác"); log(`Làm CTV cho planner khác: +${money(pay)}.`); checkStage(); CORE.refreshOfferBonus(c); c.lostReferralNow = CORE.takeLostReferral(c); c.offers = genOffers();
   }
   function takeLoan() {
     const c = state.career; if (c.loan) return;
@@ -7034,7 +7079,7 @@ window.WP_COPY = {
     if (c.stage < R.minStage || c.staff.length >= stageOf().maxStaff) return toast("Chưa tuyển thêm được ở cấp này", "warn");
     const name = C.STAFF_NAMES[c.staffSeq % C.STAFF_NAMES.length]; c.staffSeq += 1;
     c.staff.push({ id: `s${c.staffSeq}`, role, name });
-    log(`Tuyển ${R.name} ${name}: ${money(R.salary)}/tháng.`, "good"); checkStage();
+    log(`Tuyển ${R.name} ${name}: ${cashStr(CORE.salaryAt(R.salary, c.stage))}/tháng.`, "good"); checkStage();
   }
   function fire(id) {
     const c = state.career; const s = c.staff.find(x => x.id === id); if (!s) return;
@@ -7088,6 +7133,7 @@ window.WP_COPY = {
       <h2 class="sec">Khách đang hỏi</h2>
       ${CORE.demandLevel(c) !== "normal" ? `<p class="note">${CORE.demandLevel(c) === "shunned" ? "Mấy đám gần đây để lại tiếng xấu. Giờ chỉ còn khách day-of dám hỏi, và họ ép phí." : "Mấy đám gần đây chưa tốt nên khách lớn còn dè chừng. Làm tốt vài đám tới để lấy lại tiếng."}</p>` : ""}
       ${hint ? `<p class="muted">Khách ${esc(C.TYPES[hint.type].short.toLowerCase())} chưa tìm tới vì bạn chưa có ${esc(hint.office.name.toLowerCase())}. Đổi văn phòng trong tờ Sự nghiệp.</p>` : ""}
+      ${c.offers.length ? "" : `<p class="muted">Tháng này không có ai hỏi. ${CORE.dayofAvailable(c, mi.peak) ? "" : "Mùa thấp điểm không có đám nhỏ; khách lớn thì cần văn phòng và tiếng tốt. "}Có thể đi làm CTV một tháng.</p>`}
       ${c.offers.map(offerCard).join("")}
       <button class="hubline ctv" data-act="floorJob"><span>Chưa muốn nhận ai? Đi làm CTV 1 tháng</span><b class="pos">+5–8tr</b></button>
       ${c.cash < 0 && !c.loan ? `<div class="card slim"><b>Quỹ đang âm</b><small class="muted">Chốt tháng mà quỹ âm hai lần liền là phải đóng cửa. Có thể vay người quen 50tr, trả 60tr sau 3 tháng.</small><button class="btn" data-act="loan">Vay 50tr</button></div>` : ""}
@@ -7124,9 +7170,9 @@ window.WP_COPY = {
       ${CORE.receivableTotal(c) ? `<p class="note">Khách còn nợ ${money(CORE.receivableTotal(c))} (chưa phải tiền trong quỹ).</p>` : ""}
       ${contactsHtml()}
       <h3 class="sub">Team</h3>
-      <div class="card">${[`<div class="staff">${img(planner().look, "face")}<div><b>${esc(planner().name)}</b><small>Bạn · ${SOLO_AP} lượt/tuần · ${esc(state.me.skills.map(id => C.SKILLS.find(k => k.id === id).name).join(", "))}</small></div><button class="link" data-act="sheet" data-id="skill">Kỹ năng</button></div>`].concat(c.staff.map(s => { const R = C.ROLES.find(r => r.id === s.role); return `<div class="staff">${img(staffLook(s.role, s.id), "face")}<div><b>${esc(s.name)}</b><small>${esc(R.name)} · ${money(R.salary)}/tháng</small></div><button class="link" data-act="askFire" data-id="${s.id}">Cho nghỉ</button></div>`; })).join("")}
+      <div class="card">${[`<div class="staff">${img(planner().look, "face")}<div><b>${esc(planner().name)}</b><small>Bạn · ${SOLO_AP} lượt/tuần · ${esc(state.me.skills.map(id => C.SKILLS.find(k => k.id === id).name).join(", "))}</small></div><button class="link" data-act="sheet" data-id="skill">Kỹ năng</button></div>`].concat(c.staff.map(s => { const R = C.ROLES.find(r => r.id === s.role); return `<div class="staff">${img(staffLook(s.role, s.id), "face")}<div><b>${esc(s.name)}</b><small>${esc(R.name)} · ${cashStr(CORE.salaryAt(R.salary, c.stage))}/tháng</small></div><button class="link" data-act="askFire" data-id="${s.id}">Cho nghỉ</button></div>`; })).join("")}
         <small class="muted">Chi phí cố định: ${cashStr(monthlyCost())}/tháng (${monthlyParts(c).map(x => `${x.label.toLowerCase()} ${cashStr(x.amount)}`).join(", ")}).</small>
-        ${!CORE.canHire(c) && c.stage >= CORE.HIRE_GATE.stage ? `<small class="muted">Cần văn phòng nhỏ trở lên mới tuyển được người mới.${c.staff.length ? " Nhân viên hiện tại vẫn ở lại và vẫn nhận lương." : ""}</small>` : C.ROLES.filter(r => c.stage >= r.minStage).length ? (c.staff.length >= st.maxStaff ? `<small class="muted">Đã đủ ${st.maxStaff} nhân viên ở cấp này. Lên cấp để tuyển thêm.</small>` : `<div class="list">${C.ROLES.filter(r => c.stage >= r.minStage).map(r => `<button class="opt" data-act="hireStaff" data-id="${r.id}"><b>Tuyển ${esc(r.name)} · ${money(r.salary)}/tháng</b><small>${esc(r.perk)}</small></button>`).join("")}</div><small class="muted">Còn tuyển được ${st.maxStaff - c.staff.length} người ở cấp này. Lương trừ mỗi tháng, kể cả tháng không có đám.</small>`) : `<small class="muted">Lên ${esc(C.STAGES[1].name)} mới tuyển được nhân viên.</small>`}
+        ${!CORE.canHire(c) && c.stage >= CORE.HIRE_GATE.stage ? `<small class="muted">Cần văn phòng nhỏ trở lên mới tuyển được người mới.${c.staff.length ? " Nhân viên hiện tại vẫn ở lại và vẫn nhận lương." : ""}</small>` : C.ROLES.filter(r => c.stage >= r.minStage).length ? (c.staff.length >= st.maxStaff ? `<small class="muted">Đã đủ ${st.maxStaff} nhân viên ở cấp này. Lên cấp để tuyển thêm.</small>` : `<div class="list">${C.ROLES.filter(r => c.stage >= r.minStage).map(r => `<button class="opt" data-act="hireStaff" data-id="${r.id}"><b>Tuyển ${esc(r.name)} · ${cashStr(CORE.salaryAt(r.salary, c.stage))}/tháng</b><small>${esc(r.perk)}</small></button>`).join("")}</div><small class="muted">Còn tuyển được ${st.maxStaff - c.staff.length} người ở cấp này. Lương trừ mỗi tháng, kể cả tháng không có đám.</small>`) : `<small class="muted">Lên ${esc(C.STAGES[1].name)} mới tuyển được nhân viên.</small>`}
       </div>
       ${c.history.length ? `<details class="card"><summary class="h">Các đám đã làm</summary><ul class="hist">${c.history.map(h => `<li><span>${esc(h.couple)} · ${esc(C.TYPES[h.type].short)}</span><b>${"★".repeat(h.stars)}</b><span class="${h.profit < 0 ? "neg" : "pos"}">${signed(h.profit)}</span></li>`).join("")}</ul></details>` : ""}`;
   }
@@ -7574,7 +7620,7 @@ window.WP_COPY = {
       if (f.recoverDue) { projCash(f.recoverDue, "recovered", "Vendor đền một phần chi sự cố"); f.recoverDue = 0; }
       // Khách trả đợt cuối sau khi trừ giảm phí và phần đã ứng. Phần khách giữ lại là khoản phải thu, không vào quỹ.
       // Khách bực giữ lại một phần hợp đồng: tính trên đúng hợp đồng ký với agency (day-of chỉ là phí planning, không gồm tiền vendor khách tự trả).
-      { const w = Math.round(f.contract * (r.stars === 1 ? 0.2 : r.stars === 2 ? 0.05 : 0)); if (w !== r.withheld) { r.profit += r.withheld - w; r.total = Math.round(r.total + r.withheld - w); r.withheld = w; } }
+      { const w = Math.round(f.contract * CORE.withholdShare(r.stars, ["luxury", "boss"].includes(state.project.type))); if (w !== r.withheld) { r.profit += r.withheld - w; r.total = Math.round(r.total + r.withheld - w); r.withheld = w; } }
       const e = CORE.collectFinalPayment(state.career, f, { feeDiscount: r.feeDiscount, withheld: r.withheld });
       if (e) {
         if (e.withheld !== r.withheld) { r.profit += r.withheld - e.withheld; r.total = Math.round(r.total + r.withheld - e.withheld); r.withheld = e.withheld; }
@@ -7986,13 +8032,16 @@ window.WP_COPY = {
     const sf = shortfall(), f = state.fin, c = state.career; const drops = shortDrops();
     const opts = [];
     if (!c.loan) opts.push(["loan", "Vay người quen 50tr", "Có tiền ngay, ba tháng sau phải trả 60tr.", `<span class="neg">Trả 60tr sau 3 tháng</span>`]);
-    if (!f.advanceUsed) opts.push(["advance", `Xin khách ứng thêm ${money(Math.ceil(sf.short))}`, "Hai họ không vui vì bị hỏi tiền sát ngày. Khoản này trừ vào đợt cuối. Mỗi đám chỉ xin được một lần.", `<span class="neg">Hai họ phật ý</span>`]);
+    const room = CORE.advanceRoom(f), adv = Math.min(Math.ceil(sf.short), room);
+    if (room > 0) opts.push(["advance", `Xin khách ứng thêm ${money(adv)}`, `Hai họ không vui vì bị hỏi tiền sát ngày. Khoản này trừ vào đợt cuối, nên khách chỉ ứng tối đa phần họ còn phải trả (${money(room)}). Mỗi đám chỉ xin được một lần.${adv < Math.ceil(sf.short) ? ` Vẫn còn thiếu ${money(Math.ceil(sf.short) - adv)}.` : ""}`, `<span class="neg">Hai họ phật ý</span>`]);
     opts.push(["drop", drops.length ? `Không trả ${drops.map(r => r.label.toLowerCase()).join(", ")}` : "Đành chịu âm quỹ", drops.length ? "Vendor không được trả đủ sẽ không phục vụ: sự cố của hạng mục đó chắc chắn xảy ra trong ngày cưới. Mất luôn tiền cọc." : "Không còn khoản nào bỏ được. Quỹ sẽ âm sau khi trả.", `<span class="neg">${drops.length ? "Sự cố chắc chắn xảy ra" : "Quỹ âm"}</span>`]);
     return `<div class="card decision ${state.needDecision ? "flash" : ""}" id="decision"><div class="row-between"><span class="eyebrow">Thiếu tiền trả vendor trước lễ</span></div>
       <div class="speaker">${img(planner().look, "face", "worried")}<div><b>${esc(planner().name)}</b><p>Trước ngày cưới phải trả ${money(sf.due)} cho vendor, mà quỹ chỉ còn ${money(c.cash)}. Thiếu ${money(Math.ceil(sf.short))}.</p></div></div>
       <div class="list">${opts.map(([id, t, note, chip]) => `<button class="opt" data-act="short" data-id="${id}"><b>${esc(t)}</b><small>${esc(note)}</small><div class="chips">${chip}</div></button>`).join("")}</div></div>`;
   }
   // Chip trên từng lựa chọn của thẻ tháng, sinh thẳng từ hiệu ứng thật nên không thể nói khác đi.
+  // Điền số tiền thật (đã nhân theo cấp) vào chỗ trống trong câu chữ của thẻ.
+  const fillCard = (text, o) => text.replace("{cash}", o.cash ? cashStr(o.cash) : "").replace("{later}", o.later ? cashStr(o.later.cash) : "").replace("{risk}", o.risk && o.risk.cash ? cashStr(o.risk.cash) : "").replace("{need}", o.needCash ? cashStr(o.needCash) : "");
   function cardChips(o) {
     const out = [];
     if (o.cash) out.push(`<span class="${o.cash < 0 ? "neg" : "pos"}">${o.cash < 0 ? "−" : "+"}${cashStr(o.cash)}</span>`);
@@ -8024,10 +8073,11 @@ window.WP_COPY = {
   function monthCardHtml() {
     const card = monthCard(), c = state.career; if (!card) return "";
     const owed = card.when === "receivable" ? ` Khách còn nợ ${money(CORE.receivableTotal(c))}.` : "";
-    if (c.card.pick) { const o = card.options.find(x => x.id === c.card.pick); return `<div class="card decision done"><span class="eyebrow">✓ ${esc(card.title)}</span><b>${esc(o.label)}</b><div class="chips">${cardChips(o)}</div></div>`; }
+    const options = CORE.cardOptions(c, card);
+    if (c.card.pick) { const o = options.find(x => x.id === c.card.pick); return `<div class="card decision done"><span class="eyebrow">✓ ${esc(card.title)}</span><b>${esc(fillCard(o.label, o))}</b><div class="chips">${cardChips(o)}</div></div>`; }
     return `<div class="card decision ${state.needDecision ? "flash" : ""}" id="decision"><div class="row-between"><span class="eyebrow">Chuyện tháng này</span><span class="small muted">Quỹ ${money(c.cash)}</span></div>
       <div class="speaker">${img(cardLook(card), "face")}<div><b>${esc(card.speaker || planner().name)}</b><p>${esc(card.text + owed)}</p></div></div>
-      <div class="list">${card.options.map(o => `<button class="opt" data-act="mcard" data-id="${o.id}" ${o.needCash && c.cash < o.needCash ? "disabled" : ""}><b>${esc(o.label)}</b><small>${esc(o.note)}</small><div class="chips">${cardChips(o)}</div>${o.needCash && c.cash < o.needCash ? `<em>Quỹ không đủ</em>` : ""}</button>`).join("")}</div></div>`;
+      <div class="list">${options.map(o => `<button class="opt" data-act="mcard" data-id="${o.id}" ${o.needCash && c.cash < o.needCash ? "disabled" : ""}><b>${esc(fillCard(o.label, o))}</b><small>${esc(fillCard(o.note, o))}</small><div class="chips">${cardChips(o)}</div>${o.needCash && c.cash < o.needCash ? `<em>Quỹ không đủ</em>` : ""}</button>`).join("")}</div></div>`;
   }
   function dilemmaCard() {
     // Một ô, một thẻ. Thứ tự: thẻ tháng đang chờ → khách hỏi giá đang chờ → thiếu tiền trước lễ → rồi mới tới thẻ đã chọn xong của tuần này.
@@ -8620,7 +8670,7 @@ window.WP_COPY = {
     startCareer, genOffers, quoteOptions, takeOffer, startPrep, weekDilemma, chooseDilemma, canBook, book, research, negotiate, setSpec,
     actionBlock, doAction, ask, wishBlock, fulfil, confirmConcept, promisedDue, nextWeek, startEvent, optionBlock, successChance, resolveCrisis,
     nextItem, stageNext, settlementOptions, resolveSettlement, nextSettlement, endProject, floorJob, takeLoan, hire, fire, chooseBrand, learnSkill, upgrade,
-    checkStage, monthlyCost, monthlyParts, tierObj, moneyNow, riskStatus, hasSkill, avgStars, shortfall, shortActive, resolveShort, shortDrops, priceFor, catVendors, hireFreelancer, overtime, monthCard, cardPending, resolveCard, setOffice, setLiving, tickWeek, actionMoney, discoveryPending, resolveDiscovery, chooseContact, assignContact, rollDiscovery, slotHtml: () => dilemmaCard(), decisionPending
+    checkStage, monthlyCost, monthlyParts, tierObj, moneyNow, riskStatus, hasSkill, avgStars, shortfall, shortActive, resolveShort, shortDrops, priceFor, catVendors, hireFreelancer, overtime, monthCard, cardOptions: () => (monthCard() ? CORE.cardOptions(state.career, monthCard()) : []), cardPending, resolveCard, setOffice, setLiving, tickWeek, actionMoney, discoveryPending, resolveDiscovery, chooseContact, assignContact, rollDiscovery, slotHtml: () => dilemmaCard(), decisionPending
   };
   window.WP_GAME = { get state() { return state; }, get D() { return D; }, render, _build: buildProject, api, HEADLESS };
   if (!HEADLESS) render();
