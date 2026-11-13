@@ -100,6 +100,8 @@ img.sprite { image-rendering: pixelated; image-rendering: crisp-edges; display: 
 .chips span.neg { background: var(--danger-soft); color: var(--danger); }
 .chips span.pos { background: var(--jade-soft); color: var(--jade); }
 .chips span.gold { background: var(--gold-soft); color: var(--gold); }
+/* nhãn tỉ lệ của một cách xử lý sự cố ("Chắc ăn 85% · hỏng thì…"): câu dài, được xuống dòng. Không dùng tên "risk": đó là hàng ba cột của bảng rủi ro. */
+.chips span.odds { white-space: normal; }
 
 /* Title */
 .title-card { display: flex; flex-direction: column; gap: 12px; }
@@ -733,7 +735,7 @@ h2.sec.due-line.neg { color: var(--danger); }
  * crises[].options[].effects: cost (agency pays), clientPays (client is charged), couple, family.
  */
 window.GAME_DATA = {
-  "version": "3.9.0",
+  "version": "3.9.1",
   "project": {
     "couple": "Linh & Minh",
     "location": "Sài Meo",
@@ -11212,7 +11214,7 @@ window.WP_COPY = {
   // Bản cùng cấu trúc lưu: đọc thẳng, không chuyển đổi. 3.7.1–3.7.3 chỉ sửa giao diện; trường mới (warned, markSrc, sideWeek) đều có giá trị mặc định.
   // 3.7.4–3.7.5 không thêm trường lưu nào; nhãn "planner điều phối được" của mong muốn dựng lại từ dữ liệu khi nạp.
   // 3.8.0 thêm tên thương hiệu và nhận diện: save cũ có tên trống, nhận diện "cơ bản" (CORE.initIdentity); đã qua mốc chọn hướng thì lần mở tới hỏi đặt tên một lần.
-  const SAME_SHAPE = ["3.7.0", "3.7.3", "3.7.5", "3.8.0", "3.8.1"]; // 3.9.0 thêm career.scandal / scandalRep / scandalWaryUntil, đều có mặc định trong CORE.initCareer // 3.8.1 chỉ đổi giao diện màn chuẩn bị và lượt cần: không thêm trường lưu
+  const SAME_SHAPE = ["3.7.0", "3.7.3", "3.7.5", "3.8.0", "3.8.1", "3.9.0"]; // 3.9.1 chỉ sửa giao diện, cách lưu y như 3.9.0 // 3.9.0 thêm career.scandal / scandalRep / scandalWaryUntil, đều có mặc định trong CORE.initCareer // 3.8.1 chỉ đổi giao diện màn chuẩn bị và lượt cần: không thêm trường lưu
   const OFFICE_BY_OLD_STAGE = ["home", "cowork", "small", "studio", "studio"];
   function migrate(old, from) {
     const s = { ...fresh(), ...old, sheet: null };
@@ -12542,8 +12544,8 @@ window.WP_COPY = {
       const own = ((C.CRISIS_MOOD || {})[cr.id] || {})[o.id];
       const fx = o.effects || {};
       const base = own && !state.showNums ? effectChips({ ...fx, couple: 0, family: 0 }, who).replace(/<span>Không tốn gì<\/span>/, "") + `<span class="neg">${esc(own)}</span>` : effectChips(fx, who);
-      const risk = why ? "" : ar ? `<span class="gold risk">${ar.p}% ${esc(lower(ar.label))}: ${esc(lc(moodText({ couple: ar.couple, family: ar.family }, who)))}</span>`
-        : ch < 100 ? `<span class="${ch < 65 ? "neg" : "gold"} risk">${ch >= 85 ? "Chắc ăn" : ch >= 65 ? "Khá chắc" : "Hên xui"} ${ch}% · hỏng thì cả hai bên phật ý thêm</span>`
+      const risk = why ? "" : ar ? `<span class="gold odds">${ar.p}% ${esc(lower(ar.label))}: ${esc(lc(moodText({ couple: ar.couple, family: ar.family }, who)))}</span>`
+        : ch < 100 ? `<span class="${ch < 65 ? "neg" : "gold"} odds">${ch >= 85 ? "Chắc ăn" : ch >= 65 ? "Khá chắc" : "Hên xui"} ${ch}% · hỏng thì cả hai bên phật ý thêm</span>`
         : `<span class="pos">Chắc chắn</span>`;
       return `<button class="opt ${why ? "locked" : ""}" data-act="opt" data-id="${o.id}" ${why ? 'aria-disabled="true"' : ""}><b>${esc(o.title)}</b><div class="chips">${base}${risk}${ch < 100 && !why && hasSkill("xu_ly") ? `<span class="pos">+10% nhờ Xử lý sự cố</span>` : ""}${o.mark ? `<span class="gold">Có hệ quả về sau</span>` : ""}</div>${crisisReason(cr, o) ? `<small class="reason">${esc(crisisReason(cr, o))}</small>` : ""}${why ? `<em>${esc(why)}</em>` : ""}</button>`;
     };
