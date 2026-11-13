@@ -747,10 +747,11 @@ h2.sec.due-line.neg { color: var(--danger); }
 .book-todo .sub { margin: 6px 0 0; }
 .book-read { display: flex; flex-direction: column; gap: 8px; }
 .book-sec { border: 2px solid var(--line); background: var(--surface); padding: 10px 12px; }
-.book-sec > summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.book-sec > summary { cursor: pointer; list-style: none; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 2px 10px; }
+.book-sec > summary b { white-space: nowrap; } /* 3.9.5: tiêu đề mục không xuống dòng; tóm tắt dài thì xuống dưới tiêu đề */
 .book-sec > summary::-webkit-details-marker { display: none; }
 .book-sec > summary b::before { content: "▸ "; } .book-sec[open] > summary b::before { content: "▾ "; }
-.book-sec > summary span { font-size: 13px; color: var(--muted); text-align: right; }
+.book-sec > summary span { flex: 1 1 auto; font-size: 13px; color: var(--muted); text-align: right; }
 .book-sec[open] > summary { margin-bottom: 8px; }
 .wish-wait { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
 .wish-wait li { font-size: 14px; color: var(--muted); padding: 6px 10px; border: 1px dashed var(--line); background: var(--surface); }
@@ -770,7 +771,7 @@ h2.sec.due-line.neg { color: var(--danger); }
  * crises[].options[].effects: cost (agency pays), clientPays (client is charged), couple, family.
  */
 window.GAME_DATA = {
-  "version": "3.9.4",
+  "version": "3.9.5",
   "project": {
     "couple": "Linh & Minh",
     "location": "Sài Meo",
@@ -2638,6 +2639,57 @@ window.GAME_DATA = {
           "speaker": "mom_groom",
           "a": "Nhà trai quê Củ Chi, có món gà luộc lá chanh là ông nội vui lắm.",
           "reveal": "family_dish"
+        }
+      ],
+      // Câu bù (3.9.5): khi buổi gặp còn dưới 4 câu (day-of, nước ngoài: câu hỏi về mong muốn của lễ ăn hỏi bị bỏ), thêm câu ở đây theo seed của đám. Không mở mong muốn, không cộng điểm, chỉ nói về tiệc cưới.
+      "fillers": [
+        {
+          "id": "f_x_hope",
+          "q": "Gia đình mong nhất điều gì ở ngày cưới ạ?",
+          "speaker": "mom_bride",
+          "a": "Tôi chỉ mong tụi nhỏ vui. Khách về ai cũng nói tiệc ấm cúng là được."
+        },
+        {
+          "id": "f_x_then",
+          "q": "Hồi gia đình mình cưới thì tổ chức thế nào ạ?",
+          "speaker": "mom_groom",
+          "a": "Hồi đó làm ở nhà, hàng xóm sang phụ nấu từ tối hôm trước. Giờ tụi nhỏ có người lo, tôi thấy cũng mừng."
+        },
+        {
+          "id": "f_x_groom",
+          "q": "Gia đình nghĩ sao về chú rể ạ?",
+          "speaker": "dad_bride",
+          "a": "Thằng nhỏ hiền, biết thưa gửi. Con gái tôi chọn thì tôi tin."
+        },
+        {
+          "id": "f_x_bride",
+          "q": "Gia đình nghĩ sao về cô dâu ạ?",
+          "speaker": "mom_groom",
+          "a": "Con bé lễ phép, hay ghé nhà phụ tôi nấu cơm. Nhà tôi thương nó lắm."
+        },
+        {
+          "id": "f_x_child",
+          "q": "Cô dâu hồi nhỏ là người thế nào ạ?",
+          "speaker": "mom_bride",
+          "a": "Nghịch lắm, suốt ngày leo cây. Giờ mặc áo cưới chắc tôi nhìn không ra."
+        },
+        {
+          "id": "f_x_advice",
+          "q": "Gia đình có muốn gửi gắm gì cho hai bạn không ạ?",
+          "speaker": "dad_bride",
+          "a": "Mong hai đứa biết nhường nhau. Tiệc thì một ngày, sống với nhau thì cả đời."
+        },
+        {
+          "id": "f_x_meet",
+          "q": "Hai bên gia đình đã gặp nhau nhiều chưa ạ?",
+          "speaker": "mom_groom",
+          "a": "Mới gặp vài lần thôi. Tôi mong hôm cưới hai bên ngồi nói chuyện được với nhau."
+        },
+        {
+          "id": "f_x_waited",
+          "q": "Trong nhà ai mong ngày này nhất ạ?",
+          "speaker": "dad_bride",
+          "a": "Bà nội con bé. Bà hỏi ngày cưới từ hồi tụi nó mới quen."
         }
       ]
     }
@@ -10163,6 +10215,7 @@ window.WP_COPY = {
   const roll = key => E.rng(hash(`${state.seed}:${key}`))() * 100;
 
   const SOLO_AP = 4;
+  const MIN_QUESTIONS = 4; // 3.9.5: buổi gặp riêng nào cũng có ít nhất từng này câu để chọn (thiếu thì bù câu hỏi chung)
   const clone = x => JSON.parse(JSON.stringify(x));
   // ---- Career: one continuous path ------------------------------------------------
   const C = window.WP_CAREER;
@@ -10641,7 +10694,18 @@ window.WP_COPY = {
     C.DILEMMAS.forEach(d => (d.risks || []).forEach(r => { const cr = P.crises.find(c => c.id === r.crisis); if (cr) cr.risk.push({ ifMark: r.mark, add: r.add, reason: r.reason }); }));
     P.wishes = P.wishes.filter(w => !w.event || T.events.includes(w.event));
     const wishIds = new Set(P.wishes.map(w => w.id));
-    Object.values(P.meetings).forEach(m => { m.questions = m.questions.filter(q => !q.reveal || wishIds.has(q.reveal)); m.picks = Math.min(m.picks, m.questions.length); });
+    Object.values(P.meetings).forEach(m => { m.questions = m.questions.filter(q => !q.reveal || wishIds.has(q.reveal)); });
+    // 3.9.5: day-of và cưới ở nước ngoài không có lễ ăn hỏi, nên câu hỏi về mong muốn của lễ ăn hỏi bị bỏ và buổi gặp chỉ còn 1–3 câu.
+    // Thiếu thì bù bằng câu hỏi chung (data.js "fillers") cho đủ MIN_QUESTIONS: không mở mong muốn, không cộng điểm. Chọn và xếp chỗ theo seed của đám.
+    Object.entries(P.meetings).forEach(([key, m]) => {
+      const need = MIN_QUESTIONS - m.questions.length; const pool = (m.fillers || []).filter(f => !m.questions.some(q => q.id === f.id || q.q === f.q));
+      if (need > 0 && pool.length) {
+        const r = E.rng(hash(`${o.id}:fill:${key}`));
+        for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+        pool.slice(0, need).forEach(f => m.questions.splice(Math.floor(r() * (m.questions.length + 1)), 0, { ...clone(f), filler: true }));
+      }
+      m.picks = Math.min(m.picks, m.questions.length);
+    });
     const briefs = C.BRIEFS[o.type] || C.BRIEFS.full; P.project.visibleBrief = briefs[hash(o.id) % briefs.length].slice();
     const weather = P.crises.find(c => c.id === "weather");
     if (weather && o.rainy) weather.risk.push({ ifVenueKind: ["outdoor"], add: 15, reason: "Đang mùa mưa" });
@@ -11260,7 +11324,7 @@ window.WP_COPY = {
   // Bản cùng cấu trúc lưu: đọc thẳng, không chuyển đổi. 3.7.1–3.7.3 chỉ sửa giao diện; trường mới (warned, markSrc, sideWeek) đều có giá trị mặc định.
   // 3.7.4–3.7.5 không thêm trường lưu nào; nhãn "planner điều phối được" của mong muốn dựng lại từ dữ liệu khi nạp.
   // 3.8.0 thêm tên thương hiệu và nhận diện: save cũ có tên trống, nhận diện "cơ bản" (CORE.initIdentity); đã qua mốc chọn hướng thì lần mở tới hỏi đặt tên một lần.
-  const SAME_SHAPE = ["3.7.0", "3.7.3", "3.7.5", "3.8.0", "3.8.1", "3.9.0", "3.9.1", "3.9.2", "3.9.3"]; // 3.9.1–3.9.4 không đổi cách lưu: chỉ sửa giao diện, tên khách, thứ tự sự cố, nút thuê freelancer // 3.9.0 thêm career.scandal / scandalRep / scandalWaryUntil, đều có mặc định trong CORE.initCareer // 3.8.1 chỉ đổi giao diện màn chuẩn bị và lượt cần: không thêm trường lưu
+  const SAME_SHAPE = ["3.7.0", "3.7.3", "3.7.5", "3.8.0", "3.8.1", "3.9.0", "3.9.1", "3.9.2", "3.9.3", "3.9.4"]; // 3.9.1–3.9.5 không đổi cách lưu: chỉ sửa giao diện, tên khách, thứ tự sự cố, nút thuê freelancer, câu bù buổi gặp // 3.9.0 thêm career.scandal / scandalRep / scandalWaryUntil, đều có mặc định trong CORE.initCareer // 3.8.1 chỉ đổi giao diện màn chuẩn bị và lượt cần: không thêm trường lưu
   const OFFICE_BY_OLD_STAGE = ["home", "cowork", "small", "studio", "studio"];
   function migrate(old, from) {
     const s = { ...fresh(), ...old, sheet: null };
@@ -11476,10 +11540,10 @@ window.WP_COPY = {
     if (m.asked.length >= def.picks || m.asked.includes(qid)) return;
     const q = def.questions.find(x => x.id === qid); if (!q) return;
     m.asked.push(qid);
-    if (!state.revealed.includes(q.reveal)) state.revealed.push(q.reveal);
-    const w = getWish(q.reveal);
+    if (q.reveal && !state.revealed.includes(q.reveal)) state.revealed.push(q.reveal); // câu bù không có reveal: không mở gì
+    const w = q.reveal ? getWish(q.reveal) : null;
     if (w && w.kind === "info") (w.flags || []).forEach(f => { state.flags[f] = true; });
-    log(`Hỏi: ${q.q} → ${w ? w.title : ""}`);
+    log(w ? `Hỏi: ${q.q} → ${w.title}` : `Hỏi: ${q.q}`);
   }
   // Day-of (Thanh duyệt 12/11/2026): khách tự chốt và tự lo với vendor của họ, planner không đưa mong muốn vào kế hoạch được.
   // 3.7.5: trừ nhóm "planner điều phối được" (timeline, cue sheet, MC, xếp chỗ): không cần vendor nên day-of vẫn đưa vào kế hoạch được, miễn phí, 1 lượt.
