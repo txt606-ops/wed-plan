@@ -141,7 +141,7 @@ img.face { width: 40px; height: auto; }
 .tier p { margin: 0; color: var(--muted); font-size: 14px; }
 .tier-top { display: flex; justify-content: space-between; align-items: baseline; }
 .tier-top b { font-size: 17px; }
-.big-num { font: 32px/1 var(--pixel); color: var(--rose); }
+.big-num { font: 32px/1 var(--pixel); color: var(--ink); } /* tiền màu mực; màu hồng chỉ cho chỗ bấm được (3.8.1) */
 
 /* Prep lists */
 .list { display: flex; flex-direction: column; gap: 8px; }
@@ -393,7 +393,7 @@ button.pips { background: none; border: 0; padding: 6px 2px; flex-wrap: wrap; ma
 .tier-opt .t-num small { font-size: 12px; font-weight: 700; white-space: nowrap; }
 .fee-range { display: flex; flex-direction: column; align-items: flex-end; }
 .fee-range small { font-size: 11px; color: var(--muted); }
-.fee-range b { font: 26px/1 var(--pixel); color: var(--rose); white-space: nowrap; }
+.fee-range b { font: 26px/1 var(--pixel); color: var(--ink); white-space: nowrap; }
 .opt.fee-opt .big-num { font-size: 28px; }
 
 /* ---- v3.5 UX pass ---- */
@@ -688,6 +688,35 @@ h2.sec.due-line.neg { color: var(--danger); }
 .offer-line .rush { font-size: 12px; padding: 1px 6px; background: var(--danger-soft); color: var(--danger); font-weight: 700; }
 .fee-opt .load { display: block; margin-top: 4px; font-size: 13px; color: var(--muted); }
 .fee-opt .load.neg { color: var(--danger); font-weight: 700; }
+.fee-opt .load.warn { color: #b8620f; font-weight: 700; } /* cam: phải thuê freelancer mới kịp */
+
+/* ---- Đợt 6: bài bóc phốt trong group ---- */
+.post-sum { display: grid; grid-template-columns: 36px 1fr auto; gap: 8px; align-items: center; width: 100%; text-align: left; background: #f4f2f7; border: 1px solid var(--line); padding: 8px; margin-top: 6px; }
+.post-sum img.face { width: 36px; }
+.post-sum small { display: block; color: var(--muted); font-size: 12px; }
+.post-sum b { display: block; font-size: 14px; line-height: 1.35; }
+.post-sum .link { color: var(--rose); font-weight: 600; font-size: 13px; white-space: nowrap; }
+.post { background: #fff; border: 1px solid #ddd8e3; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.post.gone { align-items: center; text-align: center; padding: 28px 12px; background: #f4f2f7; }
+.post-head { display: grid; grid-template-columns: 40px 1fr; gap: 8px; align-items: center; }
+.post-head small { display: block; color: var(--muted); font-size: 12px; }
+.post-body p { margin: 0 0 6px; font-size: 15px; line-height: 1.5; }
+.post-update { margin: 0; padding: 8px 10px; background: #fff4d9; border-left: 4px solid var(--gold); font-size: 14px; }
+.post-imgs { display: grid; gap: 4px; }
+.post-imgs.n2 { grid-template-columns: 1fr 1fr; }
+.post-img { width: 100%; image-rendering: pixelated; border: 1px solid #ddd8e3; display: block; }
+.post-stats { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--muted); border-top: 1px solid #eee9f2; border-bottom: 1px solid #eee9f2; padding: 6px 0; flex-wrap: wrap; }
+.cmts { display: flex; flex-direction: column; gap: 8px; }
+.cmt { display: grid; grid-template-columns: 30px 1fr; gap: 6px; align-items: start; }
+.cmt img.face { width: 30px; }
+.cmt.sub { margin-top: 6px; grid-template-columns: 24px 1fr; }
+.cmt.sub img.face { width: 24px; }
+.cmt-bub { background: #f0edf4; border-radius: 12px; padding: 6px 10px; }
+.cmt-bub b { font-size: 13px; }
+.cmt-bub p { margin: 2px 0 0; font-size: 14px; line-height: 1.4; }
+.cmt.by-planner > div > .cmt-bub { background: var(--bubble-me, #fde4ec); border: 1px solid var(--rose); }
+.cmt.by-author > div > .cmt-bub b { color: var(--rose); }
+.hubline.post-line { border-color: var(--danger); }
 
 </style>
 </head>
@@ -704,7 +733,7 @@ h2.sec.due-line.neg { color: var(--danger); }
  * crises[].options[].effects: cost (agency pays), clientPays (client is charged), couple, family.
  */
 window.GAME_DATA = {
-  "version": "3.8.1",
+  "version": "3.9.0",
   "project": {
     "couple": "Linh & Minh",
     "location": "Sài Meo",
@@ -3048,6 +3077,9 @@ window.GAME_DATA = {
 
   // ---- Lịch sự nghiệp: 4 tuần = 1 tháng, không reset khi nhận dự án mới (mục 2.1) ----
   function initCareer(c) {
+    if (c.scandal === undefined) c.scandal = null;           // bài bóc phốt đang có (Đợt 6): chỉ một bài một lúc
+    if (!c.scandalRep) c.scandalRep = [];                    // [{ amt, until }]: danh tiếng bị kéo xuống tới hết tháng until
+    if (c.scandalWaryUntil == null) c.scandalWaryUntil = 0;  // tới tháng này khách lớn còn dè chừng vì bài bóc phốt
     if (c.elapsedWeeks == null) c.elapsedWeeks = 0;          // tổng số tuần đã làm việc trong sự nghiệp
     if (c.monthNo == null) c.monthNo = 0;                    // số tháng game đã bắt đầu (0 = chưa vào tuần làm việc đầu tiên)
     if (c.billedMonth == null) c.billedMonth = 0;            // tháng gần nhất đã thu chi phí cố định (mỗi tháng đúng một lần)
@@ -3143,7 +3175,7 @@ window.GAME_DATA = {
     ev.push(...branchMonth(c, cfg));
     if (cfg.cards && !c.bankrupt) { const card = pickMonthCard(c, cfg.cards, cfg.rnd, cfg); if (card) { c.card = { id: card.id, month: c.monthNo, pick: null }; const s = cardSpeaker(c, card, cfg.rnd); if (s) c.card.staffId = s.id; if (card.blockAfter) c.cardBlock[card.id] = c.monthNo + card.blockAfter; ev.push({ type: "monthCard", id: card.id }); } }
     // thẻ chi nhánh dùng chung ô thẻ tháng: tháng có chuyện ở chi nhánh thì thẻ chi nhánh thay thẻ tháng thường
-    if (cfg.branchCards && !c.bankrupt) { const x = pickBranchCard(c, cfg.branchCards, cfg.rnd); if (x && x.card) { c.card = { id: x.card.id, month: c.monthNo, pick: null, branch: x.branch.id }; ev.push({ type: "monthCard", id: x.card.id, branch: x.branch.id }); } }
+    if (cfg.branchCards && !c.bankrupt && !(c.card && c.card.id === "boc_phot" && !c.card.pick)) { const x = pickBranchCard(c, cfg.branchCards, cfg.rnd); if (x && x.card) { c.card = { id: x.card.id, month: c.monthNo, pick: null, branch: x.branch.id }; ev.push({ type: "monthCard", id: x.card.id, branch: x.branch.id }); } }
     return ev;
   }
   // Chốt tháng sau khi làm xong tuần toàn cục 4, 8, 12…; chỉ chốt mỗi tháng một lần.
@@ -3290,12 +3322,14 @@ window.GAME_DATA = {
     if (card.recentDone && (c.doneMonths || []).filter(m => m >= c.monthNo - 2).length < card.recentDone) return false;    // xong đủ số đám trong 2 tháng gần nhất
     if (card.notNear && card.notNear.includes(c.cardHistory[c.cardHistory.length - 1])) return false;                     // không liền kề thẻ cùng chuyện
     if (card.when === "receivable") return (c.receivables || []).some(x => !x.side); // thẻ đòi nợ khách đám cưới; nợ làm thêm tự xử lý
-    if (card.force) return false;                                    // thẻ bật theo xác suất riêng, không bốc ngẫu nhiên
+    if (card.force || card.scandal) return false;                                    // thẻ bật theo xác suất riêng, không bốc ngẫu nhiên
     if (card.when === "staff") return (c.staff || []).length > 0;
     if (cardTraitKey(card)) return staffWith(c, cardTraitKey(card)).length > 0;
     return true;
   }
   function pickMonthCard(c, cards, rnd, cfg) {
+    // bài bóc phốt đang chờ: lên ngay thẻ tháng kế tiếp sau đám (1–4 tuần sau đám, vì một tháng là 4 tuần)
+    if (c.scandal && c.scandal.state === "pending") { const k = cards.find(x => x.scandal); if (k) { c.scandal.state = "posted"; c.scandal.postedWeek = c.elapsedWeeks; return k; } }
     // thẻ "force" (Xin nghỉ đột xuất): mỗi tháng bật với xác suất = tổng điểm % của những người mang tính cách đó
     for (const k of cards.filter(x => x.force && cardTraitKey(x))) {
       const chance = staffSum(c, cardTraitKey(k)) / 100;
@@ -3628,11 +3662,90 @@ window.GAME_DATA = {
   const travelCost = (base, staffCount) => Math.round(base * (1 + staffCount * TRAVEL.perStaff));
   function noteProjectResult(c, stars) { if (stars <= SLOPPY.lostReferralStars) c.lostReferral = (c.lostReferral || 0) + 1; (c.doneMonths || (c.doneMonths = [])).push(c.monthNo); if (c.doneMonths.length > 12) c.doneMonths.shift(); }
   function takeLostReferral(c) { const n = c.lostReferral || 0; c.lostReferral = 0; return n; }
-  function recentReputation(c) { const st = (c.stars || []).slice(-6); return st.length ? st.reduce((s, x) => s + x, 0) / st.length + (c.repAdj || 0) : null; } // repAdj: danh tiếng chung bị chi nhánh kéo lên/xuống
+  function recentReputation(c, forDemand) { const st = (c.stars || []).slice(-6); return st.length ? st.reduce((s, x) => s + x, 0) / st.length + repAdjNow(c, forDemand) : null; } // repAdj: danh tiếng chung bị chi nhánh kéo lên/xuống; cộng phần bài bóc phốt còn hiệu lực
   function demandLevel(c) {
-    const r = recentReputation(c); if (r == null || (c.stars || []).length < DEMAND.minProjects) return "normal";
-    return r < DEMAND.shunned ? "shunned" : r < DEMAND.wary ? "wary" : "normal";
+    const r = recentReputation(c, true); const scandalWary = (c.scandalWaryUntil || 0) > (c.monthNo || 0);
+    if (r == null || (c.stars || []).length < DEMAND.minProjects) return scandalWary ? "wary" : "normal";
+    return r < DEMAND.shunned ? "shunned" : r < DEMAND.wary || scandalWary ? "wary" : "normal";
   }
+
+  // ---- Khách bóc phốt (Đợt 6, Thanh duyệt 13/11/2026) ----
+  // Hình hài thật của rủi ro "review xấu": thay phần phạt ẩn cũ (một đánh giá ≤2★ đẩy lén vào danh tiếng khi khách không tin lời giải thích
+  // về giá vendor). Đám có bài thì không trừ thêm lời giới thiệu theo luật "đám tệ" (SLOPPY), để không phạt hai lần.
+  // Hệ quả chỉ dùng thứ đã có: tiền, danh tiếng, khách lớn dè chừng (DEMAND "wary"), lời giới thiệu.
+  const SCANDAL = {
+    base: { 1: 0.45, 2: 0.25, 3: 0.06 },   // đám 4–5★ không bao giờ có bài
+    discovery: 0.18, discoveryRefunded: 0.05, // khách phát hiện chênh: không được hoàn / đã được hoàn một phần
+    missedKept: 0.06, missedCap: 4,         // mỗi việc đã hứa bị bỏ mà vẫn giữ nguyên phí
+    withheld: 0.12, cap: 0.85,              // khách đang giữ tiền
+    sev: { perStage: 0.15, demanding: 1.5 },// mức nặng: theo cấp sự nghiệp, luxury và đám cưới của năm nặng hơn
+    apology: { rep: -0.25, months: 2, unfair: 0.5 },
+    private: { base: 0.3, perShare: 2.5, blame: 0.35, min: 0.1, max: 0.85, refundBase: 0.08, refundBlame: 0.12, failRep: -0.45, failMonths: 4, failWary: 2, failRef: 1 },
+    crisis: { cost: 12, perStage: 8, expose: 0.12, exposeDiscovery: 0.25, exposeBlame: 0.15, exposedRep: -0.7, exposedMonths: 6, exposedWary: 3, exposedRef: 2 },
+    silence: { rep: -0.35, months: 3, wary: 2, waryDemanding: 1, ref: 1, sinkWeeks: 12 },
+    shares: 20, shareGrowth: 0.2
+  };
+  // soft: khoản trừ nhẹ khi planner nhận lỗi công khai: hiện ở số sao, nhưng không đủ làm khách lớn dè chừng (demandLevel bỏ qua)
+  const repAdjNow = (c, forDemand) => (c.repAdj || 0) + (c.scandalRep || []).filter(x => x.until > (c.monthNo || 0) && !(forDemand && x.soft)).reduce((s, x) => s + x.amt, 0);
+  const scandalSev = (stage, type) => (1 + SCANDAL.sev.perStage * (stage || 0)) * (["luxury", "boss"].includes(type) ? SCANDAL.sev.demanding : 1);
+  // Xác suất có bài, tính từ dữ liệu đám: số sao, khách phát hiện chênh, việc hứa bị bỏ mà vẫn giữ nguyên phí, khách đang giữ tiền.
+  function scandalChance(x) {
+    const b = SCANDAL.base[x.stars] || 0; if (!b) return 0;
+    let p = b + (x.discovery ? (x.refunded ? SCANDAL.discoveryRefunded : SCANDAL.discovery) : 0)
+      + (x.feeKept ? SCANDAL.missedKept * Math.min(x.missed || 0, SCANDAL.missedCap) : 0) + (x.withheld ? SCANDAL.withheld : 0);
+    return Math.min(SCANDAL.cap, Math.round(p * 1000) / 1000);
+  }
+  // Mức lỗi của planner (0..1): việc hứa bị bỏ, chênh bị phát hiện, sự cố ở phần planner lo; ngược lại sự cố thời tiết, vendor khách tự chọn,
+  // khách đòi ngoài hợp đồng không phải lỗi planner.
+  function scandalBlame(x) {
+    const mine = (x.missed || 0) + (x.discovery ? 2 : 0) + (x.crises || []).filter(k => k.planner).reduce((s, k) => s + (k.ok ? 0.3 : 1), 0);
+    const notMine = (x.crises || []).filter(k => !k.planner).length + (x.dispute ? 1 : 0);
+    return mine + notMine ? Math.round(mine / (mine + notMine) * 100) / 100 : 0.5;
+  }
+  // Tiền của hai lựa chọn tốn tiền: hoàn phí riêng tăng theo phí và mức lỗi; đội khủng hoảng tăng theo quy mô thương hiệu.
+  const scandalRefund = s => Math.max(1, Math.round(s.fee * (SCANDAL.private.refundBase + SCANDAL.private.refundBlame * s.blame) * 10) / 10);
+  const scandalCrisisCost = (s, stage) => Math.round((SCANDAL.crisis.cost + SCANDAL.crisis.perStage * (stage || 0)) * (s.demanding ? SCANDAL.sev.demanding : 1));
+  const scandalAgree = s => { const P = SCANDAL.private; return Math.max(P.min, Math.min(P.max, P.base + P.perShare * scandalRefund(s) / Math.max(1, s.fee) - P.blame * s.blame)); };
+  const scandalExpose = s => { const K = SCANDAL.crisis; return Math.max(0.05, Math.min(0.6, K.expose + (s.discovery && !s.refunded ? K.exposeDiscovery : 0) + K.exposeBlame * s.blame)); };
+  // Áp một lựa chọn. rnd(key) cho số 0..1 cố định theo save, nên cùng đám cùng lựa chọn luôn ra cùng kết quả.
+  function resolveScandal(c, choice, rnd) {
+    const s = c.scandal; if (!s || s.state !== "posted") return null;
+    const m = c.monthNo || 0, sev = s.sev, ev = { choice, cash: 0, rep: 0, months: 0, wary: 0, ref: 0, removed: false, ok: true };
+    const rep = (amt, months, soft) => { if (!amt) return; ev.rep = Math.round(amt * sev * 100) / 100; ev.months = months; c.scandalRep.push({ amt: ev.rep, until: m + months, soft: !!soft }); };
+    if (choice === "apology") { const A = SCANDAL.apology; rep(A.rep * (s.blame < 0.4 ? A.unfair : 1), A.months, true); ev.unfair = s.blame < 0.4; }
+    else if (choice === "private") {
+      const R = scandalRefund(s); if (c.cash < R) return { refused: true, need: R };
+      ev.p = scandalAgree(s); ev.ok = rnd(`scandal:private:${s.id}`) < ev.p;
+      if (ev.ok) { cash(c, -R, "scandal", "Hoàn phí riêng để khách gỡ bài"); ev.cash = -R; ev.removed = true; }
+      else { const P = SCANDAL.private; rep(P.failRep, P.failMonths); ev.wary = P.failWary; ev.ref = P.failRef; }
+    } else if (choice === "crisis") {
+      const K = scandalCrisisCost(s, c.stage); if (c.cash < K) return { refused: true, need: K };
+      cash(c, -K, "scandal", "Thuê đội xử lý khủng hoảng truyền thông"); ev.cash = -K;
+      ev.p = scandalExpose(s); ev.ok = rnd(`scandal:crisis:${s.id}`) >= ev.p;
+      if (ev.ok) ev.removed = true; else { const X = SCANDAL.crisis; rep(X.exposedRep, X.exposedMonths); ev.wary = X.exposedWary; ev.ref = X.exposedRef; }
+    } else if (choice === "silence") { const S = SCANDAL.silence; rep(S.rep, S.months); ev.wary = S.wary + (s.demanding ? S.waryDemanding : 0); ev.ref = S.ref; }
+    else return null;
+    if (ev.wary) c.scandalWaryUntil = Math.max(c.scandalWaryUntil || 0, m + ev.wary);
+    if (ev.ref) c.lostReferral = (c.lostReferral || 0) + ev.ref;
+    s.state = "done"; s.choice = choice; s.outcome = ev; s.choiceWeek = c.elapsedWeeks;
+    return ev;
+  }
+  // Số tương tác của bài theo thời gian và theo lựa chọn: im lặng thì lượt chia sẻ tăng dần tới khi bài chìm.
+  function scandalNumbers(s, weekNow) {
+    if (!s) return null;
+    const w = Math.max(0, weekNow - (s.postedWeek || 0)), o = s.outcome || {};
+    if (o.removed) return { removed: true, reactions: 0, comments: 0, shares: 0 };
+    const S0 = Math.round(SCANDAL.shares * s.sev * Math.max(1, 4 - s.stars));
+    const grow = until => S0 * (1 + SCANDAL.shareGrowth * Math.min(w, until));
+    let shares;
+    if (!s.choice) shares = grow(w);
+    else if (s.choice === "silence") shares = grow(SCANDAL.silence.sinkWeeks);
+    else { const at = Math.max(0, (s.choiceWeek || 0) - (s.postedWeek || 0)); shares = grow(at) * (o.ok === false ? 2 : 1) + (o.ok === false ? S0 * SCANDAL.shareGrowth * Math.min(Math.max(0, w - at), 8) : 0); }
+    shares = Math.round(shares);
+    const extra = s.choice === "apology" ? 1.4 : o.ok === false ? 1.6 : 1;
+    return { removed: false, shares, reactions: Math.round((shares * 6 + 30) * extra), comments: Math.round((shares * 2 + 12) * extra), sunk: s.choice === "silence" && w >= SCANDAL.silence.sinkWeeks };
+  }
+
 
   function takeLoan(c, terms) {
     if (c.loan) return null;
@@ -3860,7 +3973,7 @@ window.GAME_DATA = {
   }
   const receivableTotal = c => r1((c.receivables || []).reduce((s, x) => s + x.amount, 0));
 
-  root.WP_CORE = { IDENTITY, initIdentity, identityLevel, identityFx, cleanBrandName, startIdentity, identityTick, LUXURY_SERVICE, luxuryServiceCost, LUXURY_EXPECT, premiumExpectFor, cardSpeaker, cardStaff, loseContact, vendorSurchargeFor, cardOk, BRANCH, branchMonthlyCost, branchGate, canManage, openBranch, branchResult, branchMonth, pickBranchCard, closeBranch, applyBranchOption, addRep, registerTraits, traitOf, staffFx, staffSum, staffWith, pickQuitter, nextQuitter, leaveRisk, MORALE, addMorale, changeMorale, staffMonth, cardTraitKey, HIRING, onProbation, severanceFor, initSide, sideOffers, workSideDay, settleSideReceivables, recordPayable, payDuePayables, payableTotal, advanceRoom, STAFF, salaryAt, TRAVEL, travelCost, clientShares, DAYOF_SEASON, dayofAvailable, cardOptions, SLOPPY, withholdShare, noteProjectResult, takeLostReferral, DEMAND, recentReputation, demandLevel, OFFER_GATES, BIG_WEDDING, HIRE_GATE, STUDIO, offerAllowed, fallbackType, bigWeddingAllowed, canHire, studioActive, officeHint, ACTION_COSTS, actionMoneyCost, applyActionCost, DISCOVERY, marginDiscovery, grantMonthlyContact, chooseContact, assignVendorContact, vendorContactFor, useVendorContact, knowVendor, refreshOfferBonus,
+  root.WP_CORE = { SCANDAL, repAdjNow, scandalSev, scandalChance, scandalBlame, scandalRefund, scandalCrisisCost, scandalAgree, scandalExpose, resolveScandal, scandalNumbers, IDENTITY, initIdentity, identityLevel, identityFx, cleanBrandName, startIdentity, identityTick, LUXURY_SERVICE, luxuryServiceCost, LUXURY_EXPECT, premiumExpectFor, cardSpeaker, cardStaff, loseContact, vendorSurchargeFor, cardOk, BRANCH, branchMonthlyCost, branchGate, canManage, openBranch, branchResult, branchMonth, pickBranchCard, closeBranch, applyBranchOption, addRep, registerTraits, traitOf, staffFx, staffSum, staffWith, pickQuitter, nextQuitter, leaveRisk, MORALE, addMorale, changeMorale, staffMonth, cardTraitKey, HIRING, onProbation, severanceFor, initSide, sideOffers, workSideDay, settleSideReceivables, recordPayable, payDuePayables, payableTotal, advanceRoom, STAFF, salaryAt, TRAVEL, travelCost, clientShares, DAYOF_SEASON, dayofAvailable, cardOptions, SLOPPY, withholdShare, noteProjectResult, takeLostReferral, DEMAND, recentReputation, demandLevel, OFFER_GATES, BIG_WEDDING, HIRE_GATE, STUDIO, offerAllowed, fallbackType, bigWeddingAllowed, canHire, studioActive, officeHint, ACTION_COSTS, actionMoneyCost, applyActionCost, DISCOVERY, marginDiscovery, grantMonthlyContact, chooseContact, assignVendorContact, vendorContactFor, useVendorContact, knowVendor, refreshOfferBonus,
     TERMS, OFFICES, LIVING, LOAN, officeOf, livingOf, monthlyParts, monthlyOperatingCost, setOffice, setLiving, pickMonthCard, applyCardOption, cardPending, runScheduled, topCauses, checkBankruptcy, CAUSE_LABEL, newProjectFinance, projectCash, signClientContract, collectClientTranche, midDueWeek, vendorDepositFor, previewBook, bookVendor, bookEmergency,
     vendorBalance, payVendorBalance, dropVendor, requestClientAdvance, collectFinalPayment, recordReceivable, collectReceivable, writeOffReceivable, receivableTotal, WEEKS_PER_MONTH, initCareer, monthWeek, cash, chargeMonthlyOperatingCost, processLoan, beginMonth, closeMonth, advanceCalendarWeek, takeLoan };
 })(typeof window !== "undefined" ? window : globalThis);
@@ -9353,6 +9466,103 @@ window.WP_COPY = {
   Object.keys(BRIEFS).forEach(k => { ALL_BRIEFS[k] = [BRIEFS[k]].concat((X.briefs || {})[k] || []); });
   // One strategic decision per prep week. phase: which week it can land in; when: extra condition; risks: crisis odds tied to a choice.
   // Lý do bằng lời cho nhãn cảm xúc của từng lựa chọn sự cố (sửa 3.7.0, mục 1.2): hiện ngay dưới nhãn, để hai lựa chọn không bao giờ trông giống hệt nhau.
+  // ---- Khách bóc phốt (Đợt 6) · câu chữ do em viết, chờ Thanh duyệt (docs/review/3.9.0/cau_chu_boc_phot_de_duyet.md) ----
+  // {brand}: tên thương hiệu, chưa có thì tên planner · {bride}: tên cô dâu · {x}: chuyện đã xảy ra · {list}: các việc đã hứa bị bỏ
+  // {cat}: hạng mục bị phát hiện chênh · {gap}: số tiền chênh · {tag}: tên bạn được tag. Không tục, không tên thương hiệu hay địa danh thật.
+  const SCANDAL_TEXT = {
+    group: "Hội Cô Dâu {city}",
+    card: { title: "Khách bóc phốt", speaker: "{bride} · {group}" },
+    open: {
+      1: ["Bóc phốt {brand}, chị em sắp cưới đọc kỹ giùm mình.", "Đám cưới của mình là một kỷ niệm tệ, và mình nghĩ mọi người nên biết vì sao.", "Mình không định lên đây đâu, nhưng nuốt không trôi nữa rồi."],
+      2: ["Review thật về {brand}, dài nhưng mong chị em đọc hết.", "Đám cưới của mình vừa xong, nghĩ mãi mới quyết định viết bài này.", "Chia sẻ trải nghiệm thuê planner, để ai sắp cưới cân nhắc."],
+      3: ["Review {brand}: không tệ, nhưng có mấy chuyện mình thấy cần nói.", "Viết cho công bằng: {brand} có làm được việc, nhưng mấy chuyện này thì mình không vui."]
+    },
+    line: {
+      // Sự cố kể theo đúng lễ xảy ra. "first" mở phần kể (không bao giờ là câu nối); "next" chỉ dùng từ sự cố thứ hai,
+      // "fromEngagement" khi sự cố trước đó ở lễ ăn hỏi còn sự cố này ở tiệc cưới.
+      // Lễ ăn hỏi diễn ra ở nhà: không "sảnh", không "ngày cưới".
+      crisisBad: {
+        ENGAGEMENT: {
+          first: ["Hôm đó ở nhà, {x}, cả nhà cuống lên mà không biết hỏi ai.", "Lúc nhà trai qua thì {x}, mình đứng ngay cửa mà không biết hỏi ai."],
+          next: ["Rồi trước giờ rước, {x}, cả nhà nhìn nhau ngơ ngác.", "Đỉnh điểm là lúc nhà trai qua thì {x}, cả nhà nhìn nhau ngơ ngác."]
+        },
+        WEDDING: {
+          first: ["Ngày cưới thì {x}, mình đứng giữa sảnh mà không biết hỏi ai.", "Hôm tiệc cưới, {x}, mình đứng giữa sảnh mà không biết hỏi ai."],
+          next: ["Đỉnh điểm là {x}, cả nhà nhìn nhau ngơ ngác.", "Rồi {x}, khách bắt đầu xì xào."],
+          fromEngagement: ["Đỉnh điểm là tới tiệc cưới thì {x}, cả nhà nhìn nhau ngơ ngác.", "Rồi tới tiệc cưới thì {x}, khách bắt đầu xì xào."]
+        }
+      },
+      crisisOk: {
+        ENGAGEMENT: {
+          first: ["Hôm đó ở nhà, {x}, ekip có chạy lo nhưng mình vẫn hoảng một phen.", "Trước giờ rước thì {x}, may là ekip lo kịp."],
+          next: ["Rồi lúc nhà trai qua, {x}, may là cuối cùng cũng xong.", "Rồi trước giờ rước, {x}, ekip lo được nhưng mình vẫn thót tim."]
+        },
+        WEDDING: {
+          first: ["Hôm tiệc cưới, {x}, ekip có chạy lo nhưng mình vẫn hoảng một phen.", "Ngày cưới thì {x}, may là ekip xử lý kịp."],
+          next: ["Rồi {x}, may là cuối cùng cũng xong.", "Rồi giữa tiệc, {x}, ekip lo được nhưng mình vẫn thót tim."],
+          fromEngagement: ["Rồi tới tiệc cưới, {x}, may là cuối cùng cũng xong.", "Tới tiệc cưới thì {x}, ekip lo được nhưng mình vẫn thót tim."]
+        }
+      },
+      notMine: ["Chuyện {x} thì mình biết không ai muốn, nhưng mình nghĩ phải có phương án sớm hơn.", "Ừ thì {x} là chuyện xui, nhưng ít ra cũng phải báo nhà mình trước."],
+      missed: ["Trong gói ghi rõ {list}, mà tới cuối cùng không ai làm. Hỏi lại thì bảo bận.", "Mấy việc hứa trong hợp đồng như {list} thì coi như không có."],
+      missedKept: ["Nhà mình xin giảm chút phí vì mấy việc đó thì bên kia nhất quyết giữ nguyên.", "Đã bỏ việc rồi mà phí vẫn giữ y nguyên, nói sao cũng không bớt."],
+      discovery: ["Mình tự hỏi giá bên ngoài mới biết {cat} rẻ hơn dự toán cả {gap}. Hỏi thì được giải thích là công điều phối.", "Tình cờ mình biết {cat} báo giá cao hơn ngoài thị trường {gap}. Cảm giác bị coi như người không biết gì."],
+      withheld: ["Tới giờ hai bên vẫn chưa xong chuyện tiền nong.", "Phần tiền cuối nhà mình vẫn đang giữ, vì chưa thấy thoả đáng."],
+      dispute: ["Phát sinh thêm chút xíu cũng bắt nhà mình trả.", "Có khoản phát sinh mà nhà mình bị đẩy trả hết."],
+      generic: ["Nhiều chuyện nhỏ cộng lại, ngày vui của nhà mình không như mong đợi."]
+    },
+    close: ["Mình viết để chị em sắp cưới cân nhắc. Ai từng thuê {brand} cho mình hỏi có phải mình xui không?", "Chỉ mong ai đọc được thì chọn kỹ hơn mình.", "Mình không cần gì nhiều, chỉ muốn một lời xin lỗi đàng hoàng."],
+    names: ["Ngọc Anh", "Thu Trang", "Minh Thư", "Bảo Ngọc", "Hải Yến", "Quỳnh Như", "Phương Linh", "Khánh Vy", "Thanh Hà", "Mỹ Duyên", "Tường Vi", "Diệu Linh", "Hoài An", "Kim Ngân", "Gia Hân", "Hồng Nhung", "Đức Anh", "Quốc Bảo", "Thảo My", "Lan Chi", "Tuấn Kiệt", "Bích Phương"],
+    // các kiểu cư dân mạng
+    comment: {
+      hong: ["Chấm hóng.", "Hóng phản hồi từ bên kia.", "Lưu lại đọc sau.", "Ngồi hóng tiếp nè."],
+      tag: ["{tag} đọc nè, tháng sau tụi mình cưới rồi đó.", "{tag} ơi bên này mình định ký đó, coi lại đi."],
+      hired: ["Mình cũng từng thuê bên này, hồi đó cũng gặp chuyện y chang.", "Đám mình năm ngoái cũng bị vậy, mà mình ngại không nói."],
+      defend: ["Mình thuê {brand} hồi trước, làm ổn mà, chắc lần này xui.", "Ngày cưới chuyện gì cũng có thể xảy ra, nghe cả hai bên rồi hãy kết luận nha mọi người."],
+      askname: ["Xin tên planner chị ơi.", "Cho mình xin tên để tránh với."],
+      share: ["Chia sẻ cho chị em tránh.", "Chia sẻ về tường để bạn bè sắp cưới đọc."]
+    },
+    reply: {
+      askname: ["Mình ghi trong bài rồi đó: {brand}."], // chỉ khi thân bài thật sự có tên
+      asknameNoName: ["Bên {brand} đó chị."],
+      defend: ["Bạn là người quen bên đó hả?", "Mỗi người một trải nghiệm thôi, đừng cãi nhau nha."],
+      hired: ["Trời, vậy là không phải lần đầu.", "Sao hồi đó không lên tiếng chị ơi."]
+    },
+    // sau từng lựa chọn
+    after: {
+      apology: {
+        planner: "{brand} xin lỗi {bride} và gia đình. Tụi mình đã sai ở chuyện {issue}, và sẽ rà lại cách làm việc để không lặp lại chuyện này.",
+        plannerUnfair: "{brand} xin lỗi {bride} và gia đình vì ngày vui không trọn vẹn. Có phần do chuyện {issue} nằm ngoài tầm tay, nhưng tụi mình nhận trách nhiệm phần của mình và sẽ chuẩn bị phương án kỹ hơn.",
+        comments: ["Thái độ vậy là ổn, ai mà không có lúc sai.", "Nhận lỗi đàng hoàng vậy mình lại thấy tin hơn.", "Mong là làm được như nói."],
+        commentsUnfair: ["Đọc kỹ thì có phần đâu phải lỗi planner, mà người ta vẫn xin lỗi."],
+        commentsRain: ["Chuyện trời mưa mà cũng đổ hết cho planner thì hơi quá."] // chỉ khi đám có sự cố thời tiết thật
+      },
+      privateFail: {
+        update: "Cập nhật: planner nhắn riêng xin gỡ bài, còn đề nghị hoàn tiền nữa. Mình không cần tiền, mình cần một lời xin lỗi công khai.",
+        comments: ["Nhắn riêng ép gỡ bài là sao vậy trời.", "Càng làm vậy càng mất điểm.", "Lên đây xin lỗi đàng hoàng có phải hơn không."]
+      },
+      crisisExposed: {
+        update: "Cảm ơn mọi người. Mình cũng thấy mấy bình luận lạ vào bênh, thôi để mọi người tự đánh giá.",
+        comments: ["Ủa sao toàn nick mới tạo vào khen vậy?", "Có người chụp được mấy nick khen là cùng một đội đó mọi người.", "Bơm bình luận lộ liễu quá, mất hết thiện cảm."]
+      },
+      silence: { comments: ["Bên kia im re luôn hả?", "Im lặng là hiểu rồi đó.", "Bài này lên đầu group rồi nè."] },
+      removed: "Bài viết không còn tồn tại"
+    },
+    // bốn lựa chọn trên thẻ tháng: được gì, mất gì
+    option: {
+      apology: { label: "Đăng bài công khai nhận trách nhiệm", note: "Không tốn tiền. Tiếng giảm nhẹ khoảng 2 tháng rồi hồi; cộng đồng đánh giá thái độ.", unfair: " Đám này phần lớn lỗi không do bạn, nên vẫn giữ được tiếng nhưng mất oan một chút." },
+      private: { label: "Nhắn riêng xin gỡ bài, hoàn phí {refund}", note: "Mất {refund} nếu khách nhận. Khả năng khách đồng ý khoảng {p}%. Khách không chịu thì có thể chụp tin nhắn đăng tiếp, bài lan rộng hơn ban đầu." },
+      crisis: { label: "Thuê đội xử lý khủng hoảng truyền thông · {cost}", note: "Tốn {cost}, thường dập được bài. Khoảng {p}% bị lộ đội vào bơm bình luận, khi đó phản tác dụng nặng.", discovery: " Cao hơn vì đám này từng bị phát hiện ăn chênh." },
+      silence: { label: "Im lặng", note: "Không tốn gì. Bài chìm sau khoảng 3 tháng; trong thời gian đó khách lớn ít tìm tới, và mất một lời giới thiệu." }
+    },
+    log: {
+      posted: "Khách đám {couple} đăng bài bóc phốt trong {group}.",
+      apology: "Đăng bài nhận trách nhiệm: cộng đồng thấy thái độ, tiếng chỉ giảm nhẹ một thời gian.",
+      privateOk: "Khách nhận khoản hoàn và gỡ bài.", privateFail: "Khách không chịu gỡ, còn chụp tin nhắn đăng tiếp. Bài lan rộng hơn.",
+      crisisOk: "Đội xử lý dập được bài.", crisisExposed: "Đội xử lý bị lộ bơm bình luận. Bài phản tác dụng nặng.",
+      silence: "Im lặng. Bài sẽ chìm sau vài tuần, khách lớn dè chừng một thời gian."
+    }
+  };
   // "Sau đám cưới" (Đợt 4). WITNESS: chuyện người trong cuộc tận mắt thấy, viết như chuyện đã xảy ra.
   // Lựa chọn nào chỉ là chuyện nội bộ của planner (kèm cặp nhân viên, tổng duyệt của team, giữ hợp đồng với vendor, ăn chênh) thì không có ở đây,
   // nên không ai nhắc tới. Không bao giờ có giá vendor, phí, người đi thay.
@@ -9747,7 +9957,10 @@ window.WP_COPY = {
         { id: "skip", label: "Năm nay không tham gia", note: "Không tốn tiền. Vắng mặt nên ít người nhắc tới: mất một mối quen đang có, nếu chưa có thì danh tiếng giảm.", loseContact: "rep" }
       ] },
     // ---- Gói F: 6 thẻ mới (nạp từ docs/content bằng tools/import_gpt.py) ----
-    ...GPT.monthCards
+    ...GPT.monthCards,
+    // Khách bóc phốt (Đợt 6): không bao giờ bốc ngẫu nhiên; chỉ lên khi có bài đang chờ (CORE.pickMonthCard). Chữ và lựa chọn ở SCANDAL_TEXT.
+    { id: "boc_phot", scandal: true, weight: 0, who: "client", title: "Khách bóc phốt", text: "",
+      options: [{ id: "apology", label: "Đăng bài công khai nhận trách nhiệm" }, { id: "private", label: "Nhắn riêng xin gỡ bài" }, { id: "crisis", label: "Thuê đội xử lý khủng hoảng" }, { id: "silence", label: "Im lặng" }] }
   ];
   // Câu hệ quả cho các thẻ tháng của gói F (sửa 3.7.0, mục 1.11): file GPT chỉ có "result" (hiện sau khi chọn), nên trước khi chọn
   // người chơi không đọc được gì. Ghi ở đây, không sửa khối GPT, để lần nhập lại sau không xoá mất.
@@ -9760,6 +9973,8 @@ window.WP_COPY = {
     agency_venue_preferred_dates: { o1: "Đứng tên đồng tổ chức buổi giới thiệu: danh tiếng nhích lên, và tháng sau anh Vũ thành mối quen vendor.", o2: "Góp ít, không đứng tên. Tháng sau anh Vũ vẫn thành mối quen vendor.", o3: "Không tốn tiền, không thêm mối quen nào." }
   };
   MONTH_CARDS.forEach(k => (k.options || []).forEach(o => { if (!o.note && (CARD_NOTES[k.id] || {})[o.id]) o.note = CARD_NOTES[k.id][o.id]; }));
+  // thẻ bóc phốt: câu "được gì, mất gì" lấy từ SCANDAL_TEXT; số tiền, phần trăm do game điền lúc vẽ thẻ
+  MONTH_CARDS.filter(k => k.scandal).forEach(k => k.options.forEach(o => { o.note = SCANDAL_TEXT.option[o.id].note; }));
 
   // ---- Đi làm thêm (đặc tả Làm thêm · Nhân sự · Chi nhánh, mục 1; thay hoàn toàn CTV) ----
   // Mỗi việc một ngày; đủ daysPerWeek ngày thì lịch qua một tuần. Mỗi bên thuê có tính cách cố định trong save (chọn theo trọng số w).
@@ -9873,7 +10088,7 @@ window.WP_COPY = {
     sign: { basic: "Giấy viết tay", ok: "Bảng in", polished: "Logo có đèn" }
   };
 
-  root.WP_CAREER = { IDENTITY_TEXT, COORD_WISHES, WITNESS, AFTER_TEXT, CRISIS_MOOD, CRISIS_REASONS, OVERSEAS_VENDORS: GPT.overseasVendors, BRANCH_CARDS, BRANCH_TEXT, SIDE_JOBS, MONTH_CARDS, STAGES, ROLES, STAFF_TRAITS, TRAIT_FX, CANDIDATES, MORALE, HIRING, STAFF_NAMES, BRANDS, COUPLES: ALL_COUPLES, TRAITS: ALL_TRAITS, TYPES, CONTRACTS, BRIEFS: ALL_BRIEFS, CLIENTS, EXTRA_CRISES: X.crises || [], EXTRA_REACTIONS: X.reactions || {}, DESTS, CITIES, transitionMonths, OVERSEAS, DEST_FEES, SEASONS, SKILLS, DILEMMAS, monthInfo };
+  root.WP_CAREER = { SCANDAL_TEXT, IDENTITY_TEXT, COORD_WISHES, WITNESS, AFTER_TEXT, CRISIS_MOOD, CRISIS_REASONS, OVERSEAS_VENDORS: GPT.overseasVendors, BRANCH_CARDS, BRANCH_TEXT, SIDE_JOBS, MONTH_CARDS, STAGES, ROLES, STAFF_TRAITS, TRAIT_FX, CANDIDATES, MORALE, HIRING, STAFF_NAMES, BRANDS, COUPLES: ALL_COUPLES, TRAITS: ALL_TRAITS, TYPES, CONTRACTS, BRIEFS: ALL_BRIEFS, CLIENTS, EXTRA_CRISES: X.crises || [], EXTRA_REACTIONS: X.reactions || {}, DESTS, CITIES, transitionMonths, OVERSEAS, DEST_FEES, SEASONS, SKILLS, DILEMMAS, monthInfo };
 })(typeof window !== "undefined" ? window : globalThis);
 
 </script>
@@ -9989,7 +10204,7 @@ window.WP_COPY = {
   const fillId = (t, v = {}) => String(t).replace(/\{(\w+)\}/g, (m, k) => (k === "brand" ? brandOr() : v[k] != null ? v[k] : m));
   function avgStars() {
     const st = state.career.stars.slice(-6); if (!st.length) return 0;
-    const a = st.reduce((s, x) => s + x, 0) / st.length + (state.career.repAdj || 0); // chi nhánh kéo danh tiếng chung lên/xuống
+    const a = st.reduce((s, x) => s + x, 0) / st.length + CORE.repAdjNow(state.career); // chi nhánh và bài bóc phốt còn hiệu lực kéo danh tiếng chung lên/xuống
     return state.career.stage >= 1 ? Math.max(2.5, a) : a;
   }
   function goalRows(goal) {
@@ -10124,7 +10339,7 @@ window.WP_COPY = {
       else { // khách không tin: trừ thẳng toàn bộ phần chênh vào đợt cuối, mất lòng, thêm review xấu
         const amt = Math.round(d.gap); state.disputePaid += amt; if (state.fin) state.fin.extraDue -= amt;
         state.grievances += 2; state.coupleScore -= 4; state.familyScore -= 6; state.badReview = true;
-        d.out = `Khách không tin và trừ thẳng ${money(amt)} vào đợt cuối. Hai họ mất lòng, đám này để lại thêm một review xấu.`; state.ledger.push({ label: "Khách không tin lời giải thích về giá vendor", c: -4, f: -6 });
+        d.out = `Khách không tin và trừ thẳng ${money(amt)} vào đợt cuối. Hai họ mất lòng, và khách dễ lên group bóc phốt hơn.`; state.ledger.push({ label: "Khách không tin lời giải thích về giá vendor", c: -4, f: -6 });
       }
       d.ok = ok;
     } else if (id === "feecut") { // giảm 10% phí planning: trừ vào đợt cuối khách trả
@@ -10155,6 +10370,7 @@ window.WP_COPY = {
   function resolveCard(optId) {
     const c = state.career, card = monthCard(); if (!card || !cardPending()) return;
     if (c.card.branch) return resolveBranchCard(card, optId);
+    if (card.scandal) return resolveScandalCard(optId);
     const ev = CORE.applyCardOption(c, card, optId, CAL.rnd); if (!ev) return;
     if (ev.type === "cardRefused") return toast(`Thiếu ${cashStr(ev.short)}`, "warn");
     const o = CORE.cardOptions(c, card).find(x => x.id === optId);
@@ -10439,7 +10655,7 @@ window.WP_COPY = {
         <div class="row-between"><b>${esc(q.name)}</b><span class="big-num">${money(q.fee)}</span></div>
         <small>Cam kết ${q.contracted.length} việc${q.removed.length ? ` · bỏ ${esc(q.removed.map(actionTitle).join(", ").toLowerCase())}` : ""}${q.added.length ? ` · thêm ${esc(q.added.map(actionTitle).join(", ").toLowerCase())}` : ""}</small>
         <div class="chips">${q.notes.map(n => `<span class="${q.level === "high" ? "neg" : q.level === "low" ? "pos" : ""}">${esc(n)}</span>`).join("")}</div>
-        ${(L => `<small class="load">Cần khoảng ${L.need} lượt · bạn có ${L.have}, thuê thêm tối đa ${L.extra}</small>${L.short ? `<small class="load neg">Không kịp làm đủ</small>` : ""}`)(quoteLoad(o, q))}</button>`).join("")}</div>`;
+        ${(L => `<small class="load">Cần khoảng ${L.need} lượt · bạn có ${L.have}, thuê thêm tối đa ${L.extra}</small>${L.short ? `<small class="load neg">Không kịp làm đủ</small>` : L.need > L.have ? `<small class="load warn">Phải thuê khoảng ${L.need - L.have} freelancer (~${money((L.need - L.have) * CFG.time.freelancer.cost)})</small>` : ""}`)(quoteLoad(o, q))}</button>`).join("")}</div>`;
   }
   function takeOffer(arg) {
     const [idx, level = "mid"] = String(arg).split(":"); const i = Number(idx);
@@ -10614,7 +10830,13 @@ window.WP_COPY = {
     for (let i = 0; i < weight; i++) c.stars.push(r.stars);
     CORE.noteProjectResult(c, r.stars); // đám tệ: mất một lời giới thiệu ở lần làm mới kế tiếp
     if (c.done % 2 === 0 && fxNow("referral2")) { c.offerBonusPending = (c.offerBonusPending || 0) + fxNow("referral2"); log("Khách cũ giới thiệu người quen tới hỏi dịch vụ.", "good"); } // giữ khách cũ: mỗi 2 đám một lời giới thiệu
-    if (state.badReview) c.stars.push(Math.min(r.stars, 2)); // khách không tin lời giải thích về giá: thêm một review xấu
+    // Khách bóc phốt (Đợt 6) thay phần phạt ẩn cũ (một đánh giá ≤2★ đẩy lén khi khách không tin lời giải thích về giá vendor).
+    // Có bài thì bài lên ở thẻ tháng kế tiếp; đám đó không trừ thêm lời giới thiệu theo luật "đám tệ", để không phạt hai lần.
+    { const snap = scandalSnapshot(r), pBoc = CORE.scandalChance({ ...snap, missed: snap.missed.length });
+      if ((!c.scandal || c.scandal.state === "done") && pBoc > 0 && E.rng(hash(`${state.seed}:${o.id}:boc`))() < pBoc) {
+        c.scandal = { ...snap, state: "pending", p: pBoc };
+        if (r.stars <= CORE.SLOPPY.lostReferralStars) c.lostReferral = Math.max(0, (c.lostReferral || 0) - 1);
+      } }
     c.history.unshift({ couple: o.couple, type: o.type, stars: r.stars, profit: Math.round(r.profit), location: o.location, low: state.fin ? state.fin.low : null });
     if (o.type === "boss") c.bossDone = true;
     log(`Xong đám ${o.couple}: ${r.stars}★, ${r.profit >= 0 ? "lời" : "lỗ"} ${money(Math.abs(r.profit))}.`, r.stars >= 4 ? "good" : r.stars <= 2 ? "bad" : "info");
@@ -10770,6 +10992,7 @@ window.WP_COPY = {
     return `<section class="stack">
       ${cardPending() ? monthCardHtml() : ""}
       ${c.stage >= 4 && c.bossDone && !c.endSeen ? `<div class="card moment"><span class="eyebrow">Hết chặng đầu</span><h2 class="h big">${brandName() ? `${esc(brandName())} đã có tên` : "Agency của bạn đã có tên"}</h2><p>${c.done} đám cưới, danh tiếng ${avgStars().toFixed(1)}★, quỹ ${money(c.cash)}. Bạn vẫn có thể tiếp tục nhận khách.</p><button class="btn" data-act="endSeen">Tiếp tục làm nghề</button></div>` : ""}
+      ${scandalHubLine()}
       <button class="hubline" data-act="sheet" data-id="career"><span>Quỹ <b class="${c.cash < 0 ? "neg" : ""}">${money(c.cash)}</b></span><span>Cấp <b>${c.stage + 1}/5</b></span><span>${next ? (goalMet(next.goal) ? `<b>Đủ điều kiện lên cấp</b>` : `Lên cấp: thiếu <b>${goalLines(next.goal).filter(x => !x.ok).length}</b>`) : `<b>${c.done}</b> đám`}</span>${canHire ? `<em>Tuyển được người</em>` : ""}<i class="chev">›</i></button>
         ${c.canUpgrade && next ? `<button class="btn primary" data-act="upgrade">Lên ${esc(next.name)}</button>` : ""}
         ${c.pendingBrand ? `<button class="btn primary" data-act="sheet" data-id="brand">Chọn hướng thương hiệu</button>` : ""}
@@ -10989,7 +11212,7 @@ window.WP_COPY = {
   // Bản cùng cấu trúc lưu: đọc thẳng, không chuyển đổi. 3.7.1–3.7.3 chỉ sửa giao diện; trường mới (warned, markSrc, sideWeek) đều có giá trị mặc định.
   // 3.7.4–3.7.5 không thêm trường lưu nào; nhãn "planner điều phối được" của mong muốn dựng lại từ dữ liệu khi nạp.
   // 3.8.0 thêm tên thương hiệu và nhận diện: save cũ có tên trống, nhận diện "cơ bản" (CORE.initIdentity); đã qua mốc chọn hướng thì lần mở tới hỏi đặt tên một lần.
-  const SAME_SHAPE = ["3.7.0", "3.7.3", "3.7.5", "3.8.0"]; // 3.8.1 chỉ đổi giao diện màn chuẩn bị và lượt cần: không thêm trường lưu
+  const SAME_SHAPE = ["3.7.0", "3.7.3", "3.7.5", "3.8.0", "3.8.1"]; // 3.9.0 thêm career.scandal / scandalRep / scandalWaryUntil, đều có mặc định trong CORE.initCareer // 3.8.1 chỉ đổi giao diện màn chuẩn bị và lượt cần: không thêm trường lưu
   const OFFICE_BY_OLD_STAGE = ["home", "cowork", "small", "studio", "studio"];
   function migrate(old, from) {
     const s = { ...fresh(), ...old, sheet: null };
@@ -11395,7 +11618,7 @@ window.WP_COPY = {
       return [
         { id: "accept", title: `Đồng ý giảm ${item.pct}% ${feeName()}`, note: `Mất ~${cashStr(fee * item.pct / 100)}, khách thấy được tôn trọng`, feePct: item.pct, c: 3, f: 3, reply: "Cảm ơn bạn đã nhận trách nhiệm. Tụi mình sẽ giới thiệu bạn bè." },
         { id: "negotiate", title: `Thương lượng xuống ${half}%`, note: `Mất ~${cashStr(fee * half / 100)}. ${soft ? "Khách còn khá vui, dễ đồng ý" : "Khách đang bực, mặc cả lúc này dễ mất lòng"}`, feePct: half, c: soft ? 0 : -4, f: soft ? 0 : -4, reply: soft ? "Ừ, vậy cũng được." : "Thôi được, nhưng tụi mình hơi buồn đó." },
-        { id: "refuse", title: `Giữ nguyên ${feeName()}`, note: "Giữ đủ tiền, rủi ro bị review xấu", feePct: 0, c: -8, f: -6, reply: "Vậy là hết sự cố cũng không ai chịu sao…" }
+        { id: "refuse", title: `Giữ nguyên ${feeName()}`, note: "Giữ đủ tiền; khách bực có thể lên group bóc phốt", feePct: 0, c: -8, f: -6, reply: "Vậy là hết sự cố cũng không ai chịu sao…" }
       ];
     }
     const x = item.amount;
@@ -12045,7 +12268,7 @@ window.WP_COPY = {
     if (d.pick) return `<div class="card decision done"><span class="eyebrow">✓ Khách hỏi về giá ${esc(lower(d.label))}</span><b>${{ refund: "Hoàn lại một phần", explain: "Giải thích", feecut: "Giảm phí planning" }[d.pick]}</b><p>${esc(d.out || "")}</p></div>`;
     const opts = [
       ["refund", `Hoàn lại ${money(half)}`, "Trả lại một nửa phần chênh. Mất tiền ngay, khách yên tâm.", `<span class="neg">−${money(half)}</span><span class="pos">Khách bớt phật ý</span>`],
-      ["explain", "Giải thích", `Nói rõ giá gồm công điều phối và rủi ro agency gánh. Nếu khách không tin thì khách trừ thẳng ${money(d.gap)} vào đợt cuối, hai họ mất lòng và đám này để lại thêm một review xấu.`, `<span class="gold">${okPct}% khách bỏ qua</span><span class="neg">Không thì −${money(d.gap)}</span>`],
+      ["explain", "Giải thích", `Nói rõ giá gồm công điều phối và rủi ro agency gánh. Nếu khách không tin thì khách trừ thẳng ${money(d.gap)} vào đợt cuối, hai họ mất lòng và khách dễ lên group bóc phốt hơn một review xấu.`, `<span class="gold">${okPct}% khách bỏ qua</span><span class="neg">Không thì −${money(d.gap)}</span>`],
       ["feecut", "Giảm 10% phí planning", `Bớt ${money(fee * 0.1)} phí, trừ vào đợt cuối khách trả.`, `<span class="neg">Đợt cuối −${money(fee * 0.1)}</span><span class="pos">Hai họ hài lòng</span>`]
     ];
     return `<div class="card decision ${state.needDecision ? "flash" : ""}" id="decision"><div class="row-between"><span class="eyebrow">Khách hỏi về giá</span></div>
@@ -12054,6 +12277,7 @@ window.WP_COPY = {
   }
   function monthCardHtml() {
     const card = monthCard(), c = state.career; if (!card) return "";
+    if (card.scandal) return scandalCardHtml();
     const owed = card.when === "receivable" ? ` Khách còn nợ ${money(CORE.receivableTotal(c))}.` : "";
     const options = CORE.cardOptions(c, card);
     if (c.card.pick) { const o = options.find(x => x.id === c.card.pick); return `<div class="card decision done"><span class="eyebrow">✓ ${esc(card.title)}</span><b>${esc(fillCard(o.label, o))}</b><div class="chips">${cardChips(o)}</div></div>`; }
@@ -12619,6 +12843,7 @@ window.WP_COPY = {
     if (s.type === "restart") return `<h2 class="h">Bắt đầu lại từ đầu?</h2><p>Quỹ, team và các đám đã làm sẽ mất hết.</p><div class="sheet-actions"><button class="btn primary" data-act="restartNow">Chơi lại</button><button class="btn" data-act="close">Thôi</button></div>`;
     if (s.type === "book") return sheetBook();
     if (s.type === "confirmWeek") return sheetConfirmWeek();
+    if (s.type === "post") return sheetPost();
     return "";
   }
 
@@ -12637,6 +12862,131 @@ window.WP_COPY = {
       <div class="sheet-actions stacked">${hire}${go}${stay}</div>`;
   }
 
+
+  // ---- Khách bóc phốt (Đợt 6): ảnh chụp dữ liệu thật của đám, thẻ tháng, bài đăng xem được, bình luận ----
+  function scandalSnapshot(r) {
+    const o = state.project, c = state.career, d = state.discovery || {};
+    const crises = state.ledger.filter(x => x.src && x.src.k === "crisis").map(x => {
+      const cr = getCrisis(x.src.id), vendorCat = D.categories.some(k => k.id === cr.category);
+      return { id: cr.id, ok: !!x.src.ok, event: cr.event, planner: !(cr.id === "weather" || (isDayof(o) && vendorCat)), phrase: C.WITNESS.crisis[cr.id] || lower(cr.title), actor: speakerLook((D.reactions[cr.id] || {}).who || "bride"), rain: cr.id === "weather" };
+    });
+    const missed = E.missedContracted(D, state).map(id => getAction(id).title);
+    const [bride, groom] = String(o.couple).split(" & ");
+    const s = { id: o.id, couple: o.couple, bride, groom, type: o.type, stars: r.stars, fee: r1(E.tierFee(D, tierObj())), missed,
+      feeKept: !((state.feeDiscountPct || 0) > 0) && missed.length > 0, discovery: !!d.hit,
+      refunded: !!d.hit && (d.pick === "refund" || d.pick === "feecut" || (d.pick === "explain" && !!d.ok)), cat: d.label || "", gap: d.gap || 0,
+      withheld: (r.withheld || 0) > 0, dispute: (state.clientCharged || 0) > 0, crises, demanding: ["luxury", "boss"].includes(o.type),
+      city: c.city, brand: brandOr(), looks: { avatar: CL("bride_casual"), bride: CL("bride"), groom: CL("groom") }, venue: venueKind(), flowers: decorFlowers(),
+      sev: r1(CORE.scandalSev(c.stage, o.type)), hours: 2 + (hash(o.id + ":h") % 19), seed: hash(o.id + ":boc") };
+    s.blame = CORE.scandalBlame({ missed: missed.length, discovery: s.discovery && !s.refunded, crises, dispute: s.dispute });
+    return s;
+  }
+  const scandalGroup = s => C.SCANDAL_TEXT.group.replace("{city}", (C.CITIES[s.city] || C.CITIES.hcm).name);
+  const fmtN = n => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  function scandalPost(s) {
+    const T = C.SCANDAL_TEXT, R = E.rng(s.seed), pick = a => a[Math.floor(R() * a.length)];
+    const fill = t => String(t).replace(/\{brand\}/g, s.brand).replace(/\{bride\}/g, s.bride);
+    const bad = s.crises.filter(k => k.planner && !k.ok), okc = s.crises.filter(k => k.planner && k.ok), nm = s.crises.filter(k => !k.planner);
+    const lines = [];
+    // Kể tối đa hai sự cố phần planner lo (xử lý hỏng trước), theo thứ tự lễ: ăn hỏi rồi mới tới tiệc cưới.
+    // Sự cố đầu tiên luôn dùng câu mở của lễ đó; câu nối ("Rồi…", "Đỉnh điểm là…") chỉ từ sự cố thứ hai.
+    const told = bad.slice(0, 2).concat(okc.slice(0, Math.max(0, 2 - bad.length)))
+      .sort((x, y) => (x.event === "ENGAGEMENT" ? 0 : 1) - (y.event === "ENGAGEMENT" ? 0 : 1));
+    told.forEach((k, i) => { const set = (k.ok ? T.line.crisisOk : T.line.crisisBad)[k.event === "ENGAGEMENT" ? "ENGAGEMENT" : "WEDDING"]; const prev = told[i - 1]; lines.push(pick(i === 0 ? set.first : prev.event !== k.event && set.fromEngagement ? set.fromEngagement : set.next).replace("{x}", k.phrase)); });
+    if (nm.length) lines.push(pick(T.line.notMine).replace("{x}", nm[0].phrase));
+    if (s.missed.length) lines.push(pick(T.line.missed).replace("{list}", s.missed.slice(0, 3).map(t => lower(t)).join(", ")));
+    if (s.feeKept) lines.push(pick(T.line.missedKept));
+    if (s.discovery && !s.refunded) lines.push(pick(T.line.discovery).replace("{cat}", lower(s.cat)).replace("{gap}", money(s.gap)));
+    if (s.dispute) lines.push(pick(T.line.dispute));
+    if (s.withheld) lines.push(pick(T.line.withheld));
+    if (!lines.length) lines.push(pick(T.line.generic));
+    const issue = bad[0] ? bad[0].phrase : okc[0] ? okc[0].phrase : s.missed[0] ? lower(s.missed[0]) : nm[0] ? nm[0].phrase : s.discovery ? `giá ${lower(s.cat)}` : "khâu chuẩn bị";
+    const P = { open: fill(pick(T.open[s.stars] || T.open[2])), lines: lines.map(fill), close: fill(pick(T.close)), imgs: (bad.length ? bad : s.crises).slice(0, 2), issue, notMine: nm[0] ? nm[0].phrase : issue };
+    P.named = [P.open, ...P.lines, P.close].some(x => x.includes(s.brand)); // thân bài có tên thương hiệu/planner hay không
+    return P;
+  }
+  // Bình luận: cố định theo bài; sau lựa chọn có thêm phản hồi của planner và bình luận đổi chiều.
+  function scandalComments(s) {
+    const T = C.SCANDAL_TEXT, R = E.rng(s.seed + 7), pick = a => a[Math.floor(R() * a.length)], names = [...T.names].sort(() => R() - 0.5);
+    const fill = t => String(t).replace(/\{brand\}/g, s.brand).replace(/\{bride\}/g, s.bride).replace(/\{tag\}/g, names[names.length - 1]);
+    let i = 0; const who = () => ({ name: names[i % names.length], look: SP.guest(s.seed % 50 + i++) });
+    const me = { name: s.bride, look: s.looks.avatar, author: true };
+    const mk = (type, reply) => ({ ...who(), text: fill(pick(T.comment[type])), replies: reply ? [reply] : [] });
+    const p = scandalPost(s);
+    const list = [mk("hong"), mk("askname", { ...me, text: fill(pick(p.named ? T.reply.askname : T.reply.asknameNoName)) }), mk("hired", { ...who(), text: fill(pick(T.reply.hired)) }),
+      mk("defend", { ...who(), text: fill(pick(T.reply.defend)) }), mk("tag"), mk("share"), mk("hong")];
+    const o = s.outcome || {}, A = T.after, w = state.career.elapsedWeeks - (s.postedWeek || 0);
+    const brandMe = { name: s.brand, look: planner().look, planner: true };
+    if (s.choice === "apology") {
+      list.unshift({ ...brandMe, text: fill((s.blame < 0.4 ? A.apology.plannerUnfair : A.apology.planner).replace("{issue}", s.blame < 0.4 ? p.notMine : p.issue)), replies: (s.blame < 0.4 ? A.apology.commentsUnfair.concat(s.crises.some(k => k.rain) ? A.apology.commentsRain : []) : A.apology.comments).map(t => ({ ...who(), text: t })) });
+    } else if (s.choice === "private" && o.ok === false) list.unshift(...A.privateFail.comments.map(t => ({ ...who(), text: t, replies: [] })));
+    else if (s.choice === "crisis" && o.ok === false) list.unshift(...A.crisisExposed.comments.map(t => ({ ...who(), text: t, replies: [] })));
+    else if (s.choice === "silence" || (!s.choice && w >= 2)) list.unshift(...A.silence.comments.slice(0, Math.min(3, 1 + Math.floor(w / 2))).map(t => ({ ...who(), text: t, replies: [] })));
+    return list;
+  }
+  const postAge = s => { const w = state.career.elapsedWeeks - (s.postedWeek || 0); return w < 1 ? `${s.hours} giờ trước` : `${w} tuần trước`; };
+  // "Ảnh" trong bài: dựng lại cảnh pixel đúng khoảnh khắc sự cố của đám đó (cảnh lễ, cô dâu chú rể, người gặp sự cố, mưa nếu có).
+  const postImgCache = {};
+  function postImage(s, k) {
+    if (HEADLESS || typeof document === "undefined") return "";
+    const key = `${s.id}:${k.id}`; if (postImgCache[key]) return postImgCache[key];
+    try {
+      const cv = document.createElement("canvas"), sc = new SC.Scene(cv); const kind = k.event === "ENGAGEMENT" ? "home" : s.venue;
+      sc.set(kind, { flowers: s.flowers }); const h = sc.h || 120, y = Math.round(h * 0.62);
+      sc.add("bride", { ...s.looks.bride, turn: 1 }, 84, y, { still: true, mood: "worried" }); sc.add("groom", { ...s.looks.groom, turn: -1 }, 104, y + 2, { still: true, mood: "worried" });
+      const a = sc.add("actor", k.actor, 132, y + 6, { still: true }); a.bubble = "!"; sc.rain = !!k.rain; sc.draw();
+      return (postImgCache[key] = cv.toDataURL());
+    } catch (e) { return ""; }
+  }
+  function scandalOptionText(s, id) {
+    const T = C.SCANDAL_TEXT.option[id], c = state.career;
+    if (id === "apology") return { label: T.label, note: T.note + (s.blame < 0.4 ? T.unfair : ""), cost: 0 };
+    if (id === "private") { const R = CORE.scandalRefund(s); return { label: T.label.replace("{refund}", cashStr(R)), note: T.note.replace(/\{refund\}/g, cashStr(R)).replace("{p}", Math.round(CORE.scandalAgree(s) * 100)), cost: R }; }
+    if (id === "crisis") { const K = CORE.scandalCrisisCost(s, c.stage); return { label: T.label.replace("{cost}", cashStr(K)), note: T.note.replace(/\{cost\}/g, cashStr(K)).replace("{p}", Math.round(CORE.scandalExpose(s) * 100)) + (s.discovery && !s.refunded ? T.discovery : ""), cost: K }; }
+    return { label: T.label, note: T.note, cost: 0 };
+  }
+  function scandalSummary(s) {
+    const n = CORE.scandalNumbers(s, state.career.elapsedWeeks), T = C.SCANDAL_TEXT;
+    return `<button class="post-sum" data-act="sheet" data-id="post">${img(s.looks.avatar, "face")}<span><small>${esc(scandalGroup(s))}</small><b>${esc(n.removed ? T.after.removed : scandalPost(s).open)}</b><small>${n.removed ? "Đã gỡ" : `${fmtN(n.shares)} lượt chia sẻ`}</small></span><span class="link">Xem bài ›</span></button>`;
+  }
+  // Lựa chọn không tốn tiền (nhận lỗi, im lặng) luôn bấm được, kể cả khi quỹ âm; chỉ lựa chọn tốn tiền mới khoá khi quỹ không đủ.
+  function scandalCardHtml() {
+    const c = state.career, s = c.scandal, T = C.SCANDAL_TEXT; if (!s) return "";
+    if (c.card.pick) { const t = scandalOptionText(s, c.card.pick); return `<div class="card decision done"><span class="eyebrow">✓ ${esc(T.card.title)}</span>${scandalSummary(s)}<b>${esc(t.label)}</b></div>`; }
+    const opts = ["apology", "private", "crisis", "silence"].map(id => { const t = scandalOptionText(s, id), dis = t.cost > 0 && t.cost > c.cash; return `<button class="opt" data-act="mcard" data-id="${id}" ${dis ? "disabled" : ""}><b>${esc(t.label)}</b><small>${esc(t.note)}</small>${dis ? `<em>Quỹ không đủ</em>` : ""}</button>`; }).join("");
+    return `<div class="card decision ${state.needDecision ? "flash" : ""}" id="decision"><span class="eyebrow">Chuyện tháng này · ${esc(T.card.title)}</span>${scandalSummary(s)}<div class="list">${opts}</div></div>`;
+  }
+  function resolveScandalCard(optId) {
+    const c = state.career, s = c.scandal; if (!s || s.state !== "posted") return;
+    const ev = CORE.resolveScandal(c, optId, CAL.rnd); if (!ev) return;
+    if (ev.refused) return toast(`Thiếu ${cashStr(ev.need - c.cash)}`, "warn");
+    c.card.pick = optId; c.cardHistory.push("boc_phot"); if (c.cardHistory.length > 24) c.cardHistory.shift();
+    const L = C.SCANDAL_TEXT.log, key = optId === "private" ? (ev.ok ? "privateOk" : "privateFail") : optId === "crisis" ? (ev.ok ? "crisisOk" : "crisisExposed") : optId;
+    log(L[key], optId === "apology" || ev.removed ? "info" : "bad"); state.needDecision = false;
+  }
+  function scandalHubLine() {
+    const c = state.career, s = c.scandal; if (!s || s.state === "pending" || (c.card && c.card.id === "boc_phot" && !c.card.pick)) return "";
+    if (c.elapsedWeeks - (s.postedWeek || 0) > 20) return "";
+    const n = CORE.scandalNumbers(s, c.elapsedWeeks);
+    return `<button class="hubline post-line" data-act="sheet" data-id="post"><span>Bài trong ${esc(scandalGroup(s))}: <b>${n.removed ? "đã gỡ" : `${fmtN(n.shares)} chia sẻ`}</b></span><i class="chev">›</i></button>`;
+  }
+  function sheetPost() {
+    const c = state.career, s = c.scandal, T = C.SCANDAL_TEXT; if (!s) return "";
+    const n = CORE.scandalNumbers(s, c.elapsedWeeks);
+    if (n.removed) return `<h2 class="h">${esc(scandalGroup(s))}</h2><div class="post gone"><b>${esc(T.after.removed)}</b><small class="muted">Bài viết có thể đã bị gỡ hoặc người đăng đã đổi quyền xem.</small></div>`;
+    const p = scandalPost(s), o = s.outcome || {};
+    const update = s.choice === "private" && o.ok === false ? T.after.privateFail.update : s.choice === "crisis" && o.ok === false ? T.after.crisisExposed.update : "";
+    const cm = (x, sub) => `<div class="cmt ${sub ? "sub" : ""} ${x.planner ? "by-planner" : x.author ? "by-author" : ""}">${img(x.look, "face")}<div><div class="cmt-bub"><b>${esc(x.name)}${x.author ? " · Tác giả" : ""}</b><p>${esc(x.text)}</p></div>${(x.replies || []).map(rp => cm(rp, true)).join("")}</div></div>`;
+    const imgs = p.imgs.map(k => { const u = postImage(s, k); return u ? `<img class="post-img" src="${u}" alt="Ảnh: ${esc(k.phrase)}">` : ""; }).join("");
+    return `<div class="post">
+      <div class="post-head">${img(s.looks.avatar, "face")}<div><b>${esc(s.bride)}</b><small>${esc(scandalGroup(s))} · ${esc(postAge(s))}</small></div></div>
+      ${update ? `<p class="post-update">${esc(update)}</p>` : ""}
+      <div class="post-body"><p><b>${esc(p.open)}</b></p>${p.lines.map(l => `<p>${esc(l)}</p>`).join("")}<p>${esc(p.close)}</p></div>
+      ${imgs ? `<div class="post-imgs n${p.imgs.length}">${imgs}</div>` : ""}
+      <div class="post-stats"><span>${fmtN(n.reactions)} cảm xúc</span><span>${fmtN(n.comments)} bình luận · ${fmtN(n.shares)} lượt chia sẻ</span></div>
+      <div class="cmts">${scandalComments(s).map(x => cm(x)).join("")}</div>
+    </div>`;
+  }
   // ---- Layout and render ---------------------------------------------------------
   function navBar() {
     if (state.phase !== "prep") return "";
@@ -12837,7 +13187,7 @@ window.WP_COPY = {
     serialize: () => JSON.stringify({ v: BASE.version, s: state }), loadFrom(json) { const s = restore(JSON.parse(json)); if (s) state = s; return s; }, version: BASE.version,
     startCareer, genOffers, quoteOptions, quoteLoad: (o, q) => quoteLoad(o, q), hubHtml: () => screenHub(), takeOffer, startPrep, weekDilemma, chooseDilemma, canBook, book, research, negotiate, setSpec,
     actionBlock, doAction, ask, wishBlock, fulfil, confirmConcept, promisedDue, nextWeek, startEvent, optionBlock, successChance, resolveCrisis,
-    nextItem, stageNext, settlementOptions, resolveSettlement, nextSettlement, endProject, openSide, workSide, sideOffers: () => state.sideOffers || (state.sideOffers = CORE.sideOffers(state.career, SJ, CAL.rnd)), takeLoan, hire, fire, opsRows: () => opsRows(), lower, shortAfter: id => shortAfter(id), shortCardHtml: () => shortCard(), shortfallNow: () => shortfall(), crisisOptionsHtml: id => crisisOptions(getCrisis(id)), needLine: () => needLine(), hudHtml: () => hud(), monthCardHtml: () => monthCardHtml(), sideSheetHtml: () => sheetSide(), taskState: a => taskState(a), vendorDetailHtml: (v, c) => vendorDetail(v, c, true), offerProfile: o => offerProfile(o), promisedDue: () => promisedDue(), isContracted: id => isContracted(id), afterLines: r => afterLines(r || state.result), lessons: r => lessons(r), markLinks: () => markLinks(), wishPossible: w => wishPossible(w), famLook: id => famLook(id), coupleLook: k => CL(k), cardLook: k => cardLook(k), GROOM_TOPS: () => GROOM_TOPS, goalLines: g => goalLines(g), officeUnlocks: o => officeUnlocks(o), sheetCareerHtml: () => sheetCareer(), confirmWeekHtml: () => sheetConfirmWeek(), nextWeekNeed: () => nextWeekNeed(), taskCardHtml: a => taskCard(a), monthSpendParts: () => monthSpendParts(), html: name => ({ meeting: () => sheetBody(), offer: sheetOffer, quote: sheetQuote, review: screenReview, settlement: screenSettlement, money: sheetMoney, brief: () => screenBrief ? screenBrief() : "", prep: () => screenPrep(), confirmWeek: () => sheetConfirmWeek() }[name] || (() => ""))(), voice, subjectWord, satReasons: () => satReasons(), weekStartAP, vendorTopRisk: v => vendorRisk(v), CAL_FOR_TEST: () => CAL, branchCities, openBranch, closeBranchNow, assignManager, branchLine, candidates, rolesOpen, salaryOf, fireCost, teamFx, chooseBrand, learnSkill, upgrade, sceneForTest: () => scene, prepItems: () => { if (state.phase !== "prep" || !state.project) return []; const w = state.week, out = []; dueNow().forEach(a => out.push({ kind: "task", id: a.id })); earlyTasks().forEach(a => out.push({ kind: "task", id: a.id, early: true })); out.push({ kind: "card" }, { kind: "dilemma" }); if (state.project.type === "dayof") { foregroundTasks(); if (state.fg && state.fg.watch && !dueNow().some(a => a.id === state.fg.watch)) out.push({ kind: "task", id: state.fg.watch, watch: true }); } else { const c = D.categories.filter(x => !state.selectedVendors[x.id] && x.from <= w).sort((a, b) => a.deadline - b.deadline)[0]; if (c) out.push({ kind: "vendor", cat: c.id }); } moreTasks().forEach(a => out.push({ kind: "task", id: a.id, more: true })); return out; }, taskWarning: a => taskWarning(a), taskHire: a => taskHire(a), promiseGap: ap => promiseGap(ap == null ? state.ap : ap), earlyTasks: () => earlyTasks(), apAhead: k => apAhead(k), hireDue: () => hireDue(), dueNeed: () => dueNeed(), setBrandName, chooseIdentity, identityMethods, renameBrand(name, method) { if (!state.career.brandName || state.career.identity.renames >= IDN.renames) return false; state.sheet = { type: "brandName", mode: "rename" }; if (!setBrandName(name, "rename")) return false; state.sheet.pick = method; return chooseIdentity(method, true); }, sheetHtml: () => sheetBody(), nameSuggestions, brandOr, freelancerNow, designerLevel,
+    nextItem, stageNext, settlementOptions, resolveSettlement, nextSettlement, endProject, openSide, workSide, sideOffers: () => state.sideOffers || (state.sideOffers = CORE.sideOffers(state.career, SJ, CAL.rnd)), takeLoan, hire, fire, opsRows: () => opsRows(), lower, scandalSnapshot: r => scandalSnapshot(r), scandalPost: s => scandalPost(s || state.career.scandal), scandalComments: s => scandalComments(s || state.career.scandal), sheetPostHtml: () => sheetPost(), scandalCardHtml: () => scandalCardHtml(), scandalOptionText: id => scandalOptionText(state.career.scandal, id), shortAfter: id => shortAfter(id), shortCardHtml: () => shortCard(), shortfallNow: () => shortfall(), crisisOptionsHtml: id => crisisOptions(getCrisis(id)), needLine: () => needLine(), hudHtml: () => hud(), monthCardHtml: () => monthCardHtml(), sideSheetHtml: () => sheetSide(), taskState: a => taskState(a), vendorDetailHtml: (v, c) => vendorDetail(v, c, true), offerProfile: o => offerProfile(o), promisedDue: () => promisedDue(), isContracted: id => isContracted(id), afterLines: r => afterLines(r || state.result), lessons: r => lessons(r), markLinks: () => markLinks(), wishPossible: w => wishPossible(w), famLook: id => famLook(id), coupleLook: k => CL(k), cardLook: k => cardLook(k), GROOM_TOPS: () => GROOM_TOPS, goalLines: g => goalLines(g), officeUnlocks: o => officeUnlocks(o), sheetCareerHtml: () => sheetCareer(), confirmWeekHtml: () => sheetConfirmWeek(), nextWeekNeed: () => nextWeekNeed(), taskCardHtml: a => taskCard(a), monthSpendParts: () => monthSpendParts(), html: name => ({ meeting: () => sheetBody(), offer: sheetOffer, quote: sheetQuote, review: screenReview, settlement: screenSettlement, money: sheetMoney, brief: () => screenBrief ? screenBrief() : "", prep: () => screenPrep(), confirmWeek: () => sheetConfirmWeek() }[name] || (() => ""))(), voice, subjectWord, satReasons: () => satReasons(), weekStartAP, vendorTopRisk: v => vendorRisk(v), CAL_FOR_TEST: () => CAL, branchCities, openBranch, closeBranchNow, assignManager, branchLine, candidates, rolesOpen, salaryOf, fireCost, teamFx, chooseBrand, learnSkill, upgrade, sceneForTest: () => scene, prepItems: () => { if (state.phase !== "prep" || !state.project) return []; const w = state.week, out = []; dueNow().forEach(a => out.push({ kind: "task", id: a.id })); earlyTasks().forEach(a => out.push({ kind: "task", id: a.id, early: true })); out.push({ kind: "card" }, { kind: "dilemma" }); if (state.project.type === "dayof") { foregroundTasks(); if (state.fg && state.fg.watch && !dueNow().some(a => a.id === state.fg.watch)) out.push({ kind: "task", id: state.fg.watch, watch: true }); } else { const c = D.categories.filter(x => !state.selectedVendors[x.id] && x.from <= w).sort((a, b) => a.deadline - b.deadline)[0]; if (c) out.push({ kind: "vendor", cat: c.id }); } moreTasks().forEach(a => out.push({ kind: "task", id: a.id, more: true })); return out; }, taskWarning: a => taskWarning(a), taskHire: a => taskHire(a), promiseGap: ap => promiseGap(ap == null ? state.ap : ap), earlyTasks: () => earlyTasks(), apAhead: k => apAhead(k), hireDue: () => hireDue(), dueNeed: () => dueNeed(), setBrandName, chooseIdentity, identityMethods, renameBrand(name, method) { if (!state.career.brandName || state.career.identity.renames >= IDN.renames) return false; state.sheet = { type: "brandName", mode: "rename" }; if (!setBrandName(name, "rename")) return false; state.sheet.pick = method; return chooseIdentity(method, true); }, sheetHtml: () => sheetBody(), nameSuggestions, brandOr, freelancerNow, designerLevel,
     checkStage, monthlyCost, monthlyParts, tierObj, moneyNow, riskStatus, hasSkill, avgStars, shortfall, shortActive, resolveShort, shortDrops, priceFor, catVendors, hireFreelancer, overtime, monthCard, cardOptions: () => (monthCard() ? CORE.cardOptions(state.career, monthCard()) : []), cardPending, resolveCard, setOffice, setLiving, tickWeek, actionMoney, discoveryPending, resolveDiscovery, chooseContact, assignContact, rollDiscovery, slotHtml: () => dilemmaCard(), decisionPending
   };
   window.WP_GAME = { get state() { return state; }, get D() { return D; }, render, _build: buildProject, api, HEADLESS };
