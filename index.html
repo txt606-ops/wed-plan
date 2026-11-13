@@ -655,6 +655,39 @@ h3.sub { margin: 6px 0 0; font: 700 12px/1.3 var(--body); letter-spacing: .08em;
 .hud-sub { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .name-sug { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip-btn { font: 600 13px/1.2 var(--body); padding: 6px 10px; border: 2px solid var(--ink); background: var(--surface); color: var(--ink); cursor: pointer; }
+/* Đợt 4b: thẻ việc gọn (tên, lượt, chip), mô tả bấm "?" mới mở; cảnh báo và nút freelancer ngay trên thẻ */
+.task { flex-direction: column; align-items: stretch; gap: 6px; }
+.task-row { display: flex; align-items: flex-start; gap: 6px; }
+.task-do { flex: 1; min-width: 0; display: flex; gap: 8px; align-items: flex-start; background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.task-do .task-main { display: flex; }
+.task-info { flex: none; width: 28px; height: 28px; border: 1px solid var(--line); background: var(--surface-2); color: var(--muted); font: 700 13px/1 var(--body); cursor: pointer; }
+.task-why { color: var(--muted); font-size: 13px; line-height: 1.4; }
+.task-warn { border: 2px solid var(--danger); background: #fff3f2; padding: 8px 10px; }
+.task-warn p { margin: 0 0 6px; font-size: 14px; color: var(--danger); font-weight: 600; }
+.task .mini.hire { align-self: flex-start; }
+.due-line { margin: 0; font-size: 14px; font-weight: 600; color: var(--ink); }
+.due-line.neg { color: var(--danger); }
+.more-tasks { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 10px 12px; border: 2px solid var(--line); background: var(--surface); font: 700 15px/1.3 var(--body); color: var(--ink); cursor: pointer; }
+.task-done.slim { font-size: 13px; padding: 4px 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.task { padding: 7px 8px 7px 10px; gap: 4px; }
+.task-main { gap: 2px; }
+.task .chips { gap: 4px; }
+.task .chips span { font-size: 11.5px; padding: 0 6px; }
+.task .cost .dots { display: none; }
+.task-info { width: 26px; height: 26px; }
+.task .cost { display: flex; align-items: baseline; gap: 4px; white-space: nowrap; }
+.task .cost .cost-n, .task .cost .money { display: inline; }
+.task .cost .money::before { content: "· "; }
+.task-main b { font-size: 14.5px; }
+.week-strip { flex-wrap: wrap; row-gap: 0; }
+h2.sec.due-line { font-size: 17px; }
+h2.sec.due-line.neg { color: var(--danger); }
+.task.st-noap, .task.locked { opacity: 1; }
+.task.st-noap .task-row, .task.locked .task-row { opacity: .62; }
+/* 3.8.1: đám gấp và lượt cần ở bảng chọn gói */
+.offer-line .rush { font-size: 12px; padding: 1px 6px; background: var(--danger-soft); color: var(--danger); font-weight: 700; }
+.fee-opt .load { display: block; margin-top: 4px; font-size: 13px; color: var(--muted); }
+.fee-opt .load.neg { color: var(--danger); font-weight: 700; }
 
 </style>
 </head>
@@ -671,7 +704,7 @@ h3.sub { margin: 6px 0 0; font: 700 12px/1.3 var(--body); letter-spacing: .08em;
  * crises[].options[].effects: cost (agency pays), clientPays (client is charged), couple, family.
  */
 window.GAME_DATA = {
-  "version": "3.8.0",
+  "version": "3.8.1",
   "project": {
     "couple": "Linh & Minh",
     "location": "Sài Meo",
@@ -9801,7 +9834,7 @@ window.WP_COPY = {
     suggest: {
       atelier: ["{n} Atelier", "Xưởng Cưới {n}", "Nhà {n} Studio"],
       package: ["{n} Wedding", "Cưới Gọn {n}", "Gói Cưới {n}"],
-      destination: [["Hành Trình Cưới {n}", "Hành Trình {n}"], "{n} Destination", "Cưới Xa {n}"]
+      destination: ["Hành Trình {n}", "{n} Destination", "Cưới Xa {n}"]
     },
     levelNote: {
       basic: "Khách chưa nhớ tới bạn qua hình ảnh.",
@@ -10327,6 +10360,7 @@ window.WP_COPY = {
       a.from = scFrom(a.from); a.to = scTo(a.to, a.from);
       if (["meet_couple", "meet_family", "choose_concept"].includes(a.id)) { a.from = 1; a.to = Math.min(2, W); }
       if (a.id === "final_check") { a.from = W; a.to = W; }
+      if (a.id === "mc_plan") a.from = Math.min(a.from, Math.max(1, W - 1)); // Đợt 4b: tổng duyệt MC mở từ tuần áp chót, không dồn cứng vào tuần cuối
     });
     const ct = C.CLIENTS.find(x => x.profile.id === o.client);
     if (ct && ct.wishes) { P.meetings.couple.questions = clone(ct.coupleQuestions); P.meetings.family.questions = clone(ct.familyQuestions); P.wishes = clone(ct.wishes); }
@@ -10388,6 +10422,14 @@ window.WP_COPY = {
         notes: ["Khách kỳ vọng cao", "Có sự cố là đòi giảm nhiều", `Khách đồng ý ${accept}%, không thì mặc cả về gói Tiêu chuẩn`] }
     ];
   }
+  // Đám ngắn không đủ lượt (3.8.1, cách c): lượt cần của một gói = việc đã hứa + chốt vendor (như bảng lượt cần/lượt có), theo team hiện tại.
+  function quoteLoad(o, q) {
+    const P = buildProject({ ...o, quote: { level: q.level, contracted: q.contracted, expect: q.expect, discountMult: q.discountMult } }, state.career.staff, state.me ? state.me.skills : []);
+    const need = P.actions.filter(a => q.contracted.includes(a.id)).reduce((n, a) => n + (a.cost || 1), 0) + (o.type === "dayof" ? 0 : P.categories.length);
+    const have = P.tiers[0].ap * o.weeks + (hasSkill("nhanh_nhen") ? 1 : 0), extra = CFG.time.freelancer.maxPerWeek * o.weeks;
+    return { need, have, extra, short: need > have + extra };
+  }
+  const isRush = o => o.weeks < (C.TYPES[o.type] || {}).weeks;
   function sheetQuote() {
     const i = state.sheet.id; const o = state.career.offers[i]; if (!o) return "";
     return `<h2 class="h">${packName(o)} cho ${esc(o.couple)}</h2><p class="muted">Gói quyết định bạn hứa làm những việc gì và thu bao nhiêu phí. Việc đã hứa mà bỏ thì lúc quyết toán khách đòi giảm phí. Chất lượng vendor là chuyện riêng, chọn sau.</p>
@@ -10396,7 +10438,8 @@ window.WP_COPY = {
       <div class="list">${quoteOptions(o).map(q => `<button class="opt fee-opt" data-act="takeOffer" data-id="${i}:${q.level}">
         <div class="row-between"><b>${esc(q.name)}</b><span class="big-num">${money(q.fee)}</span></div>
         <small>Cam kết ${q.contracted.length} việc${q.removed.length ? ` · bỏ ${esc(q.removed.map(actionTitle).join(", ").toLowerCase())}` : ""}${q.added.length ? ` · thêm ${esc(q.added.map(actionTitle).join(", ").toLowerCase())}` : ""}</small>
-        <div class="chips">${q.notes.map(n => `<span class="${q.level === "high" ? "neg" : q.level === "low" ? "pos" : ""}">${esc(n)}</span>`).join("")}</div></button>`).join("")}</div>`;
+        <div class="chips">${q.notes.map(n => `<span class="${q.level === "high" ? "neg" : q.level === "low" ? "pos" : ""}">${esc(n)}</span>`).join("")}</div>
+        ${(L => `<small class="load">Cần khoảng ${L.need} lượt · bạn có ${L.have}, thuê thêm tối đa ${L.extra}</small>${L.short ? `<small class="load neg">Không kịp làm đủ</small>` : ""}`)(quoteLoad(o, q))}</button>`).join("")}</div>`;
   }
   function takeOffer(arg) {
     const [idx, level = "mid"] = String(arg).split(":"); const i = Number(idx);
@@ -10718,7 +10761,7 @@ window.WP_COPY = {
       const n = offerNotes(o).length;
       const fit = (brand && brand.offer === o.type) || (hasSkill("ngoai_ngu") && ["destination", "overseas"].includes(o.type));
       return `<button class="card offer tap" data-act="sheet" data-id="offer:${i}"><span class="row-between"><span class="offer-name"><b>${o.comeback ? "Người quen giới thiệu · " : ""}${esc(o.couple)}</b>${fit ? `<span class="fit">Hợp hướng của bạn</span>` : ""}</span><span class="fee-range"><b>${money(Math.round(o.fee * 0.85))}–${money(Math.round(o.fee * 1.05))}</b></span></span>
-        <span class="offer-line">${typeChip(o)} ${o.guests} khách · ${o.weeks} tuần${n ? ` · <em>${n} điểm cần lưu ý</em>` : ""}<i class="chev">›</i></span>
+        <span class="offer-line">${typeChip(o)}${isRush(o) ? ` <span class="rush">Gấp · ${o.weeks} tuần</span>` : ""} ${o.guests} khách${isRush(o) ? "" : ` · ${o.weeks} tuần`}${n ? ` · <em>${n} điểm cần lưu ý</em>` : ""}<i class="chev">›</i></span>
         ${(() => { const p = offerProfile(o); return `<span class="offer-prof"><span class="lvl ${p.hardLvl[0]}">Độ khó ${p.hardLvl[1].toLowerCase()}</span><span class="lvl ${p.riskLvl[0]}">Rủi ro ${p.riskLvl[1].toLowerCase()}</span><span class="lvl gain">Phí ${cashStr(p.perWeek)}/tuần</span></span>`; })()}</button>`;
     };
     const canHire = CORE.canHire(c) && C.ROLES.some(r => c.stage >= r.minStage) && c.staff.length < st.maxStaff;
@@ -10946,7 +10989,7 @@ window.WP_COPY = {
   // Bản cùng cấu trúc lưu: đọc thẳng, không chuyển đổi. 3.7.1–3.7.3 chỉ sửa giao diện; trường mới (warned, markSrc, sideWeek) đều có giá trị mặc định.
   // 3.7.4–3.7.5 không thêm trường lưu nào; nhãn "planner điều phối được" của mong muốn dựng lại từ dữ liệu khi nạp.
   // 3.8.0 thêm tên thương hiệu và nhận diện: save cũ có tên trống, nhận diện "cơ bản" (CORE.initIdentity); đã qua mốc chọn hướng thì lần mở tới hỏi đặt tên một lần.
-  const SAME_SHAPE = ["3.7.0", "3.7.3", "3.7.5"];
+  const SAME_SHAPE = ["3.7.0", "3.7.3", "3.7.5", "3.8.0"]; // 3.8.1 chỉ đổi giao diện màn chuẩn bị và lượt cần: không thêm trường lưu
   const OFFICE_BY_OLD_STAGE = ["home", "cowork", "small", "studio", "studio"];
   function migrate(old, from) {
     const s = { ...fresh(), ...old, sheet: null };
@@ -10986,6 +11029,17 @@ window.WP_COPY = {
   const moneyNow = () => E.money(D, state);
   const log = (text, type = "info") => { state.log.unshift({ text, type, week: state.phase === "prep" ? state.week : null }); state.log.length = Math.min(state.log.length, 50); };
   const baseAP = () => Math.max(1, TIME.planner + (tierObj().ap - SOLO_AP) * TIME.perStaff - (state.career.apMinus[state.career.monthNo] || 0)); // lượt thêm theo vai và ưu/nhược điểm, không theo số đầu người
+  // Lượt của một tuần sắp tới (3.8.1): lượt gốc của team trừ phần bị mất, kèm lý do để ghi ra màn hình.
+  function apAhead(k) {
+    const c = state.career, d = Math.max(1, k - state.week), E = c.elapsedWeeks || 0;
+    const m = c.monthNo + (Math.ceil((E + d) / 4) - Math.ceil(E / 4)); // tuần đó rơi vào tháng nào của sự nghiệp
+    const raw = TIME.planner + (tierObj().ap - SOLO_AP) * TIME.perStaff, cuts = [];
+    if (c.apMinus[m]) cuts.push({ n: c.apMinus[m], why: "chuyện trong tháng" });
+    if (k % 2 === 0 && fxNow("apAlt") < 0) { const who = CORE.staffWith(c, "apAlt")[0]; cuts.push({ n: -fxNow("apAlt"), why: who ? `${who.name} chạy việc chậm cách tuần` : "nhân viên chạy việc chậm cách tuần" }); }
+    if (d === 1 && c.apDebt > 0) cuts.push({ n: c.apDebt, why: "lượt mất từ lúc ở văn phòng" });
+    const lost = cuts.reduce((n, x) => n + x.n, 0);
+    return { ap: Math.max(k - state.week === 1 && c.apDebt ? 0 : 1, raw - lost), raw, cuts };
+  }
   const weekAP = () => baseAP() + (hasSkill("nhanh_nhen") && state.week === 1 ? 1 : 0) + state.weekExtra.fl + state.weekExtra.ot;
 
   let toastTimer;
@@ -11023,6 +11077,18 @@ window.WP_COPY = {
     state.weekExtra.fl += 1; state.ap += 1; state.extraCost += TIME.freelancer.cost; addExtra("Thuê freelancer", TIME.freelancer.cost); projCash(-TIME.freelancer.cost, "extra", "Thuê freelancer");
     log(`Thuê freelancer thêm 1 lượt (${money(TIME.freelancer.cost)}).`);
     toast(`+1 lượt · −${money(TIME.freelancer.cost)}`, "good");
+  }
+  // Hộp lời hứa (mục 4): thuê ít freelancer nhất để làm kịp nhiều việc đã hứa nhất có thể. null nếu thuê không làm thêm được việc nào.
+  function hirePlan() {
+    const due = promisedDue().filter(a => !actionBlock({ ...a, cost: 0 })).sort((a, b) => (a.cost || 1) - (b.cost || 1));
+    const take = budget => { const out = []; let left = budget; due.forEach(a => { if ((a.cost || 1) <= left) { out.push(a); left -= a.cost || 1; } }); return out; };
+    const now = take(state.ap).length, best = take(state.ap + flLeft()); if (best.length <= now) return null;
+    return { list: best, k: Math.max(0, best.reduce((n, a) => n + (a.cost || 1), 0) - state.ap) };
+  }
+  function hireDue() { // thuê đúng số lượt cần rồi làm các việc đó (việc có buổi gặp làm sau cùng vì mở tờ hỏi chuyện)
+    const plan = hirePlan(); if (!plan) return;
+    for (let k = plan.k; k > 0 && flLeft() > 0; k--) hireFreelancer();
+    state.sheet = null; [...plan.list].sort((a, b) => !!meetingFor(a.id) - !!meetingFor(b.id)).forEach(a => { if (!actionBlock(a)) doAction(a.id); });
   }
   function overtime() {
     if (state.weekExtra.ot >= TIME.overtime.maxPerWeek) return toast("Team đã tăng ca tuần này rồi", "warn");
@@ -11830,6 +11896,59 @@ window.WP_COPY = {
     return D.actions.filter(a => [a.flag, ...(a.flags || [])].some(f => flags.has(f)));
   }
   const openNow = a => state.week >= a.from && state.week <= a.to && !flag(a.flag);
+  // ---- Đợt 4b: lời hứa ở tiền cảnh ----
+  // Việc đã hứa tới hạn tuần này (kể cả đã xong, để hiện dấu ✓) và các việc khác đang mở (đã hứa nhưng chưa tới hạn đứng trước).
+  const dueNow = () => D.actions.filter(a => isContracted(a.id) && a.to === state.week && a.from <= state.week);
+  const dueNeed = () => dueNow().filter(a => !flag(a.flag)).reduce((n, a) => n + (a.cost || 1), 0);
+  // "Làm sớm" (3.8.1): cùng bộ việc và cùng số lượt mỗi tuần như bộ xếp lịch của cảnh báo (promiseUnplaced), nhưng xếp mỗi việc vào tuần
+  // MUỘN nhất còn chỗ (mỗi tuần tính cả freelancer còn thuê được). Việc đã hứa chưa tới hạn mà vẫn bị đẩy về tuần này là việc phải làm sớm.
+  // Đã thử ba cách (tuần sau không tính freelancer; tính cả việc không xếp được): cách này giữ lời hứa tốt nhất (docs/review/3.8.1/BAO_CAO.md).
+  function earlyTasks() {
+    const W = D.config.weeks, w = state.week, cap = {};
+    const fl = TIME.freelancer.maxPerWeek;
+    for (let k = w; k <= W; k++) cap[k] = k === w ? state.ap + flLeft() : apAhead(k).ap + fl;
+    const con = D.actions.filter(a => isContracted(a.id) && !flag(a.flag) && a.to >= w);
+    const items = con.map(a => ({ a, from: Math.max(a.from, w), to: a.to, cost: a.cost || 1 }));
+    if (!isDayof(state.project)) D.categories.filter(c => !state.selectedVendors[c.id]).forEach(c => {
+      const need = con.filter(a => a.requires === c.id).map(a => a.to);
+      items.push({ from: Math.max(w, c.from || 1), to: Math.max(w, Math.min(W, c.deadline || W, ...need)), cost: 1 });
+    });
+    items.sort((x, y) => y.to - x.to || y.from - x.from || y.cost - x.cost);
+    const now = [];
+    for (const t of items) { let put = null; for (let k = t.to; k >= t.from; k--) if (cap[k] >= t.cost) { cap[k] -= t.cost; put = k; break; } if (t.a && put === w) now.push(t.a); }
+    return now.filter(a => a.to > w && openNow(a) && !(a.requires && !state.selectedVendors[a.requires])).sort((a, b) => a.to - b.to);
+  }
+  function moreTasks() {
+    const top = new Set(dueNow().map(a => a.id).concat(earlyTasks().map(a => a.id))), watch = isDayof(state.project) && state.fg ? state.fg.watch : null;
+    return D.actions.filter(a => openNow(a) && !top.has(a.id) && a.id !== watch).sort((a, b) => (isContracted(b.id) - isContracted(a.id)) || (a.to - b.to));
+  }
+  // Xếp thử mọi việc đã hứa còn lại vào các tuần còn lại (hạn sớm trước, tuần sớm trước). Trả về việc đầu tiên không xếp được, hoặc null.
+  // Xếp thử mọi việc đã hứa còn lại vào các tuần còn lại (hạn sớm trước, việc ít tuần chọn hơn trước), tính cả lượt chốt vendor
+  // còn phải chốt (mỗi hạng mục 1 lượt, trước việc cần vendor đó). notNow: các việc không làm trong tuần này. Trả về các việc đã hứa không xếp được.
+  function promiseUnplaced(apNow, notNow, withFreelance) { // withFreelance: tính cả suất freelancer còn thuê được mỗi tuần
+    const W = D.config.weeks, w = state.week, cap = {}, fl = TIME.freelancer.maxPerWeek;
+    for (let k = w; k <= W; k++) cap[k] = (k === w ? apNow : apAhead(k).ap) + (withFreelance ? (k === w ? flLeft() : fl) : 0);
+    const con = D.actions.filter(a => isContracted(a.id) && !flag(a.flag) && a.to >= w);
+    const left = con.map(a => ({ a, from: Math.max(a.from, notNow && notNow.has(a.id) ? w + 1 : w), to: a.to, cost: a.cost || 1 }));
+    if (!isDayof(state.project)) D.categories.filter(c => !state.selectedVendors[c.id]).forEach(c => {
+      const need = con.filter(a => a.requires === c.id).map(a => a.to);
+      left.push({ vendor: c.id, from: Math.max(w, c.from || 1), to: Math.max(w, Math.min(W, c.deadline || W, ...need)), cost: 1 });
+    });
+    left.sort((x, y) => x.to - y.to || y.from - x.from || y.cost - x.cost); // cùng hạn: việc ít tuần chọn hơn xếp trước
+    const out = [];
+    for (const t of left) { let put = false; for (let k = Math.max(t.from, w); k <= t.to; k++) if (cap[k] >= t.cost) { cap[k] -= t.cost; put = true; break; } if (!put && t.a) out.push(t); }
+    return out;
+  }
+  const promiseGap = (apNow, notNow) => promiseUnplaced(apNow, notNow)[0] || null;
+  // Cảnh báo trước khi lỡ tay (mục 3): việc KHÔNG nằm trong lời hứa mà làm xong thì không còn đủ lượt cho một việc đã hứa.
+  function taskWarning(a) {
+    if (isContracted(a.id) || actionBlock(a) || promiseGap(state.ap)) return null;
+    const g = promiseGap(state.ap - (a.cost || 1)); if (!g) return null;
+    return { id: g.a.id, week: g.to, text: `Làm việc này thì ${g.to === state.week ? "tuần này" : `tuần ${g.to}`} không đủ lượt cho ${g.a.title}. Vẫn làm?` };
+  }
+  const flLeft = () => TIME.freelancer.maxPerWeek - state.weekExtra.fl;
+  // Thẻ "Chưa đủ lượt" có nút thuê freelancer ngay trên thẻ khi tuần này còn suất (mục 4).
+  const taskHire = a => !flag(a.flag) && openNow(a) && state.ap < (a.cost || 1) && flLeft() > 0 && !(a.requires && !state.selectedVendors[a.requires]);
   // At most two tasks reach the foreground each week, fixed when the week starts so progress can be counted.
   function foregroundTasks() {
     const w = state.week;
@@ -11845,15 +11964,15 @@ window.WP_COPY = {
   }
   function weekStrip() {
     const W = D.config.weeks, w = state.week; const d = weekDilemma(); const dayof = state.project.type === "dayof";
-    const fg = foregroundTasks(); const done = fg.filter(a => flag(a.flag)).length;
+    foregroundTasks(); const fg = dueNow(); const done = fg.filter(a => flag(a.flag)).length;
     const vendorOpen = !dayof && D.categories.some(c => !state.selectedVendors[c.id] && c.from <= w && c.deadline <= w);
     const parts = [];
     if (d) parts.push(`Tình huống ${state.dilemmaPick[d.id] ? "✓" : "○"}`);
     if (!dayof) parts.push(`Vendor ${vendorOpen ? "○" : "✓"}`);
-    if (fg.length) parts.push(`Việc ${done}/${fg.length}`);
-    const c = state.career;
+    if (fg.length) parts.push(`Đã hứa ${done}/${fg.length}`);
+    const c = state.career, need = dueNeed();
     return `<div class="week-strip"><span class="eyebrow">Tuần ${w}/${W} · ${esc(weekPhase(w, W))}</span><span class="small">${parts.join(" · ")}</span></div>
-      <small class="cashline">Quỹ <b class="${c.cash < 0 ? "neg" : ""}">${money(c.cash)}</b> · tháng này đã chi ${money(c.spentThisMonth)}</small>`;
+`;
   }
   // Thẻ thiếu tiền trước lễ: dùng chung ô tình huống của tuần, không bao giờ hiện cùng lúc với tình huống khác.
   // Phần còn thiếu sau khi chọn một lựa chọn của thẻ thiếu tiền (Đợt 4). Tính đúng như resolveShort làm.
@@ -12002,7 +12121,7 @@ window.WP_COPY = {
       const c = getCat(v.category); const t = state.fg && state.fg.watch ? getAction(state.fg.watch) : null;
       return `<div class="card v-slot"><span class="eyebrow">Để mắt · ${esc(CAT_SHORT[c.id] || c.label)}</span>
         ${vendorDetail(v, c, true)}
-        ${t && openNow(t) ? `<div class="list">${taskCard(t)}</div>` : t && flag(t.flag) ? `<small class="pos">✓ Đã làm: ${esc(lower(t.title))}</small>` : ""}</div>`;
+        ${t && openNow(t) && !dueNow().includes(t) ? `<div class="list">${taskCard(t)}</div>` : t && flag(t.flag) ? `<small class="pos">✓ Đã làm: ${esc(lower(t.title))}</small>` : ""}</div>`;
     }
     const c = D.categories.filter(x => !state.selectedVendors[x.id] && x.from <= w).sort((a, b) => a.deadline - b.deadline)[0];
     if (!c) return "";
@@ -12013,24 +12132,28 @@ window.WP_COPY = {
       <div class="v-tabs" role="tablist">${vs.map((v, i) => `<button role="tab" aria-selected="${i === tab}" class="${i === tab ? "on" : ""}" data-act="vtab" data-id="${c.id}:${i}">${TIER_NAMES[i]}</button>`).join("")}</div>
       ${vendorDetail(vs[tab], c, false)}</div>`;
   }
-  function taskSlot() {
-    const w = state.week; const fg = foregroundTasks();
-    const shown = new Set(fg.map(a => a.id).concat(state.fg.watch ? [state.fg.watch] : []));
-    const moreDue = D.actions.filter(a => openNow(a) && isContracted(a.id) && a.to === w && !shown.has(a.id)).length;
-    if (!fg.length) return `<p class="empty">Tuần này không có việc gấp.</p>`;
-    return `<h2 class="sec">Việc cần làm</h2><div class="list">${fg.map(a => flag(a.flag) ? `<div class="task-done">✓ ${esc(a.title)}</div>` : openNow(a) ? taskCard(a) : "").join("")}</div>
-      ${moreDue ? `<button class="link block" data-act="sheet" data-id="book">Còn ${moreDue} việc đã hứa tới hạn tuần này ›</button>` : ""}
-      ${nextWeekLine()}`;
+  // Đợt 4b: tiền cảnh từ trên xuống: việc ĐÃ HỨA tới hạn tuần này → tình huống tuần → ô vendor → "Việc khác (N)" (bấm mới mở).
+  function promisedSlot() {
+    const due = dueNow(), early = earlyTasks(); if (!due.length && !early.length) return "";
+    const left = due.filter(a => !flag(a.flag)).concat(early), done = due.filter(a => flag(a.flag));
+    const need = dueNeed() + early.reduce((n, a) => n + (a.cost || 1), 0); // mục 5: dòng trên đầu màn, đỏ khi thiếu (tính cả việc làm sớm); cũng là tiêu đề của mục
+    return `<h2 class="sec due-line ${need > state.ap ? "neg" : ""}" id="due-line">${need ? `Tuần này: việc đã hứa cần ${need} lượt · bạn có ${state.ap}` : "Việc đã hứa tuần này đã xong"}</h2>${left.length ? `<div class="list">${left.map(a => taskCard(a, true, a === left.find(taskHire))).join("")}</div>` : ""}${done.length ? `<div class="task-done slim">✓ Đã xong: ${esc(done.map(a => lower(a.title)).join(", "))}</div>` : ""}`;
+  }
+  function moreSlot() {
+    const more = moreTasks(), open = state.moreWeek === state.week;
+    return `${more.length ? `<button class="more-tasks" data-act="moreTasks" aria-expanded="${open}"><span>Việc khác (${more.length})</span><span class="chev">${open ? "▴" : "›"}</span></button>
+      ${open ? `<div class="list">${more.map(a => taskCard(a, false, a === more.find(taskHire))).join("")}</div>` : ""}` : ""}${nextWeekLine()}`;
   }
   // Cho thấy trước số lượt sắp cần (mục 1.8): việc đã hứa tới hạn tuần tới, so với số lượt mỗi tuần.
   function nextWeekNeed() {
     const w = state.week + 1; if (w > D.config.weeks) return null;
     const due = D.actions.filter(a => isContracted(a.id) && a.to === w && !flag(a.flag));
-    return due.length ? { need: due.reduce((s, a) => s + (a.cost || 1), 0), have: baseAP(), n: due.length } : null;
+    const ah = apAhead(w); return due.length ? { need: due.reduce((s, a) => s + (a.cost || 1), 0), have: ah.ap, cuts: ah.cuts, n: due.length } : null;
   }
   function nextWeekLine() {
     const x = nextWeekNeed(); if (!x) return "";
-    return `<p class="small ${x.need > x.have ? "neg" : "muted"}">Tuần tới: việc đã hứa tới hạn cần ${x.need} lượt · bạn có ${x.have}${x.need > x.have ? ". Làm bớt từ tuần này, hoặc sẽ phải bỏ một lời hứa." : ""}</p>`;
+    const lost = x.cuts.length ? ` · mất ${x.cuts.reduce((n, c) => n + c.n, 0)} vì ${x.cuts.map(c => c.why).join(", ")}` : "";
+    return `<p class="small next-line ${x.need > x.have ? "neg" : "muted"}">Tuần tới: việc đã hứa tới hạn cần ${x.need} lượt · bạn có ${x.have}${lost}${x.need > x.have ? ". Làm bớt từ tuần này, hoặc sẽ phải bỏ một lời hứa." : ""}</p>`;
   }
   function bookSummary() {
     const w = state.week; const dayof = state.project.type === "dayof";
@@ -12045,9 +12168,11 @@ window.WP_COPY = {
   function screenPrep() {
     return `<section class="stack">
       ${weekStrip()}
+      ${promisedSlot()}
       ${dilemmaCard()}
       ${vendorSlot()}
-      ${taskSlot()}
+      ${moreSlot()}
+      <small class="cashline">Quỹ <b class="${state.career.cash < 0 ? "neg" : ""}">${money(state.career.cash)}</b> · tháng này đã chi ${money(state.career.spentThisMonth)}</small>
       <button class="book-open" data-act="sheet" data-id="book"><b>Sổ dự án</b><span>${esc(bookSummary())}</span><span class="chev">▴</span></button>
     </section>`;
   }
@@ -12062,7 +12187,6 @@ window.WP_COPY = {
     const slotCat = dayof ? null : D.categories.filter(x => !state.selectedVendors[x.id] && x.from <= w).sort((a, b) => a.deadline - b.deadline)[0];
     const otherCats = dayof ? [] : D.categories.filter(c => !state.selectedVendors[c.id] && c.from <= w && c !== slotCat);
     const booked = D.categories.filter(c => state.selectedVendors[c.id]);
-    const tasks = D.actions.filter(a => openNow(a) && !shown.has(a.id)).sort((a, b) => (isContracted(b.id) - isContracted(a.id)) || (a.to - b.to));
     return `<h2 class="h">Sổ dự án</h2>
       <h3 class="sub">Mọi người</h3><div class="people">${people.map(([who, s]) => `<div class="person">${img(speakerLook(who), "face", bandMood(s))}<p>${esc(moodLine(who, s))}</p></div>`).join("")}</div>
       <h3 class="sub">Tiền <button class="link" data-act="sheet" data-id="money">Từng khoản ›</button></h3><p>${m.profit < 0 ? "Đám này đang lỗ" : "Lời dự kiến của đám này"} <b class="${m.profit < 0 ? "neg" : ""}">${money(Math.abs(m.profit))}</b>${dayof ? "" : `, trong đó chênh lệch vendor ${signed(m.margin)}`}.</p>
@@ -12072,7 +12196,6 @@ window.WP_COPY = {
       ${wishes.length ? `<h3 class="sub">Mong muốn của khách</h3>${dayof ? `<p class="small muted">${COORD_NOTE}</p>` : ""}${wishes.map(wishRow).join("")}` : ""}
       ${otherCats.length ? `<h3 class="sub">Vendor khác chốt sớm được</h3>${otherCats.map(pickerCard).join("")}` : ""}
       ${booked.length ? `<h3 class="sub">${dayof ? "Vendor khách tự chốt" : "Vendor đã chốt"}</h3><div class="list">${booked.map(bookedCard).join("")}</div>` : ""}
-      ${tasks.length ? `<h3 class="sub">Việc khác</h3><div class="list lite">${tasks.map(taskCard).join("")}</div>` : ""}
       <h3 class="sub">Thêm lượt</h3>${timeCard()}
       <div class="sheet-actions"><button class="btn" data-act="showLog">Nhật ký dự án</button></div>`;
   }
@@ -12139,17 +12262,23 @@ window.WP_COPY = {
     if (state.ap < (a.cost || 1)) return "noap";
     return isContracted(a.id) ? "promised" : "open";
   }
-  function taskCard(a) {
+  function taskCard(a, inDue, hireHere = true) { // inDue: nằm trong mục "Việc đã hứa · hạn tuần này" nên không lặp chip "Đã hứa" / "Hạn tuần này"
     const why = actionBlock(a); const cost = a.cost || 1; const meet = meetingFor(a.id); const st = taskState(a);
     if (st === "done") return `<div class="task-done">✓ ${esc(a.title)}</div>`;
     const tag = st === "overdue" ? `<span class="neg">Quá hạn</span>` : a.to === state.week ? `<span class="neg">Hạn tuần này</span>` : `<span>Hạn tuần ${a.to}</span>`;
-    return `<button class="task st-${st} ${isContracted(a.id) ? "promised" : ""} ${why ? "locked" : ""} ${meet ? "meet" : ""}" data-act="task" data-id="${a.id}">
-      <div class="task-main"><b>${esc(a.title)}</b><small>${esc(COPY.why[a.id] || a.detail)}</small>
-        <div class="chips">${isContracted(a.id) ? `<span class="gold">Đã hứa</span>` : ""}${tag}${st === "noap" ? `<span class="muted-chip">Chưa đủ lượt</span>` : ""}</div>
-        ${why && !["noap", "overdue"].includes(st) ? `<em>${esc(why)}</em>` : ""}</div>
-      <span class="cost" aria-label="${cost} lượt${actionMoney(a) ? `, ${cashStr(actionMoney(a))}` : ""}"><b class="cost-n">${cost} lượt</b><i class="dots" aria-hidden="true">${"●".repeat(cost)}</i>${actionMoney(a) ? `<small class="money">${cashStr(actionMoney(a))}</small>` : ""}</span></button>`;
+    const info = state.expand === `task:${a.id}`, warn = state.warnTask === a.id ? taskWarning(a) : null;
+    return `<div class="task st-${st} ${isContracted(a.id) ? "promised" : ""} ${why ? "locked" : ""} ${meet ? "meet" : ""}" id="task-${a.id}">
+      <div class="task-row"><button class="task-do" data-act="task" data-id="${a.id}">
+        <span class="task-main"><b>${esc(a.title)}</b>
+          ${inDue && st !== "noap" && a.to === state.week ? "" : `<span class="chips">${inDue ? (a.to > state.week ? `<span class="gold">Làm sớm · tuần cuối sẽ dồn</span>` : "") : `${isContracted(a.id) ? `<span class="gold">Đã hứa</span>` : ""}${tag}`}${st === "noap" ? `<span class="muted-chip">Chưa đủ lượt</span>` : ""}</span>`}
+          ${why && !["noap", "overdue"].includes(st) ? `<em>${esc(why)}</em>` : ""}</span>
+        <span class="cost" aria-label="${cost} lượt${actionMoney(a) ? `, ${cashStr(actionMoney(a))}` : ""}"><b class="cost-n">${cost} lượt</b><i class="dots" aria-hidden="true">${"●".repeat(cost)}</i>${actionMoney(a) ? `<small class="money">${cashStr(actionMoney(a))}</small>` : ""}</span></button>
+        <button class="task-info" data-act="expand" data-id="task:${a.id}" aria-expanded="${info}" aria-label="Việc này để làm gì">${info ? "▴" : "?"}</button></div>
+      ${info ? `<small class="task-why">${esc(COPY.why[a.id] || a.detail)}</small>` : ""}
+      ${warn ? `<div class="task-warn"><p>${esc(warn.text)}</p><div class="row-btns"><button class="btn" data-act="taskWarnOff">Thôi</button><button class="btn primary" data-act="taskForce" data-id="${a.id}">Vẫn làm</button></div></div>` : ""}
+      ${hireHere && taskHire(a) ? `<button class="mini hire" data-act="hire">+1 lượt · thuê freelancer ${money(TIME.freelancer.cost)}</button>` : ""}
+    </div>`;
   }
-
 
   function timeCard() {
     const flLeft = TIME.freelancer.maxPerWeek - state.weekExtra.fl;
@@ -12497,12 +12626,15 @@ window.WP_COPY = {
   function sheetConfirmWeek() {
     const due = promisedDue(); const need = due.reduce((s, a) => s + (a.cost || 1), 0); const minCost = Math.min(...due.map(a => a.cost || 1));
     const canStay = state.ap >= minCost; const last = state.week >= D.config.weeks;
-    const go = `<div><button class="btn${canStay ? "" : " primary"}" data-act="weekForce">${last ? "Vào ngày cưới" : `Sang tuần ${state.week + 1}`}</button><small class="muted">Bỏ ${due.length} việc đã hứa. Khách có thể đòi giảm phí khi quyết toán.</small></div>`;
-    const stay = canStay ? `<div><button class="btn primary" data-act="close">Ở lại làm</button><small class="muted">Còn ${state.ap} lượt; ${due.length > 1 ? `các việc này cần tổng ${need} lượt` : `việc này cần ${need} lượt`}.</small></div>` : "";
+    // Thuê freelancer để làm kịp (mục 4): đủ suất trong tuần thì một nút thuê đúng số lượt còn thiếu rồi làm luôn các việc đã hứa.
+    const plan = hirePlan(), hire = plan ? `<div><button class="btn primary" data-act="hireDue">Thuê ${plan.k} freelancer · ${money(plan.k * TIME.freelancer.cost)}, làm kịp ${plan.list.length === due.length ? (due.length > 1 ? "cả " + due.length + " việc" : "việc này") : `${plan.list.length}/${due.length} việc`}</button><small class="muted">Thêm ${plan.k} lượt tuần này để làm ${plan.list.map(a => lower(a.title)).join(", ")}. Tiền tính vào chi phí đám.</small></div>` : "";
+    // 3.8.1: chỉ một nút hồng. Có lựa chọn thuê freelancer thì đó là nút chính; không thì "Ở lại làm" (nếu còn đủ lượt), cuối cùng là "Vào ngày cưới / Sang tuần".
+    const go = `<div><button class="btn${!plan && !canStay ? " primary" : ""}" data-act="weekForce">${last ? "Vào ngày cưới" : `Sang tuần ${state.week + 1}`}</button><small class="muted">Bỏ ${due.length} việc đã hứa. Khách có thể đòi giảm phí khi quyết toán.</small></div>`;
+    const stay = canStay ? `<div><button class="btn${plan ? "" : " primary"}" data-act="close">Ở lại làm</button><small class="muted">Còn ${state.ap} lượt; ${due.length > 1 ? `các việc này cần tổng ${need} lượt` : `việc này cần ${need} lượt`}.</small></div>` : "";
     return `<h2 class="h">Bạn còn lời hứa chưa làm</h2>
-      <p>${state.ap ? (canStay ? "Bạn đã hứa trong gói và hạn là tuần này:" : `Tuần này còn ${state.ap} lượt, không đủ cho việc nào đã hứa:`) : "Tuần này hết lượt. Bạn đã hứa trong gói và hạn là tuần này:"}</p>
+      <p>${state.ap ? (canStay || flLeft() > 0 ? "Bạn đã hứa trong gói và hạn là tuần này:" : `Tuần này còn ${state.ap} lượt, không đủ cho việc nào đã hứa:`) : flLeft() > 0 ? `Tuần này hết lượt, nhưng còn thuê được ${flLeft()} freelancer. Bạn đã hứa trong gói và hạn là tuần này:` : "Tuần này hết lượt. Bạn đã hứa trong gói và hạn là tuần này:"}</p>
       <ul class="bul">${due.map(a => `<li><b>${esc(a.title)}</b> · cần ${a.cost || 1} lượt</li>`).join("")}</ul>
-      <div class="sheet-actions stacked">${go}${stay}</div>`;
+      <div class="sheet-actions stacked">${hire}${go}${stay}</div>`;
   }
 
   // ---- Layout and render ---------------------------------------------------------
@@ -12639,7 +12771,11 @@ window.WP_COPY = {
       case "research": research(id); break;
       case "negotiate": negotiate(id); break;
       case "spec": { const [c, sp] = id.split(":"); setSpec(c, sp); break; }
-      case "task": doAction(id); break;
+      case "task": { const a = getAction(id); if (state.warnTask !== id && taskWarning(a)) { state.warnTask = id; break; } state.warnTask = null; doAction(id); } break; // cảnh báo trước khi lỡ tay
+      case "taskForce": state.warnTask = null; doAction(id); break;
+      case "taskWarnOff": state.warnTask = null; break;
+      case "moreTasks": state.moreWeek = state.moreWeek === state.week ? null : state.week; break;
+      case "hireDue": hireDue(); break;
       case "ask": ask(id); break;
       case "meetDone": state.sheet = null; state.meeting = null; break;
       case "sheet": state.sheet = /^(quote|offer):/.test(id) ? { type: id.split(":")[0], id: Number(id.split(":")[1]) } : /^cands:/.test(id) ? { type: "cands", role: id.split(":")[1] } : /^branch(City|Mgr|Close):/.test(id) ? { type: id.split(":")[0], id: id.split(":")[1] } : { type: id }; clearTimeout(toastTimer); { const t = $("#toast"); if (t) { t.hidden = true; t.className = "toast"; } } break;
@@ -12699,9 +12835,9 @@ window.WP_COPY = {
     restore: p => restore(p),
     setState(s) { state = s; if (s.project) { D = buildProject(s.project, s.career.staff, s.me ? s.me.skills : []); TIME = D.config.time; } else { D = BASE; TIME = CFG.time; } return state; },
     serialize: () => JSON.stringify({ v: BASE.version, s: state }), loadFrom(json) { const s = restore(JSON.parse(json)); if (s) state = s; return s; }, version: BASE.version,
-    startCareer, genOffers, quoteOptions, takeOffer, startPrep, weekDilemma, chooseDilemma, canBook, book, research, negotiate, setSpec,
+    startCareer, genOffers, quoteOptions, quoteLoad: (o, q) => quoteLoad(o, q), hubHtml: () => screenHub(), takeOffer, startPrep, weekDilemma, chooseDilemma, canBook, book, research, negotiate, setSpec,
     actionBlock, doAction, ask, wishBlock, fulfil, confirmConcept, promisedDue, nextWeek, startEvent, optionBlock, successChance, resolveCrisis,
-    nextItem, stageNext, settlementOptions, resolveSettlement, nextSettlement, endProject, openSide, workSide, sideOffers: () => state.sideOffers || (state.sideOffers = CORE.sideOffers(state.career, SJ, CAL.rnd)), takeLoan, hire, fire, opsRows: () => opsRows(), lower, shortAfter: id => shortAfter(id), shortCardHtml: () => shortCard(), shortfallNow: () => shortfall(), crisisOptionsHtml: id => crisisOptions(getCrisis(id)), needLine: () => needLine(), hudHtml: () => hud(), monthCardHtml: () => monthCardHtml(), sideSheetHtml: () => sheetSide(), taskState: a => taskState(a), vendorDetailHtml: (v, c) => vendorDetail(v, c, true), offerProfile: o => offerProfile(o), promisedDue: () => promisedDue(), isContracted: id => isContracted(id), afterLines: r => afterLines(r || state.result), lessons: r => lessons(r), markLinks: () => markLinks(), wishPossible: w => wishPossible(w), famLook: id => famLook(id), coupleLook: k => CL(k), cardLook: k => cardLook(k), GROOM_TOPS: () => GROOM_TOPS, goalLines: g => goalLines(g), officeUnlocks: o => officeUnlocks(o), sheetCareerHtml: () => sheetCareer(), confirmWeekHtml: () => sheetConfirmWeek(), nextWeekNeed: () => nextWeekNeed(), taskCardHtml: a => taskCard(a), monthSpendParts: () => monthSpendParts(), html: name => ({ meeting: () => sheetBody(), offer: sheetOffer, quote: sheetQuote, review: screenReview, settlement: screenSettlement, money: sheetMoney, brief: () => screenBrief ? screenBrief() : "" }[name] || (() => ""))(), voice, subjectWord, satReasons: () => satReasons(), weekStartAP, vendorTopRisk: v => vendorRisk(v), CAL_FOR_TEST: () => CAL, branchCities, openBranch, closeBranchNow, assignManager, branchLine, candidates, rolesOpen, salaryOf, fireCost, teamFx, chooseBrand, learnSkill, upgrade, sceneForTest: () => scene, setBrandName, chooseIdentity, identityMethods, renameBrand(name, method) { if (!state.career.brandName || state.career.identity.renames >= IDN.renames) return false; state.sheet = { type: "brandName", mode: "rename" }; if (!setBrandName(name, "rename")) return false; state.sheet.pick = method; return chooseIdentity(method, true); }, sheetHtml: () => sheetBody(), nameSuggestions, brandOr, freelancerNow, designerLevel,
+    nextItem, stageNext, settlementOptions, resolveSettlement, nextSettlement, endProject, openSide, workSide, sideOffers: () => state.sideOffers || (state.sideOffers = CORE.sideOffers(state.career, SJ, CAL.rnd)), takeLoan, hire, fire, opsRows: () => opsRows(), lower, shortAfter: id => shortAfter(id), shortCardHtml: () => shortCard(), shortfallNow: () => shortfall(), crisisOptionsHtml: id => crisisOptions(getCrisis(id)), needLine: () => needLine(), hudHtml: () => hud(), monthCardHtml: () => monthCardHtml(), sideSheetHtml: () => sheetSide(), taskState: a => taskState(a), vendorDetailHtml: (v, c) => vendorDetail(v, c, true), offerProfile: o => offerProfile(o), promisedDue: () => promisedDue(), isContracted: id => isContracted(id), afterLines: r => afterLines(r || state.result), lessons: r => lessons(r), markLinks: () => markLinks(), wishPossible: w => wishPossible(w), famLook: id => famLook(id), coupleLook: k => CL(k), cardLook: k => cardLook(k), GROOM_TOPS: () => GROOM_TOPS, goalLines: g => goalLines(g), officeUnlocks: o => officeUnlocks(o), sheetCareerHtml: () => sheetCareer(), confirmWeekHtml: () => sheetConfirmWeek(), nextWeekNeed: () => nextWeekNeed(), taskCardHtml: a => taskCard(a), monthSpendParts: () => monthSpendParts(), html: name => ({ meeting: () => sheetBody(), offer: sheetOffer, quote: sheetQuote, review: screenReview, settlement: screenSettlement, money: sheetMoney, brief: () => screenBrief ? screenBrief() : "", prep: () => screenPrep(), confirmWeek: () => sheetConfirmWeek() }[name] || (() => ""))(), voice, subjectWord, satReasons: () => satReasons(), weekStartAP, vendorTopRisk: v => vendorRisk(v), CAL_FOR_TEST: () => CAL, branchCities, openBranch, closeBranchNow, assignManager, branchLine, candidates, rolesOpen, salaryOf, fireCost, teamFx, chooseBrand, learnSkill, upgrade, sceneForTest: () => scene, prepItems: () => { if (state.phase !== "prep" || !state.project) return []; const w = state.week, out = []; dueNow().forEach(a => out.push({ kind: "task", id: a.id })); earlyTasks().forEach(a => out.push({ kind: "task", id: a.id, early: true })); out.push({ kind: "card" }, { kind: "dilemma" }); if (state.project.type === "dayof") { foregroundTasks(); if (state.fg && state.fg.watch && !dueNow().some(a => a.id === state.fg.watch)) out.push({ kind: "task", id: state.fg.watch, watch: true }); } else { const c = D.categories.filter(x => !state.selectedVendors[x.id] && x.from <= w).sort((a, b) => a.deadline - b.deadline)[0]; if (c) out.push({ kind: "vendor", cat: c.id }); } moreTasks().forEach(a => out.push({ kind: "task", id: a.id, more: true })); return out; }, taskWarning: a => taskWarning(a), taskHire: a => taskHire(a), promiseGap: ap => promiseGap(ap == null ? state.ap : ap), earlyTasks: () => earlyTasks(), apAhead: k => apAhead(k), hireDue: () => hireDue(), dueNeed: () => dueNeed(), setBrandName, chooseIdentity, identityMethods, renameBrand(name, method) { if (!state.career.brandName || state.career.identity.renames >= IDN.renames) return false; state.sheet = { type: "brandName", mode: "rename" }; if (!setBrandName(name, "rename")) return false; state.sheet.pick = method; return chooseIdentity(method, true); }, sheetHtml: () => sheetBody(), nameSuggestions, brandOr, freelancerNow, designerLevel,
     checkStage, monthlyCost, monthlyParts, tierObj, moneyNow, riskStatus, hasSkill, avgStars, shortfall, shortActive, resolveShort, shortDrops, priceFor, catVendors, hireFreelancer, overtime, monthCard, cardOptions: () => (monthCard() ? CORE.cardOptions(state.career, monthCard()) : []), cardPending, resolveCard, setOffice, setLiving, tickWeek, actionMoney, discoveryPending, resolveDiscovery, chooseContact, assignContact, rollDiscovery, slotHtml: () => dilemmaCard(), decisionPending
   };
   window.WP_GAME = { get state() { return state; }, get D() { return D; }, render, _build: buildProject, api, HEADLESS };
