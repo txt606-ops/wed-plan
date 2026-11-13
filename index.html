@@ -742,6 +742,18 @@ h2.sec.due-line.neg { color: var(--danger); }
 .v-compare span { padding: 4px 2px; border: 2px solid transparent; border-top: 0; }
 .v-compare span.on { border-color: var(--ink); background: var(--surface-2); }
 .v-compare b.pos { color: var(--jade); } .v-compare b.neg { color: var(--danger); } .v-compare b.gold { color: var(--gold); }
+/* Sổ dự án (3.9.4): việc bấm được trước, phần đọc đóng sẵn */
+.book-todo { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.book-todo .sub { margin: 6px 0 0; }
+.book-read { display: flex; flex-direction: column; gap: 8px; }
+.book-sec { border: 2px solid var(--line); background: var(--surface); padding: 10px 12px; }
+.book-sec > summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.book-sec > summary::-webkit-details-marker { display: none; }
+.book-sec > summary b::before { content: "▸ "; } .book-sec[open] > summary b::before { content: "▾ "; }
+.book-sec > summary span { font-size: 13px; color: var(--muted); text-align: right; }
+.book-sec[open] > summary { margin-bottom: 8px; }
+.wish-wait { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.wish-wait li { font-size: 14px; color: var(--muted); padding: 6px 10px; border: 1px dashed var(--line); background: var(--surface); }
 
 </style>
 </head>
@@ -758,7 +770,7 @@ h2.sec.due-line.neg { color: var(--danger); }
  * crises[].options[].effects: cost (agency pays), clientPays (client is charged), couple, family.
  */
 window.GAME_DATA = {
-  "version": "3.9.3",
+  "version": "3.9.4",
   "project": {
     "couple": "Linh & Minh",
     "location": "Sài Meo",
@@ -1260,7 +1272,7 @@ window.GAME_DATA = {
     {
       "id": "meet_family",
       "title": "Gặp đại diện hai họ",
-      "detail": "Trò chuyện, hỏi 3 câu để biết gia đình coi trọng gì.",
+      "detail": "Trò chuyện, hỏi 1 câu để biết gia đình coi trọng gì.",
       "from": 1,
       "to": 2,
       "cost": 1,
@@ -2590,7 +2602,7 @@ window.GAME_DATA = {
     "family": {
       "action": "meet_family",
       "who": "Đại diện hai họ",
-      "picks": 3,
+      "picks": 1,
       "questions": [
         {
           "id": "f_taboo",
@@ -11248,7 +11260,7 @@ window.WP_COPY = {
   // Bản cùng cấu trúc lưu: đọc thẳng, không chuyển đổi. 3.7.1–3.7.3 chỉ sửa giao diện; trường mới (warned, markSrc, sideWeek) đều có giá trị mặc định.
   // 3.7.4–3.7.5 không thêm trường lưu nào; nhãn "planner điều phối được" của mong muốn dựng lại từ dữ liệu khi nạp.
   // 3.8.0 thêm tên thương hiệu và nhận diện: save cũ có tên trống, nhận diện "cơ bản" (CORE.initIdentity); đã qua mốc chọn hướng thì lần mở tới hỏi đặt tên một lần.
-  const SAME_SHAPE = ["3.7.0", "3.7.3", "3.7.5", "3.8.0", "3.8.1", "3.9.0", "3.9.1", "3.9.2"]; // 3.9.1–3.9.3 không đổi cách lưu: chỉ sửa giao diện, tên khách, thứ tự sự cố, nút thuê freelancer // 3.9.0 thêm career.scandal / scandalRep / scandalWaryUntil, đều có mặc định trong CORE.initCareer // 3.8.1 chỉ đổi giao diện màn chuẩn bị và lượt cần: không thêm trường lưu
+  const SAME_SHAPE = ["3.7.0", "3.7.3", "3.7.5", "3.8.0", "3.8.1", "3.9.0", "3.9.1", "3.9.2", "3.9.3"]; // 3.9.1–3.9.4 không đổi cách lưu: chỉ sửa giao diện, tên khách, thứ tự sự cố, nút thuê freelancer // 3.9.0 thêm career.scandal / scandalRep / scandalWaryUntil, đều có mặc định trong CORE.initCareer // 3.8.1 chỉ đổi giao diện màn chuẩn bị và lượt cần: không thêm trường lưu
   const OFFICE_BY_OLD_STAGE = ["home", "cowork", "small", "studio", "studio"];
   function migrate(old, from) {
     const s = { ...fresh(), ...old, sheet: null };
@@ -12436,11 +12448,10 @@ window.WP_COPY = {
   }
   function bookSummary() {
     const w = state.week; const dayof = state.project.type === "dayof";
-    const wishes = D.wishes.filter(x => x.kind === "wish" && state.revealed.includes(x.id) && !flag(`wish_${x.id}`) && (!dayof || x.coord)).length;
-    const cats = dayof ? 0 : D.categories.filter(c => !state.selectedVendors[c.id] && c.from <= w).length;
-    const m = moneyNow(); const parts = [];
-    if (wishes) parts.push(`${wishes} mong muốn`);
-    if (cats > 1) parts.push(`${cats - 1} vendor khác`);
+    const T = bookTodo(); const m = moneyNow(); const parts = [];
+    if (T.wishes.length) parts.push(`${T.wishes.length} mong muốn chưa đưa vào`);
+    if (T.waiting.length) parts.push(`${T.waiting.length} chờ chốt vendor`);
+    if (T.cats.length) parts.push(`${T.cats.length} vendor chốt sớm được`);
     { const ep = expectedProfit(m); parts.push(`${ep < 0 ? "lỗ dự kiến" : "lời dự kiến"} ${cashStr(Math.abs(ep))}`); }
     return parts.join(" · ");
   }
@@ -12456,26 +12467,47 @@ window.WP_COPY = {
     </section>`;
   }
   // Everything that is not this week's foreground lives here: people, money, risks, promises, wishes, other vendors and tasks.
+  // Sổ dự án (3.9.4): việc bấm được lên đầu, phần để đọc đóng sẵn bên dưới, mỗi mục một dòng tóm tắt trên tiêu đề. Không đổi luật, không đổi số.
+  const MOOD_WORD = ["rất vui", "vui", "bình thường", "hơi lo", "không vui"];
+  function bookTodo() {
+    const w = state.week, dayof = state.project.type === "dayof";
+    const known = D.wishes.filter(x => x.kind !== "info" && state.revealed.includes(x.id));
+    const open = known.filter(x => x.kind === "wish" && !flag(`wish_${x.id}`) && (!dayof || x.coord)); // mong muốn chưa đưa vào kế hoạch, đưa vào được
+    const waitsVendor = x => !!x.needs && !dayofCoord(x) && !state.selectedVendors[x.needs];
+    const wishes = open.filter(x => !waitsVendor(x)), waiting = open.filter(waitsVendor); // bấm được ngay / đang chờ chốt vendor
+    const taboos = known.filter(x => x.kind === "taboo" && tabooBroken(x)); // điều kiêng đang phạm: có nút sửa
+    const slotCat = dayof ? null : D.categories.filter(x => !state.selectedVendors[x.id] && x.from <= w).sort((a, b) => a.deadline - b.deadline)[0];
+    const cats = dayof ? [] : D.categories.filter(c => !state.selectedVendors[c.id] && c.from <= w && c !== slotCat);
+    const more = state.phase === "prep" && TIME.freelancer.maxPerWeek - state.weekExtra.fl > 0;
+    return { wishes, waiting, taboos, cats, more, known };
+  }
   function sheetBook() {
     const w = state.week; const dayof = state.project.type === "dayof"; const sat = moodNow(); const m = moneyNow();
     const people = [["bride", sat.couple], ["groom", sat.couple], ["mom_bride", sat.family], ["mom_groom", sat.family]];
     const rs = riskStatus(); const hot = rs.rows.filter(r => r.ok && r.pct >= 20).sort((a, b) => b.pct - a.pct);
-    const t = tierObj(); const shown = new Set((state.fg ? state.fg.ids : []).concat(state.fg && state.fg.watch ? [state.fg.watch] : []));
-    const known = D.wishes.filter(x => x.kind !== "info" && state.revealed.includes(x.id));
-    const wishes = known.filter(x => x.kind === "wish" || tabooBroken(x)).sort((a, b) => (dayof ? !!b.coord - !!a.coord : 0)); // day-of: nhóm điều phối được lên trước
-    const slotCat = dayof ? null : D.categories.filter(x => !state.selectedVendors[x.id] && x.from <= w).sort((a, b) => a.deadline - b.deadline)[0];
-    const otherCats = dayof ? [] : D.categories.filter(c => !state.selectedVendors[c.id] && c.from <= w && c !== slotCat);
+    const t = tierObj(); const T = bookTodo(); const ep = expectedProfit(m);
     const booked = D.categories.filter(c => state.selectedVendors[c.id]);
+    const doneN = t.contracted.filter(id => flag(getAction(id).flag)).length;
+    const rest = T.known.filter(x => !T.wishes.includes(x) && !T.waiting.includes(x) && !T.taboos.includes(x)); // đã đưa vào, day-of khách tự lo, điều kiêng đang an toàn
+    const det = (title, sum, body) => `<details class="book-sec"><summary><b>${title}</b><span>${esc(sum)}</span></summary>${body}</details>`;
+    // Thứ tự (Thanh, 13/11/2026): 1 mong muốn bấm được ngay và điều kiêng đang phạm (thẻ đầy đủ) · 2 vendor chốt sớm được (việc mở khoá mong muốn)
+    // · 3 mong muốn đang chờ vendor, mỗi cái một dòng, không nút · 4 thêm lượt. Chốt xong vendor thì mong muốn đang chờ thành thẻ đầy đủ ở nhóm 1.
+    const todo = [
+      T.wishes.length || T.taboos.length ? `<h3 class="sub">Mong muốn chưa đưa vào kế hoạch</h3>${dayof && T.wishes.length ? `<p class="small muted">${COORD_NOTE}</p>` : ""}${T.taboos.concat(T.wishes).map(wishRow).join("")}` : "",
+      T.cats.length ? `<h3 class="sub">Vendor khác chốt sớm được</h3>${T.cats.map(pickerCard).join("")}` : "",
+      T.waiting.length ? `<h3 class="sub">Mong muốn chờ chốt vendor</h3><ul class="wish-wait">${T.waiting.map(x => `<li>♥ ${esc(x.title)} · cần chốt ${esc(lower(getCat(x.needs).label))} trước</li>`).join("")}</ul>` : "",
+      T.more ? `<h3 class="sub">Thêm lượt</h3>${timeCard()}` : ""
+    ].filter(Boolean);
     return `<h2 class="h">Sổ dự án</h2>
-      <h3 class="sub">Mọi người</h3><div class="people">${people.map(([who, s]) => `<div class="person">${img(speakerLook(who), "face", bandMood(s))}<p>${esc(moodLine(who, s))}</p></div>`).join("")}</div>
-      <h3 class="sub">Tiền <button class="link" data-act="sheet" data-id="money">Từng khoản ›</button></h3><p>${expectedProfit(m) < 0 ? "Lỗ dự kiến của đám này" : "Lời dự kiến của đám này"} <b class="${expectedProfit(m) < 0 ? "neg" : ""}">${cashStr(Math.abs(expectedProfit(m)))}</b>${dayof ? "" : `, trong đó chênh lệch vendor ${signed(m.margin)}`}.</p>
-      ${cashRows()}
-      <h3 class="sub">Nguy cơ ngày cưới <button class="link" data-act="sheet" data-id="risk">Tất cả ›</button></h3>${hot.length ? `<ul class="bul">${hot.slice(0, 3).map(r => `<li>${esc(COPY.risk[r.c.id] || r.c.title)} <b class="${r.pct >= 35 ? "neg" : "gold"}">${r.pct}%</b></li>`).join("")}</ul>` : `<p class="pos">Chưa có nguy cơ đáng lo.</p>`}
-      <h3 class="sub">Việc đã hứa trong gói</h3><ul class="checks">${t.contracted.map(id => { const a = getAction(id); return `<li class="${flag(a.flag) ? "ok" : ""}">${flag(a.flag) ? "✓" : "○"} ${esc(a.title)} <small>${flag(a.flag) ? "" : a.to < w ? "đã quá hạn" : `tới tuần ${a.to}`}</small></li>`; }).join("")}</ul>
-      ${wishes.length ? `<h3 class="sub">Mong muốn của khách</h3>${dayof ? `<p class="small muted">${COORD_NOTE}</p>` : ""}${wishes.map(wishRow).join("")}` : ""}
-      ${otherCats.length ? `<h3 class="sub">Vendor khác chốt sớm được</h3>${otherCats.map(pickerCard).join("")}` : ""}
-      ${booked.length ? `<h3 class="sub">${dayof ? "Vendor khách tự chốt" : "Vendor đã chốt"}</h3><div class="list">${booked.map(bookedCard).join("")}</div>` : ""}
-      <h3 class="sub">Thêm lượt</h3>${timeCard()}
+      <section class="book-todo"><span class="eyebrow">Làm được ngay</span>${todo.length ? todo.join("") : `<p class="muted">Không có việc gì phải làm thêm ở đây.</p>`}</section>
+      <div class="book-read">
+      ${det("Tiền", `${ep < 0 ? "lỗ dự kiến" : "lời dự kiến"} ${cashStr(Math.abs(ep))}`, `<p>${ep < 0 ? "Lỗ dự kiến của đám này" : "Lời dự kiến của đám này"} <b class="${ep < 0 ? "neg" : ""}">${cashStr(Math.abs(ep))}</b>${dayof ? "" : `, trong đó chênh lệch vendor ${signed(m.margin)}`}. <button class="link" data-act="sheet" data-id="money">Từng khoản ›</button></p>${cashRows()}`)}
+      ${det("Nguy cơ ngày cưới", hot.length ? `${hot.length} nguy cơ đáng lo · cao nhất ${hot[0].pct}%` : "chưa có nguy cơ đáng lo", `${hot.length ? `<ul class="bul">${hot.slice(0, 3).map(r => `<li>${esc(COPY.risk[r.c.id] || r.c.title)} <b class="${r.pct >= 35 ? "neg" : "gold"}">${r.pct}%</b></li>`).join("")}</ul>` : `<p class="pos">Chưa có nguy cơ đáng lo.</p>`}<button class="link" data-act="sheet" data-id="risk">Tất cả ›</button>`)}
+      ${det("Việc đã hứa", `${doneN}/${t.contracted.length} xong`, `<ul class="checks">${t.contracted.map(id => { const a = getAction(id); return `<li class="${flag(a.flag) ? "ok" : ""}">${flag(a.flag) ? "✓" : "○"} ${esc(a.title)} <small>${flag(a.flag) ? "" : a.to < w ? "đã quá hạn" : `tới tuần ${a.to}`}</small></li>`; }).join("")}</ul>`)}
+      ${det("Mọi người", `cặp đôi ${MOOD_WORD[moodBand(sat.couple)]} · hai họ ${MOOD_WORD[moodBand(sat.family)]}`, `<div class="people">${people.map(([who, s]) => `<div class="person">${img(speakerLook(who), "face", bandMood(s))}<p>${esc(moodLine(who, s))}</p></div>`).join("")}</div>`)}
+      ${det(dayof ? "Vendor khách tự chốt" : "Vendor đã chốt", dayof ? `${booked.length} hạng mục` : `${booked.length}/${D.categories.length} hạng mục`, booked.length ? `<div class="list">${booked.map(bookedCard).join("")}</div>` : `<p class="muted">Chưa chốt hạng mục nào.</p>`)}
+      ${rest.length ? det("Mong muốn đã biết", `${rest.filter(x => flag(`wish_${x.id}`)).length} đã đưa vào kế hoạch`, `${dayof ? `<p class="small muted">${COORD_NOTE}</p>` : ""}${rest.map(wishRow).join("")}`) : ""}
+      </div>
       <div class="sheet-actions"><button class="btn" data-act="showLog">Nhật ký dự án</button></div>`;
   }
   // Dòng tiền của đám này, nằm trong Sổ dự án: khách đã trả bao nhiêu, còn phải trả vendor bao nhiêu trước lễ.
@@ -12836,7 +12868,7 @@ window.WP_COPY = {
     const unlocked = asked.map(q => getWish(q.reveal)).filter(Boolean);
     return `<h2 class="h">Gặp riêng · ${esc(def.who)}</h2>
       <div class="chat-wrap">${asked.map(q => `${chat([{ who: "me", text: q.q }, { who: q.speaker, text: q.a }])}${getWish(q.reveal) ? `<div class="unlock ${getWish(q.reveal).kind}">${getWish(q.reveal).kind === "taboo" ? "⚠ Điều kiêng" : getWish(q.reveal).kind === "info" ? "★ Mở brief ẩn" : "♥ Mong muốn mới"}: ${esc(getWish(q.reveal).title)}</div>` : ""}`).join("")}</div>
-      ${left > 0 ? `<p class="muted">Còn ${left} câu hỏi. Chọn câu bạn nghĩ sẽ mở ra điều quan trọng nhất.</p><div class="list">${def.questions.filter(q => !m.asked.includes(q.id)).map(q => `<button class="opt" data-act="ask" data-id="${q.id}"><b>${esc(q.q)}</b></button>`).join("")}</div>`
+      ${left > 0 ? `<p class="muted">${def.picks === 1 ? "Bạn chỉ kịp hỏi một câu." : `Còn ${left} câu hỏi.`} Chọn câu bạn nghĩ sẽ mở ra điều quan trọng nhất.</p><div class="list">${def.questions.filter(q => !m.asked.includes(q.id)).map(q => `<button class="opt" data-act="ask" data-id="${q.id}"><b>${esc(q.q)}</b></button>`).join("")}</div>`
         : `<div class="card"><b>Buổi gặp kết thúc</b><p class="muted">${unlocked.filter(w => w.kind === "wish").length ? "Mong muốn mới đã vào Sổ dự án. Đưa vào kế hoạch thì ngày cưới sẽ có khoảnh khắc đặc biệt." : "Lần này chưa mở được mong muốn nào."}</p></div>
         <div class="sheet-actions"><button class="btn primary" data-act="meetDone">Xong</button></div>`}`;
   }
