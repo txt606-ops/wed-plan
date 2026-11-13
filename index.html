@@ -735,7 +735,7 @@ h2.sec.due-line.neg { color: var(--danger); }
  * crises[].options[].effects: cost (agency pays), clientPays (client is charged), couple, family.
  */
 window.GAME_DATA = {
-  "version": "3.9.1",
+  "version": "3.9.2",
   "project": {
     "couple": "Linh & Minh",
     "location": "Sài Meo",
@@ -10476,6 +10476,9 @@ window.WP_COPY = {
     return { id: `${state.career.done}-${state.career.month}-${idx}-${Math.floor(r() * 1e6)}`, type: type === "comeback" ? "dayof" : type, comeback: type === "comeback",
       couple: `${b} & ${g}`, brand: state.career.brand || null, premiumExpect: CORE.premiumExpectFor(type, avgStars() || null), client, guests, scale, range, weeks, months: T.months, location, city: state.career.city, fee, trait: trait?.id || null, priceMult: mi.priceMult, rainy: mi.rainy, cold: mi.cold, budget, preset, dateLabel: `tháng ${m}` };
   }
+  const RECENT_COUPLES = 8; // khách mới không trùng tên cặp đôi của bấy nhiêu đám gần nhất
+  // Tên cô dâu, chú rể của đám đang bị bóc phốt, cho tới khi bài hết hiệu lực (cùng mốc 20 tuần với dòng nhắc ở văn phòng).
+  const scandalNames = c => { const s = c.scandal; if (!s || (s.state === "done" && (c.elapsedWeeks || 0) - (s.postedWeek || 0) > 20)) return new Set(); return new Set([s.bride, s.groom].filter(Boolean)); };
   function genOffers() {
     const c = state.career; const r = E.rng(hash(`${state.seed}:offers:${c.done}:${c.year}:${c.month}`));
     const mi = C.monthInfo(c.month, c.city); const rep = avgStars();
@@ -10526,8 +10529,15 @@ window.WP_COPY = {
     for (let k = 0; k < (P.lose || 0) && list.length > 1; k++) { list.pop(); if (hard.includes(list.length)) hard.splice(hard.indexOf(list.length), 1); }
     if (P.lose || P.loseBrand || P.hard) c.staff.forEach(s => revealCons(s, [...(P.lose ? ["loseMonthly"] : []), ...(P.loseBrand ? ["loseBrand2m"] : []), ...(P.hard ? ["hardMonthly", "hard2m"] : [])]));
     const out = list.map((t, i) => makeOffer(t, r, mi, rep, i, hard.includes(i) ? "strict" : null));
-    // hai lời hỏi trong cùng danh sách không trùng tên cặp đôi (chỉ đổi tên, chỉ khi trùng)
-    const used = new Set(); out.forEach(o => { for (let k = 0; k < 20 && used.has(o.couple); k++) { const [b, g2] = pick(r, C.COUPLES); o.couple = `${b} & ${g2}`; } used.add(o.couple); });
+    // Tên khách mới (chỉ đổi tên, chỉ khi trùng, mọi con số giữ nguyên):
+    // không trùng nhau trong cùng danh sách, không trùng tên cô dâu/chú rể của đám đang bị bóc phốt (bài còn hiệu lực),
+    // không trùng 8 đám gần nhất. Hết tên để tránh thì bỏ luật 8 đám trước, vẫn giữ luật bóc phốt.
+    const used = new Set(), recent = new Set(c.history.slice(0, RECENT_COUPLES).map(h => h.couple)), hot = scandalNames(c);
+    const clash = (cp, strict) => used.has(cp) || cp.split(" & ").some(x => hot.has(x)) || (strict && recent.has(cp));
+    out.forEach(o => {
+      for (const strict of [true, false]) for (let k = 0; k < 40 && clash(o.couple, strict); k++) { const [b, g2] = pick(r, C.COUPLES); o.couple = `${b} & ${g2}`; }
+      used.add(o.couple);
+    });
     return out;
   }
   // Loại đám như khách thấy nó: đám package của thương hiệu Package có vendor đối tác giảm thêm. Dùng cho cả giá vendor lẫn sàn ngân sách khách.
@@ -11214,7 +11224,7 @@ window.WP_COPY = {
   // Bản cùng cấu trúc lưu: đọc thẳng, không chuyển đổi. 3.7.1–3.7.3 chỉ sửa giao diện; trường mới (warned, markSrc, sideWeek) đều có giá trị mặc định.
   // 3.7.4–3.7.5 không thêm trường lưu nào; nhãn "planner điều phối được" của mong muốn dựng lại từ dữ liệu khi nạp.
   // 3.8.0 thêm tên thương hiệu và nhận diện: save cũ có tên trống, nhận diện "cơ bản" (CORE.initIdentity); đã qua mốc chọn hướng thì lần mở tới hỏi đặt tên một lần.
-  const SAME_SHAPE = ["3.7.0", "3.7.3", "3.7.5", "3.8.0", "3.8.1", "3.9.0"]; // 3.9.1 chỉ sửa giao diện, cách lưu y như 3.9.0 // 3.9.0 thêm career.scandal / scandalRep / scandalWaryUntil, đều có mặc định trong CORE.initCareer // 3.8.1 chỉ đổi giao diện màn chuẩn bị và lượt cần: không thêm trường lưu
+  const SAME_SHAPE = ["3.7.0", "3.7.3", "3.7.5", "3.8.0", "3.8.1", "3.9.0", "3.9.1"]; // 3.9.1, 3.9.2 chỉ sửa giao diện và tên khách, cách lưu y như 3.9.0 // 3.9.0 thêm career.scandal / scandalRep / scandalWaryUntil, đều có mặc định trong CORE.initCareer // 3.8.1 chỉ đổi giao diện màn chuẩn bị và lượt cần: không thêm trường lưu
   const OFFICE_BY_OLD_STAGE = ["home", "cowork", "small", "studio", "studio"];
   function migrate(old, from) {
     const s = { ...fresh(), ...old, sheet: null };
@@ -12896,7 +12906,8 @@ window.WP_COPY = {
       .sort((x, y) => (x.event === "ENGAGEMENT" ? 0 : 1) - (y.event === "ENGAGEMENT" ? 0 : 1));
     told.forEach((k, i) => { const set = (k.ok ? T.line.crisisOk : T.line.crisisBad)[k.event === "ENGAGEMENT" ? "ENGAGEMENT" : "WEDDING"]; const prev = told[i - 1]; lines.push(pick(i === 0 ? set.first : prev.event !== k.event && set.fromEngagement ? set.fromEngagement : set.next).replace("{x}", k.phrase)); });
     if (nm.length) lines.push(pick(T.line.notMine).replace("{x}", nm[0].phrase));
-    if (s.missed.length) lines.push(pick(T.line.missed).replace("{list}", s.missed.slice(0, 3).map(t => lower(t)).join(", ")));
+    // lời cô dâu kể: "gặp riêng cô dâu chú rể" thành "gặp riêng tụi mình"
+    if (s.missed.length) lines.push(pick(T.line.missed).replace("{list}", s.missed.slice(0, 3).map(t => lower(t).replace(/cô dâu chú rể/gi, "tụi mình")).join(", ")));
     if (s.feeKept) lines.push(pick(T.line.missedKept));
     if (s.discovery && !s.refunded) lines.push(pick(T.line.discovery).replace("{cat}", lower(s.cat)).replace("{gap}", money(s.gap)));
     if (s.dispute) lines.push(pick(T.line.dispute));
